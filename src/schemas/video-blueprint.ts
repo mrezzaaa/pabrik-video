@@ -119,7 +119,7 @@ export const ScriptSegmentSchema = z.object({
   segmentIndex: z.number().int().min(0).max(3),
   phaseType: PhaseTypeSchema,
   chapterTitle: z.string().min(3), // Supports <highlight>word</highlight> for coral red text
-  narrationText: z.string().min(8),
+  narrationText: z.string().min(90, "narrationText must be at least 18 spoken words (~90 chars) to hit 8+ seconds of TTS audio"),
   primaryMetric: z.object({
     startValue: z.number(),
     endValue: z.number(),

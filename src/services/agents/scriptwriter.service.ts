@@ -21,7 +21,7 @@ const SCRIPT_SCHEMA_TEMPLATE = `{
       "segmentIndex": 0,
       "phaseType": "EVERYDAY_CONTRAST_HOOK",
       "chapterTitle": "<Action Title with <highlight>key words</highlight>>",
-      "narrationText": "<Conversational Indonesian narration, 18-24 words total. Short punchy sentences (3-7 words).>",
+      "narrationText": "<MINIMUM 18 WORDS. Example: 'Nah, ini bagian utamanya. Kuncinya ada di komponen kecil ini. Semakin tinggi tekanannya, semakin keras ia bekerja. Makanya perlu dicek rutin.'>",
       "primaryMetric": {
         "startValue": 18,
         "endValue": 65,
@@ -90,10 +90,10 @@ BLUEPRINT PHASES:
 ${JSON.stringify(blueprint.phases, null, 2)}
 
 STRICT REQUIREMENTS:
-1. Spoken sentence length: 3 to 7 words per sentence. Natural Indonesian conversational cadence ("gaya video Bandeng Presto kitabedah.id").
-2. Target word count: 18 to 24 words per segment.
+1. ⚠️ WORD COUNT ENFORCEMENT: Each narrationText MUST be 18 to 28 spoken words minimum. Count words! Target 4 acts × ~11 words each = 40-50 second total video.
+2. Sentence style: 3 to 7 words per sentence, chain 3-5 sentences per segment. Natural Indonesian conversational cadence.
 3. Practical checklist: Exactly 3 items, maximum 3-4 words per item!
-4. Pill labels: Maximum 1-2 pills per segment, each maximum 2-3 words with directional arrow (e.g., "DURI LUNAK →", "← UAP TERKURUNG").
+4. Pill labels: Maximum 1-2 pills per segment, each maximum 2-3 topic-specific words with directional arrow.
 5. Return ONLY valid JSON conforming to this schema structure:
 ${SCRIPT_SCHEMA_TEMPLATE}`;
 

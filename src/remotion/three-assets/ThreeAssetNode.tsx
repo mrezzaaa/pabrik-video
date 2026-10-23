@@ -122,6 +122,40 @@ export const ThreeAssetNode: React.FC<ThreeAssetNodeProps> = ({
     return res;
   }, [anim, isAnimActive, frame, fps]);
 
+  // Pre-compute geometry data at component top level (rules of hooks: no useMemo inside switch)
+  const lathePoints = useMemo(() => {
+    const args = node.geometryArgs ?? {};
+    if (args.lathePoints && args.lathePoints.length >= 2) {
+      return args.lathePoints.map((p) => new THREE.Vector2(p[0], p[1]));
+    }
+    return [
+      new THREE.Vector2(0.2, -1.2),
+      new THREE.Vector2(0.9, -0.8),
+      new THREE.Vector2(1.1, -0.2),
+      new THREE.Vector2(1.15, 0.3),
+      new THREE.Vector2(0.85, 0.8),
+      new THREE.Vector2(0.45, 1.3),
+    ];
+  }, [node.geometryArgs]);
+
+  const tubeCurvePoints = useMemo(() => {
+    const args = node.geometryArgs ?? {};
+    if (args.tubePath && args.tubePath.length >= 2) {
+      return args.tubePath.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
+    }
+    return [
+      new THREE.Vector3(-1.0, -0.6, 0),
+      new THREE.Vector3(-0.4, 0.0, 0.5),
+      new THREE.Vector3(0.4, 0.5, -0.3),
+      new THREE.Vector3(1.0, 1.0, 0),
+    ];
+  }, [node.geometryArgs]);
+
+  const tubeCurve = useMemo(
+    () => new THREE.CatmullRomCurve3(tubeCurvePoints),
+    [tubeCurvePoints]
+  );
+
   const finalPos: [number, number, number] = [
     node.position[0] + animOffset.pos[0],
     node.position[1] + animOffset.pos[1],
@@ -306,27 +340,12 @@ export const ThreeAssetNode: React.FC<ThreeAssetNodeProps> = ({
       }
 
       case "lathe": {
-        const points = useMemo(() => {
-          if (args.lathePoints && args.lathePoints.length >= 2) {
-            return args.lathePoints.map((p) => new THREE.Vector2(p[0], p[1]));
-          }
-          // Default smooth organic contour
-          return [
-            new THREE.Vector2(0.2, -1.2),
-            new THREE.Vector2(0.9, -0.8),
-            new THREE.Vector2(1.1, -0.2),
-            new THREE.Vector2(1.15, 0.3),
-            new THREE.Vector2(0.85, 0.8),
-            new THREE.Vector2(0.45, 1.3),
-          ];
-        }, [args.lathePoints]);
-
         const arcDeg = args.arcAngleDeg ?? (node.enableCutawayClip ? 270 : 360);
         const phiLen = (arcDeg * Math.PI) / 180;
 
         return (
           <mesh>
-            <latheGeometry args={[points, 48, 0, phiLen]} />
+            <latheGeometry args={[lathePoints, 48, 0, phiLen]} />
             {renderMaterial()}
             {node.showEdgesOutline && (
               <Edges threshold={22} color="#1E293B" scale={1.001} />
@@ -379,24 +398,11 @@ export const ThreeAssetNode: React.FC<ThreeAssetNodeProps> = ({
       }
 
       case "tube": {
-        const curvePoints = useMemo(() => {
-          if (args.tubePath && args.tubePath.length >= 2) {
-            return args.tubePath.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
-          }
-          return [
-            new THREE.Vector3(-1.0, -0.6, 0),
-            new THREE.Vector3(-0.4, 0.0, 0.5),
-            new THREE.Vector3(0.4, 0.5, -0.3),
-            new THREE.Vector3(1.0, 1.0, 0),
-          ];
-        }, [args.tubePath]);
-
-        const curve = useMemo(() => new THREE.CatmullRomCurve3(curvePoints), [curvePoints]);
         const tubeR = args.tubeRadius ?? 0.12;
 
         return (
           <mesh>
-            <tubeGeometry args={[curve, 48, tubeR, 16, false]} />
+            <tubeGeometry args={[tubeCurve, 48, tubeR, 16, false]} />
             {renderMaterial()}
             {node.showEdgesOutline && (
               <Edges threshold={22} color="#1E293B" scale={1.001} />
