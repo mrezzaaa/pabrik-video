@@ -21,7 +21,7 @@ services:
     container_name: pabrik-video-bull-board
     restart: unless-stopped
     ports:
-      - "3005:3000"
+      - "3005:3005"
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379

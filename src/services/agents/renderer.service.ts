@@ -5,8 +5,6 @@ import { renderMedia, selectComposition } from "@remotion/renderer";
 import { env } from "@/config/env";
 import type { RemotionCompositionProps } from "@/schemas/video-blueprint";
 
-let cachedBundleLocation: string | null = null;
-
 export async function getOrCreateRemotionBundle(): Promise<string> {
   // Always bundle with current publicDir so new job audio chunks in /public/renders/[jobId]/audio/ are accessible
   const entryPoint = path.join(process.cwd(), "src", "remotion", "index.ts");
@@ -27,7 +25,6 @@ export async function getOrCreateRemotionBundle(): Promise<string> {
     },
   });
 
-  cachedBundleLocation = bundleLocation;
   return bundleLocation;
 }
 
@@ -54,10 +51,14 @@ export async function runRemotionRenderAgent(params: {
       ? "BedahVideoShorts"
       : "BedahVideoComposition";
 
+  // Dedicated port range (3310-3390) to avoid colliding with port 3000 when another IPv6 server is bound to localhost:3000
+  const safePort = 3310 + Math.floor(Math.random() * 80);
+
   const composition = await selectComposition({
     serveUrl,
     id: compositionId,
     inputProps: compositionProps,
+    port: safePort,
   });
 
   let lastReportedPercent = -1;
@@ -71,6 +72,7 @@ export async function runRemotionRenderAgent(params: {
       height: compositionProps.height,
     },
     serveUrl,
+    port: safePort + 1,
     codec: "h264",
     outputLocation: outputFilePath,
     inputProps: compositionProps,
