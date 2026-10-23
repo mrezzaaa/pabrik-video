@@ -201,7 +201,7 @@ export default function FactoryDashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs font-bold tracking-widest text-sky-400">
-                  KITABEDAH.ID ENGINE
+                  VIDEO EXPLAINER ENGINE
                 </span>
                 <Badge variant="success">60 FPS ISOMETRIC</Badge>
               </div>
