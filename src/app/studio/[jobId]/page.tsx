@@ -59,7 +59,7 @@ export default function StudioJobPage() {
       try {
         const data = JSON.parse(ev.data) as VideoJobState;
         setJobState(data);
-        if (data.compositionProps && data.compositionProps.scene) {
+        if (data.compositionProps && data.compositionProps.visualScene) {
           setCompositionProps(data.compositionProps);
         }
       } catch {

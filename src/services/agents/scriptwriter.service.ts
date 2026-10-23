@@ -32,7 +32,7 @@ const SCRIPT_SCHEMA_TEMPLATE = `{
         "sparklinePoints": [18, 25, 35, 50, 65]
       },
       "statusBadge": {
-        "text": "<SHORT STATUS, e.g., CAS BIASA / NORMAL>",
+        "text": "<SHORT STATUS, e.g., STANDAR / AKTIF>",
         "variant": "green"
       },
       "secondaryMetric": "<Short context, e.g., 5V / 3A standar>",
@@ -42,7 +42,6 @@ const SCRIPT_SCHEMA_TEMPLATE = `{
           "componentId": "comp_1",
           "text": "<PART NAME> →",
           "direction": "RIGHT",
-          "anchor": { "x": 340, "y": 820 },
           "relativeTriggerRatio": 0.15,
           "durationSeconds": 4.5
         }
@@ -81,7 +80,7 @@ CRITICAL INSTRUCTIONS:
    - 1: "CORE_MECHANISM_CUTAWAY"
    - 2: "COMPONENT_ZOOM_INS"
    - 3: "PRACTICAL_TAKEAWAY_LOOP" (set "showChecklistCard": true on segment 3)
-3. Every "pillLabels" item MUST reference a valid "componentId" from the blueprint (${blueprint.components.map((c) => `"${c.id}"`).join(", ")}) and use its anchor coordinates.
+3. Every "pillLabels" item MUST reference a valid "componentId" from the blueprint (${blueprint.components.map((c) => `"${c.id}"`).join(", ")}). Note: 2D screen coordinates are computed automatically by the 3D Isometric Projection Engine!
 4. Make sure "primaryMetric", "statusBadge", and "secondaryMetric" reflect the real physical numbers of "${blueprint.topic}" (unit: "${blueprint.metricUnit}", baseline: ${blueprint.baselineMetricValue}, peak: ${blueprint.peakMetricValue}).
 5. Return ONLY valid JSON matching this schema structure:
 ${SCRIPT_SCHEMA_TEMPLATE}`;

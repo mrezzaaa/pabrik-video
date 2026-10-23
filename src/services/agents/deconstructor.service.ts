@@ -9,12 +9,11 @@ import { LAYMAN_DECONSTRUCTOR_SYSTEM_PROMPT } from "./prompts";
 const BLUEPRINT_SCHEMA_TEMPLATE = `{
   "topic": "<user topic string>",
   "laymanHookTitle": "<Short hook title with <highlight>key words</highlight>>",
-  "everydayCategory": "<Category in uppercase, e.g., TEKNOLOGI BATERAI & DAYA>",
-  "coreSimpleTruth": "<One sentence layman summary of the core mechanism>",
-  "containerType": "dual-chamber | layered-stack | cylinder-cutaway | box-cutaway | circuit-board | mechanical-housing",
+  "everydayCategory": "<Category in uppercase, e.g., TEKNOLOGI & REKAYASA SEHARI-HARI>",
+  "coreSimpleTruth": "<One sentence layman summary of the core physical mechanism>",
   "baselineMetricValue": 18,
   "peakMetricValue": 200,
-  "metricUnit": "W | V | % | °C | Bar | RPM",
+  "metricUnit": "W | V | % | °C | Bar | RPM | km/j | Gbps",
   "practicalChecklistTitle": "CEK SEBELUM PAKAI / BELI:",
   "practicalChecklistItems": [
     "<Practical checklist item 1>",
@@ -24,39 +23,39 @@ const BLUEPRINT_SCHEMA_TEMPLATE = `{
   "components": [
     {
       "id": "comp_1",
-      "name": "<Part 1 Name>",
+      "name": "<Outer Shell / Casing Name>",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
-      "fillColor": "#93C5FD",
-      "defaultAnchor": { "x": 340, "y": 820 },
-      "zoomTarget": { "x": 60, "y": 120, "scale": 1.5 }
+      "fillColor": "#E2E8F0",
+      "center3D": { "x": 0, "y": 0, "z": 10 },
+      "zoomTarget": { "x": 45, "y": 80, "scale": 1.45 }
     },
     {
       "id": "comp_2",
-      "name": "<Part 2 Name>",
+      "name": "<Primary Internal Mechanism Name>",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
-      "fillColor": "#FACC15",
-      "defaultAnchor": { "x": 540, "y": 980 },
-      "zoomTarget": { "x": 0, "y": 0, "scale": 1.65 }
+      "fillColor": "#93C5FD",
+      "center3D": { "x": -22, "y": 15, "z": 5 },
+      "zoomTarget": { "x": 0, "y": -20, "scale": 1.65 }
     },
     {
       "id": "comp_3",
-      "name": "<Part 3 Name>",
+      "name": "<Sub-Component 1 Name>",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
-      "fillColor": "#86EFAC",
-      "defaultAnchor": { "x": 740, "y": 1120 },
-      "zoomTarget": { "x": -70, "y": -90, "scale": 1.75 }
+      "fillColor": "#FACC15",
+      "center3D": { "x": 22, "y": -15, "z": -10 },
+      "zoomTarget": { "x": -55, "y": -60, "scale": 1.75 }
     },
     {
       "id": "comp_4",
-      "name": "<Part 4 Name>",
+      "name": "<Sub-Component 2 / Regulator Name>",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#F87171",
-      "defaultAnchor": { "x": 540, "y": 1260 },
-      "zoomTarget": { "x": 0, "y": -160, "scale": 1.8 }
+      "center3D": { "x": 0, "y": 0, "z": -48 },
+      "zoomTarget": { "x": 0, "y": -140, "scale": 1.8 }
     }
   ],
   "phases": [
@@ -103,14 +102,14 @@ export async function runDeconstructorAgent(topic: string): Promise<{
   blueprint: DeconstructionBlueprint;
   modelUsed: string;
 }> {
-  const userPrompt = `Deconstruct this exact Indonesian topic into a 4-Act Warm Editorial Cutaway Storyboard for a general audience ("orang awam"):
+  const userPrompt = `Deconstruct this exact Indonesian topic into a 4-Act Warm Editorial 3D Cutaway Storyboard for a general audience ("orang awam"):
 
 TOPIC: "${topic}"
 
 REQUIREMENTS:
-1. All 4 phases, components, metrics, and checklist items MUST be 100% specific to "${topic}".
-2. Choose the most appropriate metricUnit (e.g., "W", "V", "%", "°C", "Bar", "RPM") and realistic baselineMetricValue & peakMetricValue for "${topic}".
-3. Choose the best containerType from: "dual-chamber", "layered-stack", "cylinder-cutaway", "box-cutaway", "circuit-board", "mechanical-housing".
+1. All 4 phases, physical 3D components, metrics, and checklist items MUST be 100% specific to "${topic}".
+2. Choose the most appropriate metricUnit (e.g., "W", "V", "%", "°C", "Bar", "RPM", "km/j", "Gbps") and realistic baselineMetricValue & peakMetricValue for "${topic}".
+3. Define 4 distinct anatomical components with 3D coordinates ("center3D": {x, y, z} in [-65..65]) so they can be assembled in 3D space.
 4. Return ONLY valid JSON conforming to this schema structure:
 ${BLUEPRINT_SCHEMA_TEMPLATE}`;
 

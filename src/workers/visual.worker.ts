@@ -25,7 +25,7 @@ export function startVisualWorker(): Worker {
           agent: "AGENT_4_VISUAL",
           level: "INFO",
           message:
-            "Choreographing light-mode 90° cutaway SVG layers, spring camera zoom-ins, dark pill pointers & yellow karaoke subtitles...",
+            "Executing 2-Step Anatomy-to-3D CAD Process: compiling 3D isometric cutaway geometry, Painter's Algorithm depth sorting & pill socket projection...",
         }
       );
 
@@ -63,7 +63,7 @@ export function startVisualWorker(): Worker {
           {
             agent: "AGENT_4_VISUAL",
             level: "SUCCESS",
-            message: `Parametric Scene Graph compiled: ${compositionProps.scene.internalLayers.length} cutaway layers (${compositionProps.scene.containerType}), ${compositionProps.scene.particleFlows.length} particle flows, ${compositionProps.pillCallouts.length} pill callouts.`,
+            message: `3D Isometric Scene Graph compiled: ${compositionProps.visualScene.parts.length} 3D parts (${compositionProps.visualScene.parts.map((p) => p.builderType).join(", ")}), ${compositionProps.visualScene.particleStreams.length} 3D particle streams, ${compositionProps.pillCallouts.length} projected pill sockets.`,
           }
         );
 

@@ -2,6 +2,7 @@ import type {
   RemotionCompositionProps,
   WordTiming,
 } from "@/schemas/video-blueprint";
+import { DEFAULT_ISO_CONFIG, projectIso3D } from "./iso-engine/iso-math";
 
 function computeClientWordTimings(
   narrationText: string,
@@ -42,14 +43,26 @@ function computeClientWordTimings(
       startSec,
       endSec,
       startFrame: Math.floor(startSec * fps),
-      endFrame: Math.max(Math.ceil(endSec * fps), Math.floor(startSec * fps) + 1),
+      endFrame: Math.max(
+        Math.ceil(endSec * fps),
+        Math.floor(startSec * fps) + 1
+      ),
     };
   });
+}
+
+function projectAnchor(x: number, y: number, z: number) {
+  const pt = projectIso3D({ x, y, z }, DEFAULT_ISO_CONFIG);
+  return {
+    x: Math.round(pt.sx),
+    y: Math.round(pt.sy),
+  };
 }
 
 /**
  * Default Studio Preview Composition Props:
  * "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W"
+ * Compiled with Universal 3D-to-SVG Isometric Cutaway Builders (hollowBox3D, box3D, tubePath3D, particleStreams)
  */
 export function buildDefaultCompositionProps(): RemotionCompositionProps {
   const topic = "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W";
@@ -80,16 +93,27 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
       startFrame,
       endFrame,
       durationInFrames,
-      wordTimings: computeClientWordTimings(actNarrations[idx], startSec, dur, fps),
+      wordTimings: computeClientWordTimings(
+        actNarrations[idx],
+        startSec,
+        dur,
+        fps
+      ),
     };
   });
+
+  const anchorCathode = projectAnchor(-28, 12, 10);
+  const anchorSeparator = projectAnchor(0, 0, 12);
+  const anchorAnode = projectAnchor(28, -12, 10);
+  const anchorBms = projectAnchor(0, 0, -48);
 
   return {
     jobId: "demo-battery-200w",
     topic,
     laymanHookTitle: "Cas baterai 200W <highlight>kok bisa kilat?</highlight>",
     everydayCategory: "TEKNOLOGI BATERAI & FAST CHARGING",
-    coreSimpleTruth: "Arsitektur Dual-Cell membagi arus 200W ke dua jalur paralel",
+    coreSimpleTruth:
+      "Arsitektur Dual-Cell membagi arus 200W ke dua jalur paralel",
     width: 1080,
     height: 1920,
     fps: 60,
@@ -103,179 +127,192 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
         "Suhu HP di bawah 40°C",
       ],
     },
-    scene: {
-      containerType: "dual-chamber",
-      containerTitle: "DUAL-CELL LITHIUM-ION 200W",
-      containerSubtitle: "BELAHAN MELINTANG SEL BATERAI",
-      outerBounds: {
-        x: 210,
-        y: 630,
-        width: 660,
-        height: 750,
-        wallThickness: 24,
-        outerFill: "#E2E8F0",
-        interiorFill: "#F8FAFC",
+    visualScene: {
+      subjectTitle: "DUAL-CELL LITHIUM-ION 200W",
+      anatomyDecomposition: {
+        outerHousingShell:
+          "Casing aluminium pelindung baterai Dual-Cell dengan belahan melintang 90°",
+        primaryInternalMechanism:
+          "Elektroda Katoda LiCoO₂ dan Anoda Grafit kembar yang bekerja paralel",
+        zoomInSubComponents:
+          "Membran Separator berpori mikro dan modul Chip BMS Dual-Charge Pump",
+        physicalMediumFlow:
+          "Aliran ion Lithium (Li+) menyeberangi separator dan elektron 200W dari port USB-C",
       },
-      internalLayers: [
+      parts: [
         {
-          id: "layer_cathode",
-          componentId: "comp_cathode",
-          name: "Katoda (LiCoO₂)",
-          everydayRole: "Gudang asal ion Lithium",
-          zIndex: 1,
-          fillColor: "#93C5FD",
-          outlineColor: "#1E293B",
-          strokeWidth: 2.5,
-          bounds: { x: 245, y: 695, width: 255, height: 470, rx: 16 },
-          anchorScreenCoord: { x: 340, y: 920 },
-          customSvgElements: [
-            {
-              id: "cathode_plate_1",
-              shape: "rect",
-              x: 270,
-              y: 775,
-              width: 205,
-              height: 45,
-              rx: 8,
-              fill: "#60A5FA",
-              stroke: "#1E293B",
-              strokeWidth: 2.5,
-              opacity: 1,
-              label: "SEL A (+)",
-            },
-            {
-              id: "cathode_plate_2",
-              shape: "rect",
-              x: 270,
-              y: 1060,
-              width: 205,
-              height: 45,
-              rx: 8,
-              fill: "#60A5FA",
-              stroke: "#1E293B",
-              strokeWidth: 2.5,
-              opacity: 1,
-              label: "SEL B (+)",
-            },
-          ],
+          partId: "part_outer_housing",
+          componentId: "comp_bms",
+          name: "Casing Dual-Cell Aluminium",
+          builderType: "hollowBox3D",
+          materialColor: "#E2E8F0",
+          cutaway: true,
+          opacity: 1,
+          params: {
+            center: { x: 0, y: 0, z: 0 },
+            axis: "Z",
+            size: { w: 112, d: 96, h: 128 },
+            wallThickness: 10,
+          },
+          animation: {
+            type: "none",
+            axis: "Z",
+            speed: 1,
+            amplitude: 0,
+          },
         },
         {
-          id: "layer_separator",
+          partId: "part_cathode_cell",
+          componentId: "comp_cathode",
+          name: "Katoda LiCoO₂ (+)",
+          builderType: "box3D",
+          materialColor: "#93C5FD",
+          cutaway: false,
+          opacity: 1,
+          params: {
+            center: { x: -28, y: 12, z: 10 },
+            axis: "Z",
+            size: { w: 30, d: 58, h: 74 },
+            wallThickness: 6,
+          },
+          animation: {
+            type: "pulse",
+            axis: "Z",
+            speed: 1.2,
+            amplitude: 4,
+          },
+        },
+        {
+          partId: "part_separator_membrane",
           componentId: "comp_separator",
           name: "Membran Separator",
-          everydayRole: "Saringan ion anti-korslet",
-          zIndex: 2,
-          fillColor: "#FACC15",
-          outlineColor: "#1E293B",
-          strokeWidth: 2.5,
-          bounds: { x: 512, y: 695, width: 56, height: 470, rx: 12 },
-          anchorScreenCoord: { x: 540, y: 830 },
-          customSvgElements: [],
+          builderType: "box3D",
+          materialColor: "#FACC15",
+          cutaway: false,
+          opacity: 0.95,
+          params: {
+            center: { x: 0, y: 0, z: 12 },
+            axis: "Z",
+            size: { w: 10, d: 64, h: 78 },
+            wallThickness: 4,
+          },
+          animation: {
+            type: "oscillate",
+            axis: "Z",
+            speed: 1.1,
+            amplitude: 3,
+          },
         },
         {
-          id: "layer_anode",
+          partId: "part_anode_graphite",
           componentId: "comp_anode",
-          name: "Anoda Grafit",
-          everydayRole: "Parkiran ion saat penuh",
-          zIndex: 3,
-          fillColor: "#86EFAC",
-          outlineColor: "#1E293B",
-          strokeWidth: 2.5,
-          bounds: { x: 580, y: 695, width: 255, height: 470, rx: 16 },
-          anchorScreenCoord: { x: 735, y: 920 },
-          customSvgElements: [
-            {
-              id: "anode_grid_1",
-              shape: "rect",
-              x: 605,
-              y: 775,
-              width: 205,
-              height: 45,
-              rx: 8,
-              fill: "#4ADE80",
-              stroke: "#1E293B",
-              strokeWidth: 2.5,
-              opacity: 1,
-              label: "GRAFIT LAPIS 1",
-            },
-            {
-              id: "anode_grid_2",
-              shape: "rect",
-              x: 605,
-              y: 1060,
-              width: 205,
-              height: 45,
-              rx: 8,
-              fill: "#4ADE80",
-              stroke: "#1E293B",
-              strokeWidth: 2.5,
-              opacity: 1,
-              label: "GRAFIT LAPIS 2",
-            },
-          ],
+          name: "Anoda Grafit (-)",
+          builderType: "box3D",
+          materialColor: "#86EFAC",
+          cutaway: false,
+          opacity: 1,
+          params: {
+            center: { x: 28, y: -12, z: 10 },
+            axis: "Z",
+            size: { w: 30, d: 58, h: 74 },
+            wallThickness: 6,
+          },
+          animation: {
+            type: "pulse",
+            axis: "Z",
+            speed: 1.2,
+            amplitude: 4,
+          },
         },
         {
-          id: "layer_bms_port",
+          partId: "part_bms_controller",
           componentId: "comp_bms",
-          name: "Chip BMS & Dual-Pump",
-          everydayRole: "Membagi arus 200W (2x 100W)",
-          zIndex: 4,
-          fillColor: "#F87171",
-          outlineColor: "#1E293B",
-          strokeWidth: 2.5,
-          bounds: { x: 245, y: 1190, width: 590, height: 150, rx: 18 },
-          anchorScreenCoord: { x: 540, y: 1265 },
-          customSvgElements: [
-            {
-              id: "usbc_port",
-              shape: "rect",
-              x: 450,
-              y: 1270,
-              width: 180,
-              height: 52,
-              rx: 14,
-              fill: "#FACC15",
-              stroke: "#1E293B",
-              strokeWidth: 2.5,
-              opacity: 1,
-              label: "USB-C 200W IN",
-            },
-          ],
+          name: "Chip BMS Dual-Pump 200W",
+          builderType: "box3D",
+          materialColor: "#F87171",
+          cutaway: false,
+          opacity: 1,
+          params: {
+            center: { x: 0, y: 0, z: -46 },
+            axis: "Z",
+            size: { w: 84, d: 62, h: 20 },
+            wallThickness: 6,
+          },
+          animation: {
+            type: "none",
+            axis: "Z",
+            speed: 1,
+            amplitude: 0,
+          },
+        },
+        {
+          partId: "part_dual_busbar",
+          componentId: "comp_bms",
+          name: "Jalur Arus Paralel 10A",
+          builderType: "tubePath3D",
+          materialColor: "#FDBA74",
+          cutaway: false,
+          opacity: 1,
+          params: {
+            center: { x: 0, y: 0, z: -25 },
+            axis: "Z",
+            tubeRadius: 5,
+            wallThickness: 4,
+            path3D: [
+              { x: -28, y: 12, z: -36 },
+              { x: 0, y: 0, z: -44 },
+              { x: 28, y: -12, z: -36 },
+            ],
+          },
+          animation: {
+            type: "none",
+            axis: "Z",
+            speed: 1,
+            amplitude: 0,
+          },
         },
       ],
-      customSvgElements: [],
-      particleFlows: [
+      particleStreams: [
         {
-          id: "flow_li_ions_top",
+          id: "stream_li_ions_upper",
           type: "ions",
           color: "#38BDF8",
-          from: { x: 360, y: 880 },
-          to: { x: 720, y: 880 },
+          path3D: [
+            { x: -28, y: 12, z: 26 },
+            { x: 0, y: 0, z: 28 },
+            { x: 28, y: -12, z: 26 },
+          ],
           count: 10,
           speed: 1.8,
-          size: 13,
+          size: 10,
           activeInPhases: [0, 1, 2, 3],
         },
         {
-          id: "flow_li_ions_bottom",
+          id: "stream_li_ions_lower",
           type: "ions",
           color: "#38BDF8",
-          from: { x: 360, y: 1010 },
-          to: { x: 720, y: 1010 },
+          path3D: [
+            { x: -28, y: 12, z: -4 },
+            { x: 0, y: 0, z: -2 },
+            { x: 28, y: -12, z: -4 },
+          ],
           count: 10,
           speed: 1.8,
-          size: 13,
+          size: 10,
           activeInPhases: [1, 2, 3],
         },
         {
-          id: "flow_electrons_bms",
+          id: "stream_fast_electrons",
           type: "electrons",
           color: "#FACC15",
-          from: { x: 540, y: 1320 },
-          to: { x: 710, y: 1140 },
-          count: 8,
-          speed: 2.1,
-          size: 12,
+          path3D: [
+            { x: 0, y: 18, z: -56 },
+            { x: 16, y: 4, z: -36 },
+            { x: 28, y: -12, z: 8 },
+          ],
+          count: 9,
+          speed: 2.2,
+          size: 9,
           activeInPhases: [0, 1, 2],
         },
       ],
@@ -284,7 +321,8 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
       {
         segmentIndex: 0,
         phaseType: "EVERYDAY_CONTRAST_HOOK",
-        chapterTitle: "Cas baterai 200W <highlight>kok bisa kilat?</highlight>",
+        chapterTitle:
+          "Cas baterai 200W <highlight>kok bisa kilat?</highlight>",
         narrationText: actNarrations[0],
         audioUrl: "",
         startFrame: timings[0].startFrame,
@@ -330,7 +368,7 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
           startFrame: timings[1].startFrame,
           endFrame: timings[1].endFrame,
           x: 0,
-          y: -30,
+          y: -25,
           scale: 1.18,
         },
         primaryMetric: {
@@ -365,7 +403,7 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
           startFrame: timings[2].startFrame,
           endFrame: timings[2].endFrame,
           x: 0,
-          y: -90,
+          y: -75,
           scale: 1.48,
         },
         primaryMetric: {
@@ -389,7 +427,8 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
       {
         segmentIndex: 3,
         phaseType: "PRACTICAL_TAKEAWAY_LOOP",
-        chapterTitle: "Penuh 10 menit, <highlight>baterai tetap awet!</highlight>",
+        chapterTitle:
+          "Penuh 10 menit, <highlight>baterai tetap awet!</highlight>",
         narrationText: actNarrations[3],
         audioUrl: "",
         startFrame: timings[3].startFrame,
@@ -435,7 +474,7 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
         endFrame: timings[0].endFrame - 15,
         text: "ARUS 200W MASUK →",
         direction: "RIGHT",
-        anchor: { x: 540, y: 1265 },
+        anchor: anchorBms,
       },
       {
         id: "pill_bat_1",
@@ -444,7 +483,7 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
         endFrame: timings[1].endFrame - 20,
         text: "KATODA LiCoO₂ →",
         direction: "RIGHT",
-        anchor: { x: 340, y: 920 },
+        anchor: anchorCathode,
       },
       {
         id: "pill_bat_2",
@@ -453,7 +492,7 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
         endFrame: timings[1].endFrame - 15,
         text: "← ANODA GRAFIT",
         direction: "LEFT",
-        anchor: { x: 735, y: 920 },
+        anchor: anchorAnode,
       },
       {
         id: "pill_bat_3",
@@ -462,7 +501,7 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
         endFrame: timings[2].endFrame - 20,
         text: "PEMISAH (SEPARATOR) →",
         direction: "RIGHT",
-        anchor: { x: 540, y: 830 },
+        anchor: anchorSeparator,
       },
       {
         id: "pill_bat_4",
@@ -471,7 +510,7 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
         endFrame: timings[3].endFrame - 20,
         text: "← DUAL-CELL AMAN",
         direction: "LEFT",
-        anchor: { x: 540, y: 1265 },
+        anchor: anchorBms,
       },
     ],
     sfxOverlays: [

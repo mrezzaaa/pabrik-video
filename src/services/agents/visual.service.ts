@@ -1,7 +1,7 @@
 import { generateStructuredOmniroute } from "@/lib/omniroute";
 import { env } from "@/config/env";
 import {
-  ParametricSceneGraphSchema,
+  IsoSceneGraphSchema,
   RemotionCompositionPropsSchema,
   type DeconstructionBlueprint,
   type ScriptArchitectOutput,
@@ -10,67 +10,144 @@ import {
   type FramePillCallout,
   type FrameSfxOverlay,
   type PhaseTimelineBlock,
-  type ParametricSceneGraph,
+  type IsoSceneGraph,
+  type IsoPart3D,
 } from "@/schemas/video-blueprint";
-import { PARAMETRIC_VISUAL_SYSTEM_PROMPT } from "./prompts";
+import {
+  DEFAULT_ISO_CONFIG,
+  computeCentroid3D,
+  projectIso3D,
+  type Point3D,
+} from "@/remotion/iso-engine/iso-math";
+import { UNIVERSAL_3D_CAD_VISUAL_SYSTEM_PROMPT } from "./prompts";
 
-const SCENE_GRAPH_TEMPLATE = `{
-  "containerType": "dual-chamber",
-  "containerTitle": "<Short uppercase diagram header>",
-  "containerSubtitle": "<Short subtitle, e.g., ARSITEKTUR BELAHAN MELINTANG>",
-  "outerBounds": {
-    "x": 220,
-    "y": 620,
-    "width": 640,
-    "height": 760,
-    "wallThickness": 24,
-    "outerFill": "#E2E8F0",
-    "interiorFill": "#F8FAFC"
+const ISO_SCENE_GRAPH_TEMPLATE = `{
+  "subjectTitle": "<SHORT UPPERCASE SUBJECT NAME>",
+  "anatomyDecomposition": {
+    "outerHousingShell": "<What encloses it? e.g., Casing luar / dinding pelindung>",
+    "primaryInternalMechanism": "<What moves or reacts inside? e.g., Rotor & kumparan / sel anoda-katoda>",
+    "zoomInSubComponents": "<What small parts regulate or lock it? e.g., Katup pengaman / membran separator / chip BMS>",
+    "physicalMediumFlow": "<What flows through it? e.g., Aliran ion / uap bertekanan / fluks magnetik>"
   },
-  "internalLayers": [
+  "parts": [
     {
-      "id": "layer_1",
+      "partId": "part_outer_shell",
       "componentId": "comp_1",
-      "name": "<Part Name>",
-      "everydayRole": "<Short role label>",
-      "zIndex": 1,
-      "fillColor": "#93C5FD",
-      "outlineColor": "#1E293B",
-      "strokeWidth": 2.5,
-      "bounds": { "x": 260, "y": 680, "width": 250, "height": 420, "rx": 16 },
-      "anchorScreenCoord": { "x": 385, "y": 890 },
-      "customSvgElements": [
-        {
-          "id": "el_1",
-          "shape": "rect",
-          "x": 280,
-          "y": 710,
-          "width": 210,
-          "height": 60,
-          "rx": 8,
-          "fill": "#FACC15",
-          "stroke": "#1E293B",
-          "strokeWidth": 2.5,
-          "label": "TERMINAL"
-        }
-      ]
+      "name": "<Part 1 Name>",
+      "builderType": "revolveProfile",
+      "materialColor": "#E2E8F0",
+      "cutaway": true,
+      "opacity": 1,
+      "params": {
+        "center": { "x": 0, "y": 0, "z": 0 },
+        "axis": "Z",
+        "wallThickness": 9,
+        "profilePoints": [
+          { "r": 54, "z": -65 },
+          { "r": 58, "z": 0 },
+          { "r": 52, "z": 65 }
+        ]
+      },
+      "animation": {
+        "type": "none",
+        "axis": "Z",
+        "speed": 1.0,
+        "amplitude": 0
+      }
+    },
+    {
+      "partId": "part_core_mechanism",
+      "componentId": "comp_2",
+      "name": "<Part 2 Name>",
+      "builderType": "radialArray3D",
+      "materialColor": "#93C5FD",
+      "cutaway": false,
+      "opacity": 1,
+      "params": {
+        "center": { "x": 0, "y": 0, "z": 8 },
+        "axis": "Z",
+        "radialCount": 8,
+        "radialRadius": 28,
+        "elementSize": { "w": 14, "d": 10, "h": 42 }
+      },
+      "animation": {
+        "type": "rotate",
+        "axis": "Z",
+        "speed": 1.4,
+        "amplitude": 15
+      }
+    },
+    {
+      "partId": "part_sub_1",
+      "componentId": "comp_3",
+      "name": "<Part 3 Name>",
+      "builderType": "tubePath3D",
+      "materialColor": "#FACC15",
+      "cutaway": false,
+      "opacity": 1,
+      "params": {
+        "center": { "x": 0, "y": 0, "z": -18 },
+        "tubeRadius": 8,
+        "path3D": [
+          { "x": -34, "y": -18, "z": -38 },
+          { "x": 0, "y": 0, "z": -15 },
+          { "x": 34, "y": 18, "z": 18 }
+        ]
+      },
+      "animation": {
+        "type": "pulse",
+        "axis": "Z",
+        "speed": 1.5,
+        "amplitude": 6
+      }
+    },
+    {
+      "partId": "part_sub_2",
+      "componentId": "comp_4",
+      "name": "<Part 4 Name>",
+      "builderType": "box3D",
+      "materialColor": "#F87171",
+      "cutaway": false,
+      "opacity": 1,
+      "params": {
+        "center": { "x": 0, "y": 0, "z": -48 },
+        "size": { "w": 46, "d": 36, "h": 20 }
+      },
+      "animation": {
+        "type": "oscillate",
+        "axis": "Z",
+        "speed": 1.2,
+        "amplitude": 5
+      }
     }
   ],
-  "customSvgElements": [],
-  "particleFlows": [
+  "particleStreams": [
     {
-      "id": "flow_1",
+      "id": "stream_1",
       "type": "ions",
       "color": "#38BDF8",
-      "from": { "x": 380, "y": 890 },
-      "to": { "x": 700, "y": 890 },
+      "path3D": [
+        { "x": -35, "y": -20, "z": -40 },
+        { "x": 0, "y": 0, "z": 0 },
+        { "x": 35, "y": 20, "z": 42 }
+      ],
       "count": 12,
       "speed": 1.6,
-      "size": 11,
+      "size": 10,
       "activeInPhases": [0, 1, 2, 3]
     }
   ]
 }`;
+
+/**
+ * Computes the representative 3D anchor coordinate of an IsoPart3D
+ */
+export function resolvePartAnchor3D(part: IsoPart3D): Point3D {
+  if (part.params.path3D && part.params.path3D.length > 0) {
+    return computeCentroid3D(part.params.path3D);
+  }
+  return part.params.center ?? { x: 0, y: 0, z: 0 };
+}
 
 export async function runVisualChoreographerAgent(params: {
   jobId: string;
@@ -91,15 +168,17 @@ export async function runVisualChoreographerAgent(params: {
   const width = isLandscape ? 1920 : 1080;
   const height = isLandscape ? 1080 : 1920;
 
-  // Ask Agent 4 via Omniroute to generate the topic-specific Parametric Cutaway Scene Graph
-  const userPrompt = `Generate a topic-specific Parametric Cutaway & SVG Scene Graph ("ParametricSceneGraphSchema") for:
-TOPIC: "${blueprint.topic}"
-CONTAINER TYPE: "${blueprint.containerType}"
+  // Ask Agent 4 via Omniroute to execute the 2-Step Anatomy-to-3D CAD Prompt
+  const userPrompt = `Execute the 2-Step Anatomy-to-3D CAD Process to construct a topic-accurate 3D Isometric Cutaway Scene Graph ("IsoSceneGraphSchema") for:
 
-COMPONENTS TO MAP (use these exact componentId values in internalLayers):
+TOPIC: "${blueprint.topic}"
+CATEGORY: "${blueprint.everydayCategory}"
+CORE MECHANISM: "${blueprint.coreSimpleTruth}"
+
+COMPONENTS FROM AGENT 1 (every componentId below MUST be represented in "parts"):
 ${JSON.stringify(blueprint.components, null, 2)}
 
-SCRIPT SEGMENTS & PILL LABELS:
+SCRIPT SEGMENTS & PILL POINTERS:
 ${JSON.stringify(
   script.segments.map((s) => ({
     segmentIndex: s.segmentIndex,
@@ -110,18 +189,23 @@ ${JSON.stringify(
   2
 )}
 
-REQUIREMENTS:
-1. Create 1 "internalLayers" entry for each component in blueprint.components (minimum 3-4 layers), positioned cleanly inside x: 250..830, y: 660..1340 so they form a clear cross-section diagram of "${blueprint.topic}".
-2. Include "customSvgElements" (rect, circle, ellipse, path, line) with stroke "#1E293B" and warm cel-shaded fills (#E2E8F0, #93C5FD, #FACC15, #86EFAC, #F87171, #C084FC) to show internal structures specific to "${blueprint.topic}".
-3. Include 2 or 3 "particleFlows" (type: "ions" | "electrons" | "heat-waves" | "fluid" | "steam" | "airflow") animating between coordinates inside the cutaway.
-4. Return ONLY valid JSON matching this structure:
-${SCENE_GRAPH_TEMPLATE}`;
+UNIVERSAL 3D BUILDER SELECTION GUIDE:
+- Choose the builders that best represent the real-world physical geometry of "${blueprint.topic}":
+  - Cylindrical / conical / spherical / vessel / cup / lens / pipe housing -> use "revolveProfile" with "cutaway": true and 3-6 "profilePoints" ({ r, z }).
+  - Rectangular / dual-cell battery / electronic / appliance / chamber housing -> use "hollowBox3D" with "cutaway": true and "size": { w, d, h }.
+  - Internal plates / electrodes / chips / blocks -> use "box3D" with "center": { x, y, z } and "size": { w, d, h }.
+  - Organic / tooth / biological / custom prism shapes -> use "extrudePolygon" with "polygon": Array<{ x, y }> and "depth".
+  - Coils / pipes / nerves / blood vessels / fiber cores / wires -> use "tubePath3D" with "path3D": Array<{ x, y, z }> and "tubeRadius".
+  - Turbine blades / motor stator coils / rotor magnets / gears / fins -> use "radialArray3D" with "radialCount", "radialRadius", and "elementSize".
+- Include 2 or 3 "particleStreams" flowing along 3D paths ("path3D") inside the cutaway.
+- Return ONLY valid JSON matching this structure:
+${ISO_SCENE_GRAPH_TEMPLATE}`;
 
-  const { data: sceneGraph } =
-    await generateStructuredOmniroute<ParametricSceneGraph>({
-      systemPrompt: PARAMETRIC_VISUAL_SYSTEM_PROMPT,
+  const { data: visualScene } =
+    await generateStructuredOmniroute<IsoSceneGraph>({
+      systemPrompt: UNIVERSAL_3D_CAD_VISUAL_SYSTEM_PROMPT,
       userPrompt,
-      schema: ParametricSceneGraphSchema,
+      schema: IsoSceneGraphSchema,
       preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
       temperature: 0.25,
     });
@@ -129,14 +213,18 @@ ${SCENE_GRAPH_TEMPLATE}`;
   // Camera Choreography per Act driven by blueprint component zoomTargets
   const c2Zoom = blueprint.components[2]?.zoomTarget ?? {
     x: 0,
-    y: 120,
-    scale: 1.65,
+    y: 90,
+    scale: 1.6,
   };
   const cameraPresets = [
     { x: 0, y: 0, scale: 1.0 },
-    { x: 0, y: -35, scale: 1.18 },
-    { x: c2Zoom.x, y: c2Zoom.y, scale: Math.min(1.85, Math.max(1.35, c2Zoom.scale)) },
-    { x: 0, y: 15, scale: 1.02 },
+    { x: 0, y: -30, scale: 1.18 },
+    {
+      x: c2Zoom.x,
+      y: c2Zoom.y,
+      scale: Math.min(1.85, Math.max(1.35, c2Zoom.scale)),
+    },
+    { x: 0, y: 12, scale: 1.02 },
   ];
 
   const phases: PhaseTimelineBlock[] = [];
@@ -169,22 +257,27 @@ ${SCENE_GRAPH_TEMPLATE}`;
       secondaryMetric: scriptSeg.secondaryMetric,
       activeComponentIds:
         bpPhase?.focusComponentIds ??
-        sceneGraph.internalLayers.map((l) => l.componentId),
+        visualScene.parts.map((p) => p.componentId),
       showChecklistCard: scriptSeg.showChecklistCard ?? i === 3,
     });
 
-    // Attach pillLabels to the exact (x, y) coordinates of the generated internal layers
+    // Project the 3D part's socket coordinate to 2D SVG screen coordinates via projectIso3D()
     for (const pill of scriptSeg.pillLabels) {
-      const matchedLayer = sceneGraph.internalLayers.find(
-        (l) => l.componentId === pill.componentId
+      const matchedPart = visualScene.parts.find(
+        (p) => p.componentId === pill.componentId
       );
       const matchedComp = blueprint.components.find(
         (c) => c.id === pill.componentId
       );
-      const resolvedAnchor =
-        matchedLayer?.anchorScreenCoord ??
-        matchedComp?.defaultAnchor ??
-        pill.anchor;
+      const anchor3D: Point3D = matchedPart
+        ? resolvePartAnchor3D(matchedPart)
+        : matchedComp?.center3D ?? { x: 0, y: 0, z: 0 };
+
+      const projected2D = projectIso3D(anchor3D, DEFAULT_ISO_CONFIG);
+      const clampedAnchor = {
+        x: Math.round(Math.max(240, Math.min(840, projected2D.sx))),
+        y: Math.round(Math.max(660, Math.min(1360, projected2D.sy))),
+      };
 
       const triggerOffset = Math.floor(
         ttsSeg.durationInFrames * (pill.relativeTriggerRatio ?? 0.15)
@@ -206,7 +299,7 @@ ${SCENE_GRAPH_TEMPLATE}`;
         endFrame,
         text: pill.text,
         direction: pill.direction,
-        anchor: resolvedAnchor,
+        anchor: clampedAnchor,
       });
     }
 
@@ -244,7 +337,7 @@ ${SCENE_GRAPH_TEMPLATE}`;
     durationInFrames: tts.totalDurationInFrames,
     aspectRatioMode,
     practicalChecklist: script.practicalChecklist,
-    scene: sceneGraph,
+    visualScene,
     phases,
     pillCallouts,
     sfxOverlays,
