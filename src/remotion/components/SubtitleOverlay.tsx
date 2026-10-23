@@ -1,28 +1,145 @@
 import React from "react";
-import { useCurrentFrame } from "remotion";
+import { useCurrentFrame, useVideoConfig } from "remotion";
 import type { PhaseTimelineBlock, WordTiming } from "@/schemas/video-blueprint";
 
 interface SubtitleOverlayProps {
   phases: PhaseTimelineBlock[];
 }
 
+export interface SubtitleChunk {
+  words: WordTiming[];
+  displayStartFrame: number;
+  displayEndFrame: number;
+}
+
+const INDONESIAN_CONJUNCTIONS = new Set([
+  "dan",
+  "tapi",
+  "tetapi",
+  "karena",
+  "sehingga",
+  "nah",
+  "namun",
+  "agar",
+  "untuk",
+  "saat",
+  "ketika",
+  "maka",
+  "bahkan",
+  "jadi",
+  "atau",
+  "kalau",
+  "jika",
+  "supaya",
+  "padahal",
+]);
+
 /**
- * Groups segment wordTimings into short 3-word phrases so the viewer
- * sees 2-to-4 words at a time with the active spoken word highlighted in warm yellow (#FACC15).
+ * Natural phrase-based chunker for Indonesian explainer subtitles.
+ * - Targets 4 to 7 words per chunk.
+ * - Respects sentence terminals (. ? !), clause commas (,), and spoken conjunctions.
+ * - Never leaves stranded 1-word or 2-word chunks.
+ * - Guarantees minimum 0.8s (48 frames at 60fps) display duration per chunk.
  */
-function groupIntoShortPhrases(
+export function chunkIntoNaturalPhrases(
   words: WordTiming[],
-  wordsPerPhrase = 3,
-): WordTiming[][] {
-  const chunks: WordTiming[][] = [];
-  for (let i = 0; i < words.length; i += wordsPerPhrase) {
-    chunks.push(words.slice(i, i + wordsPerPhrase));
+  fps = 60,
+  minDisplaySec = 0.8,
+  phaseEndFrame = 0
+): SubtitleChunk[] {
+  if (!words.length) return [];
+
+  const rawGroups: WordTiming[][] = [];
+  let currentGroup: WordTiming[] = [];
+
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    currentGroup.push(w);
+
+    const isTerminalPunct = /[.!?]$/.test(w.word);
+    const isClausePunct = /[,;:\-—]$/.test(w.word);
+    const wordsRemaining = words.length - (i + 1);
+
+    const nextWord = words[i + 1];
+    const nextIsConjunction =
+      nextWord &&
+      INDONESIAN_CONJUNCTIONS.has(
+        nextWord.word.toLowerCase().replace(/[^a-z]/g, "")
+      );
+
+    const reachedIdealLength = currentGroup.length >= 4;
+    const reachedMaxLength = currentGroup.length >= 7;
+
+    let shouldBreak = false;
+
+    if (isTerminalPunct) {
+      // Always break on full stop / question mark / exclamation mark
+      shouldBreak = true;
+    } else if (reachedMaxLength) {
+      // Must break if reached 7 words, unless next has only 1-2 words remaining
+      if (wordsRemaining > 2 || wordsRemaining === 0) {
+        shouldBreak = true;
+      }
+    } else if (reachedIdealLength) {
+      if (isClausePunct && wordsRemaining >= 3) {
+        // Break on comma/semicolon if at least 3 words remain
+        shouldBreak = true;
+      } else if (nextIsConjunction && wordsRemaining >= 4) {
+        // Break before a natural conjunction if enough words remain
+        shouldBreak = true;
+      }
+    }
+
+    if (shouldBreak || i === words.length - 1) {
+      // If remaining words are only 1 or 2, absorb them into current group instead of leaving them stranded
+      if (wordsRemaining > 0 && wordsRemaining <= 2 && !isTerminalPunct) {
+        continue;
+      }
+      rawGroups.push(currentGroup);
+      currentGroup = [];
+    }
   }
+
+  if (currentGroup.length > 0) {
+    if (rawGroups.length > 0 && currentGroup.length < 3) {
+      rawGroups[rawGroups.length - 1].push(...currentGroup);
+    } else {
+      rawGroups.push(currentGroup);
+    }
+  }
+
+  // Calculate display timing for each chunk (min 0.8s display window)
+  const minFrames = Math.round(minDisplaySec * fps);
+  const chunks: SubtitleChunk[] = [];
+
+  for (let idx = 0; idx < rawGroups.length; idx++) {
+    const group = rawGroups[idx];
+    const rawStart = group[0].startFrame;
+    const rawEnd = group[group.length - 1].endFrame;
+
+    const nextGroup = rawGroups[idx + 1];
+    const boundaryLimit = nextGroup ? nextGroup[0].startFrame : Math.max(rawEnd + 15, phaseEndFrame);
+
+    const displayStartFrame = rawStart;
+    // Display chunk until at least minFrames or until next chunk starts
+    const displayEndFrame = Math.max(
+      rawEnd,
+      Math.min(boundaryLimit, displayStartFrame + minFrames)
+    );
+
+    chunks.push({
+      words: group,
+      displayStartFrame,
+      displayEndFrame,
+    });
+  }
+
   return chunks;
 }
 
 export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ phases }) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
   const activePhase =
     phases.find((p) => frame >= p.startFrame && frame < p.endFrame) ??
@@ -32,18 +149,21 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ phases }) => {
     return null;
   }
 
-  const phrases = groupIntoShortPhrases(activePhase.wordTimings, 3);
+  const chunks = chunkIntoNaturalPhrases(
+    activePhase.wordTimings,
+    fps,
+    0.8,
+    activePhase.endFrame
+  );
 
-  const currentPhrase =
-    phrases.find((chunk) => {
-      const start = chunk[0]?.startFrame ?? 0;
-      const end = chunk[chunk.length - 1]?.endFrame ?? 0;
-      return frame >= start && frame <= end;
-    }) ??
-    phrases.find((chunk) => frame < (chunk[0]?.startFrame ?? 0)) ??
-    phrases[phrases.length - 1];
+  const currentChunk =
+    chunks.find(
+      (c) => frame >= c.displayStartFrame && frame <= c.displayEndFrame
+    ) ??
+    chunks.find((c) => frame < c.displayStartFrame) ??
+    chunks[chunks.length - 1];
 
-  if (!currentPhrase || currentPhrase.length === 0) {
+  if (!currentChunk || currentChunk.words.length === 0) {
     return null;
   }
 
@@ -62,7 +182,7 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ phases }) => {
           "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Dark Rounded Pill Background (bg-[#1E293B]/90 text-white px-5 py-2.5 rounded-xl) */}
+      {/* Dark Rounded Pill Background */}
       <div
         style={{
           backgroundColor: "rgba(30, 41, 59, 0.94)",
@@ -79,15 +199,16 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ phases }) => {
           maxWidth: 920,
         }}
       >
-        {currentPhrase.map((wt, idx) => {
+        {currentChunk.words.map((wt, idx) => {
+          // Highlight active spoken word strictly by its own timestamp
           const isSpoken = frame >= wt.startFrame && frame <= wt.endFrame;
           return (
             <span
-              key={`${wt.word}_${idx}`}
+              key={`${wt.word}_${idx}_${wt.startFrame}`}
               style={{
                 fontSize: 42,
                 fontWeight: 800,
-                lineHeight: 1.2,
+                lineHeight: 1.25,
                 padding: isSpoken ? "4px 14px" : "4px 6px",
                 borderRadius: 12,
                 backgroundColor: isSpoken ? "#FACC15" : "transparent",
