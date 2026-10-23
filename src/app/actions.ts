@@ -21,7 +21,7 @@ export async function createVideoFactoryJobAction(formData: {
   await enqueueVideoFactoryFlow({
     jobId,
     topic: cleanTopic,
-    aspectRatioMode: formData.aspectRatioMode ?? "LANDSCAPE_16_9",
+    aspectRatioMode: formData.aspectRatioMode ?? "SHORTS_9_16",
     autoRenderMp4: formData.autoRenderMp4 ?? true,
   });
 

@@ -4,38 +4,41 @@ import type { RemotionCompositionProps } from "@/schemas/video-blueprint";
 import { IsometricStage } from "../components/IsometricStage";
 import { TelemetryHUD } from "../components/TelemetryHUD";
 import { PopUpCalloutLayer } from "../components/PopUpCallout";
+import { SubtitleOverlay } from "../components/SubtitleOverlay";
 import { AudioTrack } from "../components/AudioTrack";
 
 export const BedahVideoComposition: React.FC<RemotionCompositionProps> = (
-  props
+  props,
 ) => {
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: "#090D16",
-        color: "#F8FAFC",
-        fontFamily: "system-ui, -apple-system, sans-serif",
+        backgroundColor: "#F8F9FA",
+        color: "#0F172A",
+        fontFamily:
+          "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Layer 1: Isometric 3D Vector Stage (<IsometricStage />) */}
+      {/* Layer 1: Warm Light-Mode 90° Cutaway Stage (<IsometricStage />) */}
       <IsometricStage
-        layers={props.isometricLayers}
+        layers={props.cutawayLayers}
         phases={props.phases}
         primaryArchetype={props.primaryArchetype}
-        coreEquationOrLaw={props.coreEquationOrLaw}
       />
 
-      {/* Layer 2: Top Telemetry HUD (<TelemetryHUD />) */}
-      <TelemetryHUD
-        normalizedTitle={props.normalizedTitle}
-        engineeringCategory={props.engineeringCategory}
-        channels={props.telemetryChannels}
+      {/* Layer 2: Simplified Clean Editorial Header (<TelemetryHUD />) */}
+      <TelemetryHUD phases={props.phases} />
+
+      {/* Layer 3: Dark Pill Pointers, Comic SFX Text & Practical Checklist (<PopUpCalloutLayer />) */}
+      <PopUpCalloutLayer
+        pillCallouts={props.pillCallouts}
+        sfxOverlays={props.sfxOverlays}
         phases={props.phases}
-        totalDurationInFrames={props.durationInFrames}
+        practicalChecklist={props.practicalChecklist}
       />
 
-      {/* Layer 3: Dynamic Pop-up Callouts (<PopUpCalloutLayer />) */}
-      <PopUpCalloutLayer callouts={props.callouts} />
+      {/* Layer 4: Karaoke Word-Highlight Subtitles (<SubtitleOverlay />) */}
+      <SubtitleOverlay phases={props.phases} />
 
       {/* Synchronized Audio Track (UnlimitedTTS id-ID Ethan 1.1x chunks) */}
       <AudioTrack phases={props.phases} />

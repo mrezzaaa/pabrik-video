@@ -13,7 +13,7 @@ import {
 export async function createInitialJobState(params: {
   jobId: string;
   topic: string;
-  aspectRatioMode?: "LANDSCAPE_16_9" | "SHORTS_9_16";
+  aspectRatioMode?: "SHORTS_9_16" | "LANDSCAPE_16_9";
 }): Promise<VideoJobState> {
   const redis = getRedisClient();
   const now = new Date().toISOString();
@@ -21,7 +21,7 @@ export async function createInitialJobState(params: {
   const initialState: VideoJobState = {
     jobId: params.jobId,
     topic: params.topic,
-    aspectRatioMode: params.aspectRatioMode ?? "LANDSCAPE_16_9",
+    aspectRatioMode: params.aspectRatioMode ?? "SHORTS_9_16",
     status: "QUEUED",
     progressPercent: 2,
     createdAt: now,

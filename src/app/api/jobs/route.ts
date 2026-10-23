@@ -10,9 +10,9 @@ export const dynamic = "force-dynamic";
 const createJobBodySchema = z.object({
   topic: z.string().min(3, "Topic minimal 3 karakter"),
   aspectRatioMode: z
-    .enum(["LANDSCAPE_16_9", "SHORTS_9_16"])
+    .enum(["SHORTS_9_16", "LANDSCAPE_16_9"])
     .optional()
-    .default("LANDSCAPE_16_9"),
+    .default("SHORTS_9_16"),
   autoRenderMp4: z.boolean().optional().default(true),
 });
 

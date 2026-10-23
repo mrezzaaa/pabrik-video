@@ -25,7 +25,7 @@ export function startVisualWorker(): Worker {
           agent: "AGENT_4_VISUAL",
           level: "INFO",
           message:
-            "Choreographing Isometric 3D vector layers, camera exploded-view keyframes, and 45° leader-line callout anchors...",
+            "Choreographing light-mode 90° cutaway SVG layers, spring camera zoom-ins, dark pill pointers & yellow karaoke subtitles...",
         }
       );
 
@@ -39,12 +39,14 @@ export function startVisualWorker(): Worker {
         const tts = childTts || state?.tts;
 
         if (!blueprint || !script || !tts) {
-          throw new Error("Missing upstream artifacts (blueprint, script, or tts) for Agent 4");
+          throw new Error(
+            "Missing upstream artifacts (blueprint, script, or tts) for Agent 4"
+          );
         }
 
         const compositionProps = await runVisualChoreographerAgent({
           jobId,
-          aspectRatioMode: aspectRatioMode ?? state.aspectRatioMode,
+          aspectRatioMode: aspectRatioMode ?? state.aspectRatioMode ?? "SHORTS_9_16",
           blueprint,
           script,
           tts,
@@ -54,14 +56,14 @@ export function startVisualWorker(): Worker {
           jobId,
           (prev) => ({
             status: "READY_FOR_PREVIEW",
-            progressPercent: 85,
+            progressPercent: 86,
             compositionProps,
             steps: { ...prev.steps, visual: "COMPLETED" },
           }),
           {
             agent: "AGENT_4_VISUAL",
             level: "SUCCESS",
-            message: `RemotionCompositionProps compiled: ${compositionProps.isometricLayers.length} isometric layers, ${compositionProps.callouts.length} frame-synced callouts (${compositionProps.width}x${compositionProps.height} @ ${compositionProps.fps}fps).`,
+            message: `Clean Cutaway Props compiled: ${compositionProps.cutawayLayers.length} layers, ${compositionProps.pillCallouts.length} pill callouts (${compositionProps.width}x${compositionProps.height} @ ${compositionProps.fps}fps).`,
           }
         );
 

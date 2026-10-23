@@ -3,6 +3,7 @@ import { computeWordTimings, synthesizeScriptSegment } from "@/lib/tts-client";
 import {
   TtsSynchronizerOutputSchema,
   type AudioSegmentTimingSchema,
+  type AudioSfxTrigger,
   type ScriptArchitectOutput,
   type TtsSynchronizerOutput,
 } from "@/schemas/video-blueprint";
@@ -13,7 +14,12 @@ type AudioSegmentTiming = z.infer<typeof AudioSegmentTimingSchema>;
 export async function runTtsSynchronizerAgent(params: {
   jobId: string;
   script: ScriptArchitectOutput;
-  onSegmentProgress?: (segmentIndex: number, total: number, audioUrl: string, durationSec: number) => Promise<void>;
+  onSegmentProgress?: (
+    segmentIndex: number,
+    total: number,
+    audioUrl: string,
+    durationSec: number
+  ) => Promise<void>;
 }): Promise<TtsSynchronizerOutput> {
   const { jobId, script, onSegmentProgress } = params;
   const fps = env.REMOTION_FPS || 60;
@@ -22,6 +28,7 @@ export async function runTtsSynchronizerAgent(params: {
   const speed = env.UNLIMITEDTTS_SPEED || 1.1;
 
   const timedSegments: AudioSegmentTiming[] = [];
+  const sfxTriggers: AudioSfxTrigger[] = [];
   let cumulativeSeconds = 0;
   let cumulativeFrames = 0;
   let primaryEngineUsed = `unlimitedtts.com (${language}, Voice: ${voice}, Speed: ${speed}x)`;
@@ -39,8 +46,11 @@ export async function runTtsSynchronizerAgent(params: {
 
     primaryEngineUsed = synthResult.engineUsed;
 
-    // Exact frame calculation as required by spec: durationInFrames = Math.ceil(audioDurationInSeconds * 60)
-    const durationInFrames = Math.max(Math.ceil(synthResult.durationInSeconds * fps), 180);
+    // Exact frame calculation: durationInFrames = Math.ceil(audioDurationInSeconds * 60)
+    const durationInFrames = Math.max(
+      Math.ceil(synthResult.durationInSeconds * fps),
+      180
+    );
     const exactDurationSec = Number((durationInFrames / fps).toFixed(3));
 
     const startSec = Number(cumulativeSeconds.toFixed(3));
@@ -69,11 +79,30 @@ export async function runTtsSynchronizerAgent(params: {
       wordTimings,
     });
 
+    // Map SFX trigger timestamp matching visual sfxCue
+    if (seg.sfxCue) {
+      const sfxStartFrame =
+        startFrame +
+        Math.floor(durationInFrames * (seg.sfxCue.relativeTriggerRatio ?? 0.3));
+      sfxTriggers.push({
+        id: `sfx_${i}_${seg.sfxCue.soundEffectFile}`,
+        soundEffectFile: seg.sfxCue.soundEffectFile,
+        startFrame: sfxStartFrame,
+        durationInFrames: 90,
+        visualText: seg.sfxCue.text,
+      });
+    }
+
     cumulativeSeconds = endSec;
     cumulativeFrames = endFrame;
 
     if (onSegmentProgress) {
-      await onSegmentProgress(i + 1, script.segments.length, synthResult.audioUrl, synthResult.durationInSeconds);
+      await onSegmentProgress(
+        i + 1,
+        script.segments.length,
+        synthResult.audioUrl,
+        synthResult.durationInSeconds
+      );
     }
   }
 
@@ -87,6 +116,7 @@ export async function runTtsSynchronizerAgent(params: {
     totalDurationInSeconds: Number(cumulativeSeconds.toFixed(3)),
     totalDurationInFrames: Math.max(cumulativeFrames, 300),
     segments: timedSegments,
+    sfxTriggers,
   };
 
   return TtsSynchronizerOutputSchema.parse(output);

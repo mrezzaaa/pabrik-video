@@ -18,14 +18,14 @@ export function startScriptwriterWorker(): Worker {
         jobId,
         (prev) => ({
           status: "SCRIPTING",
-          progressPercent: 28,
+          progressPercent: 30,
           steps: { ...prev.steps, scriptwriter: "ACTIVE" },
         }),
         {
           agent: "AGENT_2_SCRIPTWRITER",
           level: "INFO",
           message:
-            'Writing Indonesian "bedah mekanisme" narration, synchronous top HUD telemetry channels, and callout triggers...',
+            "Writing casual, punchy Indonesian narration (4-7 words/sentence), editorial header metrics, pill pointers & SFX cues...",
         }
       );
 
@@ -44,14 +44,14 @@ export function startScriptwriterWorker(): Worker {
         await updateJobState(
           jobId,
           (prev) => ({
-            progressPercent: 45,
+            progressPercent: 46,
             script,
             steps: { ...prev.steps, scriptwriter: "COMPLETED" },
           }),
           {
             agent: "AGENT_2_SCRIPTWRITER",
             level: "SUCCESS",
-            message: `Script & Telemetry architected (${modelUsed}): ${script.segments.length} segments, ${script.telemetryChannels.length} live telemetry channels.`,
+            message: `Conversational script & layman metrics compiled (${modelUsed}): ${script.segments.length} acts + checklist card.`,
           }
         );
 

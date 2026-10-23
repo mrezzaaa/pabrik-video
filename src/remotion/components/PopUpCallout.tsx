@@ -1,213 +1,255 @@
 import React from "react";
-import {
-  interpolate,
-  spring,
-  useCurrentFrame,
-  useVideoConfig,
-} from "remotion";
-import type { FrameCalloutTrigger } from "@/schemas/video-blueprint";
+import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import type {
+  FramePillCallout,
+  FrameSfxOverlay,
+  PhaseTimelineBlock,
+} from "@/schemas/video-blueprint";
 
 interface PopUpCalloutLayerProps {
-  callouts: FrameCalloutTrigger[];
+  pillCallouts: FramePillCallout[];
+  sfxOverlays: FrameSfxOverlay[];
+  phases: PhaseTimelineBlock[];
+  practicalChecklist: {
+    title: string;
+    items: string[];
+  };
 }
 
 export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
-  callouts,
+  pillCallouts,
+  sfxOverlays,
+  phases,
+  practicalChecklist,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const activeCallouts = callouts.filter(
-    (c) => frame >= c.startFrame && frame <= c.endFrame
+  const activePills = pillCallouts.filter(
+    (c) => frame >= c.startFrame && frame <= c.endFrame,
+  );
+  const activeSfx = sfxOverlays.filter(
+    (s) => frame >= s.startFrame && frame <= s.endFrame,
   );
 
-  if (activeCallouts.length === 0) {
-    return null;
-  }
+  const activePhase =
+    phases.find((p) => frame >= p.startFrame && frame < p.endFrame) ??
+    phases[phases.length - 1];
+
+  const showChecklist = Boolean(activePhase?.showChecklistCard);
+  const checklistLocalFrame = Math.max(
+    0,
+    frame - (activePhase?.startFrame ?? 0),
+  );
+
+  const checklistSpring = spring({
+    frame: checklistLocalFrame,
+    fps,
+    config: { damping: 16, stiffness: 130 },
+  });
 
   return (
     <div
       style={{
         position: "absolute",
         inset: 0,
-        zIndex: 15,
+        zIndex: 20,
         pointerEvents: "none",
+        fontFamily:
+          "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {activeCallouts.map((callout) => {
-        const localFrame = frame - callout.startFrame;
-        const remainingFrames = callout.endFrame - frame;
+      {/* 1. Action/SFX Floating Text ("PSSST!", "BERJAM-JAM", "TERKUNCI", "MAMPET!") */}
+      {activeSfx.map((sfx) => {
+        const localFrame = frame - sfx.startFrame;
+        const remainingFrames = sfx.endFrame - frame;
 
-        const enterSpring = spring({
+        const popSpring = spring({
           frame: localFrame,
           fps,
-          config: {
-            damping: 15,
-            stiffness: 140,
-            mass: 0.7,
-          },
+          config: { damping: 12, stiffness: 180, mass: 0.6 },
         });
 
-        const exitOpacity = interpolate(remainingFrames, [0, 15], [0, 1], {
+        const exitOpacity = interpolate(remainingFrames, [0, 12], [0, 1], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
         });
 
-        const progress = enterSpring * exitOpacity;
+        if (sfx.variant === "FADED_BG") {
+          return (
+            <div
+              key={sfx.id}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: sfx.y,
+                transform: `translate(-50%, -50%) rotate(${sfx.rotateDeg}deg) scale(${interpolate(
+                  popSpring,
+                  [0, 1],
+                  [0.85, 1],
+                )})`,
+                opacity: 0.16 * exitOpacity,
+                fontSize: 112,
+                fontWeight: 900,
+                letterSpacing: "0.04em",
+                color: "#0F172A",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {sfx.text}
+            </div>
+          );
+        }
 
-        // 45-degree angled SVG leader line from object anchor -> elbowPoint -> card attachment point
-        const isRightSide = callout.cardPosition.includes("RIGHT");
-        const lineEndX = isRightSide
-          ? callout.cardCoord.x
-          : callout.cardCoord.x + 310;
-        const lineEndY = callout.elbowPoint.y;
-
-        const pathD = `M ${callout.anchor.x} ${callout.anchor.y} L ${callout.elbowPoint.x} ${callout.elbowPoint.y} L ${lineEndX} ${lineEndY}`;
-        const pathLength = 420;
-        const dashOffset = interpolate(enterSpring, [0, 1], [pathLength, 0]);
+        const isRedStamp = sfx.variant === "RED_STAMP";
+        const bgColor = isRedStamp ? "#EF4444" : "#FACC15";
+        const textColor = isRedStamp ? "#FFFFFF" : "#0F172A";
 
         return (
-          <React.Fragment key={callout.id}>
-            {/* SVG 45-Degree Leader Line & Anchor Target Ring */}
-            <svg
-              viewBox="0 0 1920 1080"
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                opacity: exitOpacity,
-              }}
-            >
-              {/* Pulsing Anchor Ring on Isometric Component */}
-              <circle
-                cx={callout.anchor.x}
-                cy={callout.anchor.y}
-                r={14 * enterSpring}
-                fill="none"
-                stroke={callout.accentColor}
-                strokeWidth={2}
-              />
-              <circle
-                cx={callout.anchor.x}
-                cy={callout.anchor.y}
-                r={5}
-                fill={callout.accentColor}
-              />
+          <div
+            key={sfx.id}
+            style={{
+              position: "absolute",
+              left: sfx.x,
+              top: sfx.y,
+              transform: `translate(-50%, -50%) rotate(${sfx.rotateDeg}deg) scale(${popSpring})`,
+              opacity: exitOpacity,
+              backgroundColor: bgColor,
+              color: textColor,
+              fontSize: 44,
+              fontWeight: 900,
+              letterSpacing: "0.03em",
+              padding: "8px 24px",
+              borderRadius: 16,
+              border: "3.5px solid #1E293B",
+              boxShadow: "0 6px 0 #1E293B",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {sfx.text}
+          </div>
+        );
+      })}
 
-              {/* 45-Degree Angled Leader Line */}
-              <path
-                d={pathD}
-                fill="none"
-                stroke={callout.accentColor}
-                strokeWidth={2.5}
-                strokeDasharray={pathLength}
-                strokeDashoffset={dashOffset}
-              />
+      {/* 2. Compact Dark-Slate Rounded Pill Component Pointers */}
+      {activePills.map((pill) => {
+        const localFrame = frame - pill.startFrame;
+        const remainingFrames = pill.endFrame - frame;
 
-              {/* Joint Node at 45-Degree Elbow */}
-              <circle
-                cx={callout.elbowPoint.x}
-                cy={callout.elbowPoint.y}
-                r={3.5}
-                fill="#090D16"
-                stroke={callout.accentColor}
-                strokeWidth={2}
-              />
-            </svg>
+        const enterSpring = spring({
+          frame: localFrame,
+          fps,
+          config: { damping: 16, stiffness: 150, mass: 0.7 },
+        });
 
-            {/* Sleek Glassmorphism Data Card */}
-            <div
-              style={{
-                position: "absolute",
-                left: callout.cardCoord.x,
-                top: callout.cardCoord.y,
-                width: 315,
-                opacity: progress,
-                transform: `translateY(${interpolate(enterSpring, [0, 1], [14, 0])}px) scale(${interpolate(
-                  enterSpring,
-                  [0, 1],
-                  [0.92, 1]
-                )})`,
-                background: "rgba(15, 23, 42, 0.84)",
-                backdropFilter: "blur(16px)",
-                border: `1px solid ${callout.accentColor}`,
-                borderLeft: `4px solid ${callout.accentColor}`,
-                borderRadius: 10,
-                padding: "12px 16px",
-                boxShadow: "0 16px 36px rgba(0, 0, 0, 0.55)",
-              }}
-            >
+        const exitOpacity = interpolate(remainingFrames, [0, 12], [0, 1], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        });
+
+        const translateX =
+          pill.direction === "RIGHT"
+            ? interpolate(enterSpring, [0, 1], [-18, 0])
+            : interpolate(enterSpring, [0, 1], [18, 0]);
+
+        return (
+          <div
+            key={pill.id}
+            style={{
+              position: "absolute",
+              left: pill.anchor.x,
+              top: pill.anchor.y,
+              transform: `translate(-50%, -50%) translateX(${translateX}px) scale(${interpolate(
+                enterSpring,
+                [0, 1],
+                [0.85, 1],
+              )})`,
+              opacity: enterSpring * exitOpacity,
+              backgroundColor: "rgba(30, 41, 59, 0.94)",
+              color: "#FFFFFF",
+              fontSize: 23,
+              fontWeight: 800,
+              letterSpacing: "0.02em",
+              padding: "10px 24px",
+              borderRadius: 9999,
+              border: "2.5px solid #0F172A",
+              boxShadow: "0 8px 20px rgba(15, 23, 42, 0.22)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {pill.text}
+          </div>
+        );
+      })}
+
+      {/* 3. Practical Checklist Card ("CEK SEBELUM BELI: [✅ Pemberat, ✅ Katup pengaman, ✅ Pengunci tutup]") */}
+      {showChecklist && (
+        <div
+          style={{
+            position: "absolute",
+            right: 54,
+            bottom: 350,
+            width: 440,
+            transform: `translateY(${interpolate(
+              checklistSpring,
+              [0, 1],
+              [35, 0],
+            )}px) scale(${interpolate(checklistSpring, [0, 1], [0.9, 1])})`,
+            opacity: checklistSpring,
+            backgroundColor: "rgba(15, 23, 42, 0.94)",
+            color: "#FFFFFF",
+            borderRadius: 24,
+            padding: "26px 30px",
+            border: "3px solid #1E293B",
+            boxShadow: "0 16px 36px rgba(15, 23, 42, 0.28)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 900,
+              color: "#FACC15",
+              letterSpacing: "0.04em",
+              marginBottom: 16,
+            }}
+          >
+            {practicalChecklist.title}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {practicalChecklist.items.map((item, idx) => (
               <div
+                key={idx}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 4,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: callout.accentColor,
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  {callout.label}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: 10,
-                    color: "#94A3B8",
-                  }}
-                >
-                  SPEC // ID
-                </span>
-              </div>
-
-              <div
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: 20,
-                  fontWeight: 800,
+                  gap: 12,
+                  fontSize: 24,
+                  fontWeight: 700,
                   color: "#F8FAFC",
-                  marginBottom: 6,
                 }}
               >
-                {callout.value}
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    backgroundColor: "#16A34A",
+                    color: "#FFFFFF",
+                    fontSize: 18,
+                    fontWeight: 900,
+                  }}
+                >
+                  ✓
+                </span>
+                <span>{item}</span>
               </div>
-
-              <div
-                style={{
-                  display: "inline-block",
-                  fontFamily: "monospace",
-                  fontSize: 12,
-                  color: "#38BDF8",
-                  background: "rgba(56, 189, 248, 0.12)",
-                  padding: "3px 8px",
-                  borderRadius: 4,
-                  marginBottom: 6,
-                }}
-              >
-                {callout.formulaOrFact}
-              </div>
-
-              <div
-                style={{
-                  fontSize: 12.5,
-                  lineHeight: 1.35,
-                  color: "#CBD5E1",
-                }}
-              >
-                {callout.subtext}
-              </div>
-            </div>
-          </React.Fragment>
-        );
-      })}
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

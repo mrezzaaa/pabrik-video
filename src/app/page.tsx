@@ -36,27 +36,27 @@ import { Progress } from "@/components/ui/progress";
 import type { VideoJobState } from "@/schemas/video-blueprint";
 
 const PRESET_TOPICS = [
+  "Kenapa duri bandeng presto bisa lunak?",
   "Kenapa air di dalam tumbler suhunya bisa awet",
   "Bagaimana kompresor AC mengubah gas freon menjadi udara dingin",
   "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W",
-  "Kenapa mesin turbofan pesawat jet bisa menghasilkan daya dorong ekstrem",
 ];
 
 const AGENT_PIPELINE_META = [
   {
     key: "deconstructor" as const,
     code: "AGENT 01",
-    name: "Topic Deconstructor",
+    name: "Layman Storyboarder",
     workerFile: "deconstructor.worker.ts",
-    desc: "5-Phase Engineering Blueprint & Physics Equation",
+    desc: "4-Act Everyday Cutaway Storyboard & Checklist",
     icon: Cpu,
   },
   {
     key: "scriptwriter" as const,
     code: "AGENT 02",
-    name: "Script & Telemetry Architect",
+    name: "Conversational Copywriter",
     workerFile: "scriptwriter.worker.ts",
-    desc: "Gaya Bedah Mekanisme + Top HUD Metrics + Callouts",
+    desc: "Punchy 4-7 Word Indonesian + Editorial Metrics + Pill Labels",
     icon: FileCode2,
   },
   {
@@ -64,15 +64,15 @@ const AGENT_PIPELINE_META = [
     code: "AGENT 03",
     name: "UnlimitedTTS Synchronizer",
     workerFile: "tts.worker.ts",
-    desc: "id-ID • Voice: Ethan • 1.1x Speed • 60fps Frame Sync",
+    desc: "id-ID • Voice: Ethan • 1.1x Speed • Word-Level Karaoke Sync",
     icon: Mic,
   },
   {
     key: "visual" as const,
     code: "AGENT 04",
-    name: "Isometric 3D Choreographer",
+    name: "Cutaway & Camera Choreographer",
     workerFile: "visual.worker.ts",
-    desc: "SVG/CSS-3D Exploded Views + 45° Leader Callouts",
+    desc: "Light-Mode 90° Cutaway SVG + Spring Camera Zoom-Ins",
     icon: Boxes,
   },
   {
@@ -80,19 +80,17 @@ const AGENT_PIPELINE_META = [
     code: "AGENT 05",
     name: "Remotion Render Worker",
     workerFile: "renderer.worker.ts",
-    desc: "Headless 1080p/60fps MP4 Render (@remotion/renderer)",
+    desc: "Headless 1080x1920 @ 60fps MP4 Render (@remotion/renderer)",
     icon: Film,
   },
 ];
 
 export default function FactoryDashboardPage() {
   const router = useRouter();
-  const [topic, setTopic] = useState(
-    "Kenapa air di dalam tumbler suhunya bisa awet"
-  );
+  const [topic, setTopic] = useState("Kenapa duri bandeng presto bisa lunak?");
   const [aspectRatioMode, setAspectRatioMode] = useState<
     "LANDSCAPE_16_9" | "SHORTS_9_16"
-  >("LANDSCAPE_16_9");
+  >("SHORTS_9_16");
   const [autoRenderMp4, setAutoRenderMp4] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [jobs, setJobs] = useState<VideoJobState[]>([]);
@@ -223,10 +221,10 @@ export default function FactoryDashboardPage() {
               <Mic className="h-3.5 w-3.5 text-sky-400" />
               <span>TTS: ETHAN (id-ID @ 1.1x)</span>
             </div>
-            <Link href="/studio/demo-tumbler-job">
+            <Link href="/studio/demo-presto-job">
               <Button variant="outline" size="sm" className="gap-1.5">
                 <Play className="h-3.5 w-3.5 text-sky-400" />
-                Instant Demo Studio
+                Instant Demo Studio (Bandeng Presto)
               </Button>
             </Link>
           </div>
@@ -566,9 +564,9 @@ export default function FactoryDashboardPage() {
                       Belum ada job di antrean Redis, atau buka Demo Studio
                       langsung.
                     </p>
-                    <Link href="/studio/demo-tumbler-job">
+                    <Link href="/studio/demo-presto-job">
                       <Button variant="outline" size="sm" className="font-mono">
-                        Buka Demo Studio (Tumbler Vacuum)
+                        Buka Demo Studio (Bandeng Presto 9:16)
                       </Button>
                     </Link>
                   </div>

@@ -4,126 +4,104 @@ import {
   type ScriptArchitectOutput,
   type TtsSynchronizerOutput,
   type RemotionCompositionProps,
-  type IsometricVectorLayer,
-  type FrameCalloutTrigger,
+  type CutawayVectorLayer,
+  type FramePillCallout,
+  type FrameSfxOverlay,
   type PhaseTimelineBlock,
 } from "@/schemas/video-blueprint";
 
-const PRIMITIVE_TYPES: IsometricVectorLayer["svgPrimitiveType"][] = [
-  "OUTER_SHELL_CYLINDER",
-  "VACUUM_ANNULUS_CHAMBER",
-  "COPPER_THERMAL_LINING",
-  "INNER_CORE_CHAMBER",
-  "SEAL_CAP_ASSEMBLY",
+const PART_TYPES: CutawayVectorLayer["partType"][] = [
+  "POT_BODY_CUTAWAY",
+  "BOILING_WATER_FLUID",
+  "CORE_SUBJECT_ITEM",
+  "PRESSURE_WEIGHT_VALVE",
+  "LID_SAFETY_LOCK",
 ];
 
-const LAYER_PALETTE = [
-  { stroke: "#38BDF8", fill: "rgba(14, 116, 144, 0.24)", glow: "#0EA5E9" },
-  { stroke: "#22D3EE", fill: "rgba(6, 182, 212, 0.16)", glow: "#22D3EE" },
-  { stroke: "#F59E0B", fill: "rgba(217, 119, 6, 0.26)", glow: "#F59E0B" },
-  { stroke: "#10B981", fill: "rgba(5, 150, 105, 0.24)", glow: "#10B981" },
-  { stroke: "#F43F5E", fill: "rgba(225, 29, 72, 0.26)", glow: "#F43F5E" },
+const WARM_FILL_PALETTE = [
+  "#E2E8F0", // Silver pot/body
+  "#93C5FD", // Water blue
+  "#F87171", // Coral red
+  "#FACC15", // Warm yellow
+  "#86EFAC", // Soft green
 ];
-
-/**
- * Computes a 45-degree angled SVG leader line elbow and glassmorphism card coordinates
- */
-function computeCalloutGeometry(
-  anchor: { x: number; y: number },
-  cardPosition: "TOP_LEFT" | "TOP_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_RIGHT"
-): {
-  elbowPoint: { x: number; y: number };
-  cardCoord: { x: number; y: number };
-} {
-  const diagOffset = 75;
-  const horizRun = 95;
-
-  switch (cardPosition) {
-    case "TOP_LEFT": {
-      const elbow = { x: anchor.x - diagOffset, y: anchor.y - diagOffset };
-      const card = { x: Math.max(80, elbow.x - horizRun - 310), y: Math.max(150, elbow.y - 44) };
-      return { elbowPoint: elbow, cardCoord: card };
-    }
-    case "TOP_RIGHT": {
-      const elbow = { x: anchor.x + diagOffset, y: anchor.y - diagOffset };
-      const card = { x: Math.min(1480, elbow.x + horizRun), y: Math.max(150, elbow.y - 44) };
-      return { elbowPoint: elbow, cardCoord: card };
-    }
-    case "BOTTOM_LEFT": {
-      const elbow = { x: anchor.x - diagOffset, y: anchor.y + diagOffset };
-      const card = { x: Math.max(80, elbow.x - horizRun - 310), y: Math.min(860, elbow.y - 36) };
-      return { elbowPoint: elbow, cardCoord: card };
-    }
-    case "BOTTOM_RIGHT":
-    default: {
-      const elbow = { x: anchor.x + diagOffset, y: anchor.y + diagOffset };
-      const card = { x: Math.min(1480, elbow.x + horizRun), y: Math.min(860, elbow.y - 36) };
-      return { elbowPoint: elbow, cardCoord: card };
-    }
-  }
-}
 
 export async function runVisualChoreographerAgent(params: {
   jobId: string;
-  aspectRatioMode?: "LANDSCAPE_16_9" | "SHORTS_9_16";
+  aspectRatioMode?: "SHORTS_9_16" | "LANDSCAPE_16_9";
   blueprint: DeconstructionBlueprint;
   script: ScriptArchitectOutput;
   tts: TtsSynchronizerOutput;
 }): Promise<RemotionCompositionProps> {
-  const { jobId, aspectRatioMode = "LANDSCAPE_16_9", blueprint, script, tts } = params;
+  const {
+    jobId,
+    aspectRatioMode = "SHORTS_9_16",
+    blueprint,
+    script,
+    tts,
+  } = params;
 
-  const isShorts = aspectRatioMode === "SHORTS_9_16";
-  const width = isShorts ? 1080 : 1920;
-  const height = isShorts ? 1920 : 1080;
+  const isLandscape = aspectRatioMode === "LANDSCAPE_16_9";
+  const width = isLandscape ? 1920 : 1080;
+  const height = isLandscape ? 1080 : 1920;
 
-  // Build Isometric 3D Vector Layers mapped to Blueprint Components
-  const isometricLayers: IsometricVectorLayer[] = blueprint.components.map((comp, idx) => {
-    const palette = LAYER_PALETTE[idx % LAYER_PALETTE.length];
-    const primitive = PRIMITIVE_TYPES[idx % PRIMITIVE_TYPES.length];
-
-    // Calculate exploded-view offsets along isometric axes
-    const explodeOffsets = [
-      { x: -120, y: 70, z: -65 },
-      { x: -55, y: 30, z: -25 },
-      { x: 35, y: -25, z: 25 },
-      { x: 95, y: -55, z: 65 },
-      { x: 0, y: -135, z: 125 },
-    ][idx % 5];
-
-    return {
-      id: `iso_layer_${idx}`,
+  // Build 2.5D Cel-Shaded Isometric Cutaway Layers with dark outlines (#1E293B, 2.5px)
+  const cutawayLayers: CutawayVectorLayer[] = blueprint.components.map(
+    (comp, idx) => ({
+      id: `cutaway_layer_${idx}`,
       componentId: comp.id,
       name: comp.name,
+      everydayRole: comp.everydayRole,
       zIndex: idx + 1,
-      baseElevationZ: idx * 14,
-      explodeOffsetZ: explodeOffsets.z,
-      explodeOffsetX: explodeOffsets.x,
-      explodeOffsetY: explodeOffsets.y,
-      strokeColor: palette.stroke,
-      fillColor: palette.fill,
-      glowColor: palette.glow,
-      svgPrimitiveType: primitive,
-      energyFlowPathD:
-        idx % 2 === 0
-          ? "M 960 680 C 910 580, 910 460, 960 360"
-          : "M 1020 660 C 1070 560, 1070 450, 1020 350",
+      outlineColor: "#1E293B",
+      strokeWidth: 2.5,
+      fillColor: comp.fillColor || WARM_FILL_PALETTE[idx % WARM_FILL_PALETTE.length],
+      partType: PART_TYPES[idx % PART_TYPES.length],
       anchorScreenCoord: comp.defaultAnchor,
-    };
-  });
+    })
+  );
 
-  // Camera Choreography Keyframes per Phase (Hook -> Core -> Exploded Breakdown -> Telemetry Zoom -> Summary)
+  // Camera Choreography per Act (Full Cutaway -> Core Cutaway Zoom -> Valve/Lock Zoom-In -> Full Summary)
   const cameraPresets = [
-    { zoom: 1.02, panX: 0, panY: 15, rotateXDeg: 60, rotateZDeg: -45, explodeFactor: 0.0, crossSectionRatio: 0.15 },
-    { zoom: 1.16, panX: -25, panY: 5, rotateXDeg: 58, rotateZDeg: -42, explodeFactor: 0.25, crossSectionRatio: 0.85 },
-    { zoom: 1.08, panX: 10, panY: 20, rotateXDeg: 60, rotateZDeg: -48, explodeFactor: 1.0, crossSectionRatio: 1.0 },
-    { zoom: 1.22, panX: 0, panY: 55, rotateXDeg: 56, rotateZDeg: -40, explodeFactor: 0.45, crossSectionRatio: 0.9 },
-    { zoom: 1.0, panX: 0, panY: 10, rotateXDeg: 60, rotateZDeg: -45, explodeFactor: 0.0, crossSectionRatio: 0.5 },
+    {
+      x: 0,
+      y: 0,
+      scale: 1.0,
+      cutawayOpenRatio: 0.65,
+      steamIntensity: 0.4,
+      bubbleIntensity: 0.5,
+    },
+    {
+      x: 0,
+      y: -45,
+      scale: 1.22,
+      cutawayOpenRatio: 1.0,
+      steamIntensity: 1.1,
+      bubbleIntensity: 1.2,
+    },
+    {
+      x: -20,
+      y: 230,
+      scale: 1.82,
+      cutawayOpenRatio: 1.0,
+      steamIntensity: 1.35,
+      bubbleIntensity: 0.9,
+    },
+    {
+      x: 0,
+      y: 20,
+      scale: 1.04,
+      cutawayOpenRatio: 1.0,
+      steamIntensity: 0.6,
+      bubbleIntensity: 0.6,
+    },
   ];
 
   const phases: PhaseTimelineBlock[] = [];
-  const callouts: FrameCalloutTrigger[] = [];
+  const pillCallouts: FramePillCallout[] = [];
+  const sfxOverlays: FrameSfxOverlay[] = [];
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     const scriptSeg = script.segments[i];
     const ttsSeg = tts.segments[i];
     const bpPhase = blueprint.phases[i];
@@ -132,8 +110,7 @@ export async function runVisualChoreographerAgent(params: {
     phases.push({
       segmentIndex: i,
       phaseType: scriptSeg.phaseType,
-      phaseTitle: scriptSeg.phaseTitle,
-      onScreenHeadline: scriptSeg.onScreenHeadline,
+      chapterTitle: scriptSeg.chapterTitle,
       narrationText: scriptSeg.narrationText,
       audioUrl: ttsSeg.audioUrl,
       startFrame: ttsSeg.startFrame,
@@ -145,39 +122,55 @@ export async function runVisualChoreographerAgent(params: {
         endFrame: ttsSeg.endFrame,
         ...camPreset,
       },
-      telemetrySnapshot: scriptSeg.telemetrySnapshot,
-      activeComponentIds: bpPhase?.focusComponentIds ?? isometricLayers.map((l) => l.componentId),
+      primaryMetric: scriptSeg.primaryMetric,
+      statusBadge: scriptSeg.statusBadge,
+      secondaryMetric: scriptSeg.secondaryMetric,
+      activeComponentIds:
+        bpPhase?.focusComponentIds ?? cutawayLayers.map((l) => l.componentId),
+      showChecklistCard: scriptSeg.showChecklistCard ?? i === 3,
     });
 
-    // Map Pop-Up Callout triggers to exact frame numbers synced with Ethan 1.1x voiceover
-    for (const draftCallout of scriptSeg.callouts) {
-      const matchedLayer = isometricLayers.find((l) => l.componentId === draftCallout.componentId);
-      const anchor = matchedLayer?.anchorScreenCoord ?? draftCallout.anchor;
-
-      const triggerOffsetFrames = Math.floor(ttsSeg.durationInFrames * draftCallout.relativeTriggerRatio);
-      const startFrame = ttsSeg.startFrame + triggerOffsetFrames;
-      const calloutDurationFrames = Math.min(
-        Math.round(draftCallout.durationSeconds * tts.fps),
-        ttsSeg.endFrame - startFrame - 6
+    // Dark Pill Component Pointers
+    for (const pill of scriptSeg.pillLabels) {
+      const triggerOffset = Math.floor(
+        ttsSeg.durationInFrames * (pill.relativeTriggerRatio ?? 0.15)
       );
-      const endFrame = Math.max(startFrame + 90, startFrame + calloutDurationFrames);
+      const startFrame = ttsSeg.startFrame + triggerOffset;
+      const pillDurationFrames = Math.min(
+        Math.round((pill.durationSeconds ?? 4.2) * tts.fps),
+        ttsSeg.endFrame - startFrame - 4
+      );
+      const endFrame = Math.max(startFrame + 75, startFrame + pillDurationFrames);
 
-      const { elbowPoint, cardCoord } = computeCalloutGeometry(anchor, draftCallout.cardPosition);
-
-      callouts.push({
-        id: draftCallout.id,
-        componentId: draftCallout.componentId,
+      pillCallouts.push({
+        id: pill.id,
+        componentId: pill.componentId,
         startFrame,
         endFrame,
-        label: draftCallout.label,
-        value: draftCallout.value,
-        formulaOrFact: draftCallout.formulaOrFact,
-        subtext: draftCallout.subtext,
-        accentColor: draftCallout.accentColor,
-        anchor,
-        elbowPoint,
-        cardCoord,
-        cardPosition: draftCallout.cardPosition,
+        text: pill.text,
+        direction: pill.direction,
+        anchor: pill.anchor,
+      });
+    }
+
+    // Comic SFX Floating Text ("PSSST!", "TERKUNCI", "BERJAM-JAM")
+    if (scriptSeg.sfxCue) {
+      const sfxStartFrame =
+        ttsSeg.startFrame +
+        Math.floor(
+          ttsSeg.durationInFrames * (scriptSeg.sfxCue.relativeTriggerRatio ?? 0.3)
+        );
+      const sfxEndFrame = Math.min(ttsSeg.endFrame - 6, sfxStartFrame + 135);
+
+      sfxOverlays.push({
+        id: `sfx_overlay_${i}`,
+        startFrame: sfxStartFrame,
+        endFrame: Math.max(sfxStartFrame + 60, sfxEndFrame),
+        text: scriptSeg.sfxCue.text,
+        variant: scriptSeg.sfxCue.variant,
+        x: scriptSeg.sfxCue.x,
+        y: scriptSeg.sfxCue.y,
+        rotateDeg: scriptSeg.sfxCue.rotateDeg,
       });
     }
   }
@@ -185,19 +178,21 @@ export async function runVisualChoreographerAgent(params: {
   const compositionProps: RemotionCompositionProps = {
     jobId,
     topic: blueprint.topic,
-    normalizedTitle: blueprint.normalizedTitle,
-    engineeringCategory: blueprint.engineeringCategory,
-    coreEquationOrLaw: blueprint.coreEquationOrLaw,
+    laymanHookTitle: blueprint.laymanHookTitle,
+    everydayCategory: blueprint.everydayCategory,
+    coreSimpleTruth: blueprint.coreSimpleTruth,
     primaryArchetype: blueprint.primaryArchetype,
     width,
     height,
     fps: tts.fps,
     durationInFrames: tts.totalDurationInFrames,
     aspectRatioMode,
-    telemetryChannels: script.telemetryChannels,
-    isometricLayers,
+    practicalChecklist: script.practicalChecklist,
+    cutawayLayers,
     phases,
-    callouts,
+    pillCallouts,
+    sfxOverlays,
+    sfxTriggers: tts.sfxTriggers ?? [],
   };
 
   return RemotionCompositionPropsSchema.parse(compositionProps);

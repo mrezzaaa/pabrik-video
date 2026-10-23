@@ -21,7 +21,7 @@ export function startDeconstructorWorker(): Worker {
         {
           agent: "AGENT_1_DECONSTRUCTOR",
           level: "INFO",
-          message: `Deconstructing engineering phases & physical mechanisms for "${topic}"...`,
+          message: `Building 4-act layman cutaway storyboard for "${topic}"...`,
         }
       );
 
@@ -31,14 +31,14 @@ export function startDeconstructorWorker(): Worker {
         await updateJobState(
           jobId,
           (prev) => ({
-            progressPercent: 22,
+            progressPercent: 24,
             blueprint,
             steps: { ...prev.steps, deconstructor: "COMPLETED" },
           }),
           {
             agent: "AGENT_1_DECONSTRUCTOR",
             level: "SUCCESS",
-            message: `Blueprint generated via ${modelUsed}: ${blueprint.components.length} components, 5 scientific phases (${blueprint.primaryArchetype}).`,
+            message: `Layman Storyboard ready (${modelUsed}): ${blueprint.components.length} cutaway parts, 4 acts (${blueprint.primaryArchetype}).`,
           }
         );
 

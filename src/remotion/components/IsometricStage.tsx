@@ -7,691 +7,562 @@ import {
   useVideoConfig,
 } from "remotion";
 import type {
-  IsometricVectorLayer,
+  CutawayVectorLayer,
   PhaseTimelineBlock,
+  VisualArchetype,
 } from "@/schemas/video-blueprint";
 
 interface IsometricStageProps {
-  layers: IsometricVectorLayer[];
+  layers: CutawayVectorLayer[];
   phases: PhaseTimelineBlock[];
-  primaryArchetype: string;
-  coreEquationOrLaw: string;
-}
-
-/**
- * Helper to project 3D coordinates (x, y, z) onto 2D isometric SVG canvas
- * using standard 30-degree isometric projection math:
- * screenX = centerX + (x - y) * cos(30°)
- * screenY = centerY + (x + y) * sin(30°) - z
- */
-function isoProject(
-  x: number,
-  y: number,
-  z: number,
-  centerX = 960,
-  centerY = 580
-): { x: number; y: number } {
-  const cos30 = 0.8660254;
-  const sin30 = 0.5;
-  return {
-    x: centerX + (x - y) * cos30,
-    y: centerY + (x + y) * sin30 - z,
-  };
+  primaryArchetype: VisualArchetype;
 }
 
 export const IsometricStage: React.FC<IsometricStageProps> = ({
-  layers,
   phases,
-  coreEquationOrLaw,
+  primaryArchetype,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Identify current phase and camera targets
   const activePhase =
     phases.find((p) => frame >= p.startFrame && frame < p.endFrame) ??
     phases[phases.length - 1] ??
     phases[0];
 
-  const phaseLocalFrame = Math.max(0, frame - (activePhase?.startFrame ?? 0));
-  const phaseDuration = Math.max(1, activePhase?.durationInFrames ?? 300);
+  const prevPhaseIndex = Math.max(0, (activePhase?.segmentIndex ?? 0) - 1);
+  const prevPhase = phases[prevPhaseIndex] ?? activePhase;
 
-  // Spring transition for camera & exploded view factor
-  const transitionSpring = spring({
-    frame: phaseLocalFrame,
+  const localFrame = Math.max(0, frame - (activePhase?.startFrame ?? 0));
+
+  // Smooth spring camera zoom & pan (damping: 18, stiffness: 120 as specified)
+  const camSpring = spring({
+    frame: localFrame,
     fps,
     config: {
       damping: 18,
-      stiffness: 85,
-      mass: 0.9,
+      stiffness: 120,
     },
   });
 
-  const targetZoom = activePhase?.camera.zoom ?? 1;
-  const targetPanX = activePhase?.camera.panX ?? 0;
-  const targetPanY = activePhase?.camera.panY ?? 0;
-  const targetExplode = activePhase?.camera.explodeFactor ?? 0;
-  const targetCrossSection = activePhase?.camera.crossSectionRatio ?? 0.5;
-
-  const currentZoom = interpolate(transitionSpring, [0, 1], [1.0, targetZoom]);
-  const currentPanX = interpolate(transitionSpring, [0, 1], [0, targetPanX]);
-  const currentPanY = interpolate(transitionSpring, [0, 1], [0, targetPanY]);
-  const explodeProgress = interpolate(transitionSpring, [0, 1], [0.1, targetExplode]);
-  const crossSectionReveal = interpolate(
-    transitionSpring,
+  const camX = interpolate(
+    camSpring,
     [0, 1],
-    [0.2, targetCrossSection]
+    [prevPhase?.camera.x ?? 0, activePhase?.camera.x ?? 0],
+  );
+  const camY = interpolate(
+    camSpring,
+    [0, 1],
+    [prevPhase?.camera.y ?? 0, activePhase?.camera.y ?? 0],
+  );
+  const camScale = interpolate(
+    camSpring,
+    [0, 1],
+    [prevPhase?.camera.scale ?? 1, activePhase?.camera.scale ?? 1],
   );
 
-  // Continuous stroke-dashoffset animation for energy / heat / fluid vectors
-  const dashOffset = -(frame * 3.2);
-  const reverseDashOffset = frame * 2.6;
-  const ambientPulse = interpolate(Math.sin(frame / 14), [-1, 1], [0.55, 1]);
+  const isPressurized =
+    activePhase?.statusBadge.variant === "red" ||
+    activePhase?.primaryMetric.isHighActive;
+  const isSoftBones = (activePhase?.segmentIndex ?? 0) >= 1;
 
-  // Pre-build isometric floor grid lines
-  const gridIndices = [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6];
-  const gridSpacing = 75;
-  const gridExtent = 450;
+  // Physics micro-animations: rising bubbles, steam wisps, jiggling weight valve
+  const bubbleRise1 = (frame * 3.4) % 180;
+  const bubbleRise2 = ((frame + 45) * 3.8) % 180;
+  const bubbleRise3 = ((frame + 95) * 3.1) % 180;
+
+  const valveJiggleDeg = isPressurized ? Math.sin(frame * 0.65) * 6 : 0;
+  const valveLiftY = isPressurized
+    ? interpolate(Math.sin(frame * 0.45), [-1, 1], [-8, 0])
+    : 0;
+  const safetyPinLiftY = isPressurized ? -16 : 0;
+
+  const steamDashOffset = -(frame * 4.2);
+  const isTumbler = primaryArchetype === "THERMAL_TUMBLER";
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: "#090D16",
+        backgroundColor: "#F8F9FA",
+        backgroundImage:
+          "radial-gradient(circle at 50% 48%, #FFFFFF 0%, #F8F9FA 62%, #E2E8F0 100%)",
         overflow: "hidden",
       }}
     >
-      {/* Subtle radial atmospheric glow behind the isometric stage */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(circle at 50% 54%, rgba(14, 165, 233, 0.14) 0%, rgba(30, 41, 59, 0.06) 45%, rgba(9, 13, 22, 0.95) 80%)",
-        }}
-      />
-
-      {/* CSS 3D Isometric Engineering Floor Plane (rotateX(60deg) rotateZ(-45deg)) */}
+      {/* Warm Studio Floor Shadow */}
       <div
         style={{
           position: "absolute",
           left: "50%",
-          top: "58%",
-          width: 1100,
-          height: 1100,
-          marginLeft: -550,
-          marginTop: -550,
-          transform: `translate3d(${currentPanX}px, ${currentPanY}px, 0px) scale(${currentZoom}) rotateX(60deg) rotateZ(-45deg)`,
-          transformStyle: "preserve-3d",
-          backgroundImage: `
-            linear-gradient(to right, #1E293B 1.5px, transparent 1.5px),
-            linear-gradient(to bottom, #1E293B 1.5px, transparent 1.5px)
-          `,
-          backgroundSize: "55px 55px",
-          border: "2px solid rgba(56, 189, 248, 0.25)",
-          boxShadow: "0 0 90px rgba(14, 165, 233, 0.12) inset",
-          opacity: 0.72,
+          top: 1380,
+          width: 680,
+          height: 150,
+          marginLeft: -340,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(ellipse at center, rgba(15, 23, 42, 0.14) 0%, rgba(15, 23, 42, 0.0) 72%)",
+          transform: `translate(${camX * 0.5}px, ${camY * 0.5}px) scale(${camScale})`,
         }}
-      >
-        {/* Rotating Isometric Target Reticle on the 3D Stage Floor */}
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            width: 540,
-            height: 540,
-            marginLeft: -270,
-            marginTop: -270,
-            borderRadius: "50%",
-            border: "2px dashed rgba(56, 189, 248, 0.35)",
-            transform: `rotateZ(${frame * 0.35}deg)`,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            width: 360,
-            height: 360,
-            marginLeft: -180,
-            marginTop: -180,
-            borderRadius: "50%",
-            border: "1.5px solid rgba(34, 211, 238, 0.28)",
-          }}
-        />
-      </div>
+      />
 
-      {/* Precision SVG Isometric Projection Stage & Exploded Vector Layers */}
+      {/* Main Cel-Shaded Isometric 90-Degree Cutaway SVG Viewport */}
       <svg
-        viewBox="0 0 1920 1080"
+        viewBox="0 0 1080 1920"
         style={{
           width: "100%",
           height: "100%",
           position: "absolute",
           inset: 0,
-          transform: `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`,
-          transformOrigin: "960px 560px",
+          transform: `translate(${camX}px, ${camY}px) scale(${camScale})`,
+          transformOrigin: "540px 980px",
         }}
       >
-        <defs>
-          <filter id="isoGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-          <linearGradient id="thermalCoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.88" />
-            <stop offset="50%" stopColor="#F59E0B" stopOpacity="0.72" />
-            <stop offset="100%" stopColor="#EF4444" stopOpacity="0.9" />
-          </linearGradient>
-          <linearGradient id="stainlessShellGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#1E293B" stopOpacity="0.85" />
-            <stop offset="45%" stopColor="#334155" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#0F172A" stopOpacity="0.9" />
-          </linearGradient>
-          <linearGradient id="copperShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.85" />
-            <stop offset="50%" stopColor="#D97706" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#B45309" stopOpacity="0.85" />
-          </linearGradient>
-        </defs>
+        {isTumbler ? (
+          /* =================================================================
+             ARCHETYPE B: CEL-SHADED ISOMETRIC TUMBLER 90° CUTAWAY
+             ================================================================= */
+          <g>
+            {/* Outer Stainless Body (#E2E8F0 with #1E293B 2.5px outline) */}
+            <ellipse
+              cx={540}
+              cy={1380}
+              rx={195}
+              ry={72}
+              fill="#CBD5E1"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+            <path
+              d="M 345 720 L 345 1380 A 195 72 0 0 0 735 1380 L 735 720 Z"
+              fill="#E2E8F0"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
 
-        {/* Isometric Math Grid Lines & Coordinate Axes (#1E293B) */}
-        <g opacity={0.65}>
-          {gridIndices.map((idx) => {
-            const p1 = isoProject(idx * gridSpacing, -gridExtent, -180);
-            const p2 = isoProject(idx * gridSpacing, gridExtent, -180);
-            const q1 = isoProject(-gridExtent, idx * gridSpacing, -180);
-            const q2 = isoProject(gridExtent, idx * gridSpacing, -180);
-            return (
-              <React.Fragment key={`grid_${idx}`}>
-                <line
-                  x1={p1.x}
-                  y1={p1.y}
-                  x2={p2.x}
-                  y2={p2.y}
-                  stroke="#1E293B"
-                  strokeWidth={idx === 0 ? 2 : 1}
-                />
-                <line
-                  x1={q1.x}
-                  y1={q1.y}
-                  x2={q2.x}
-                  y2={q2.y}
-                  stroke="#1E293B"
-                  strokeWidth={idx === 0 ? 2 : 1}
-                />
-              </React.Fragment>
-            );
-          })}
-        </g>
+            {/* 90-Degree Cutaway Window Revealing Vacuum Gap & Copper Lining */}
+            <rect
+              x={385}
+              y={770}
+              width={310}
+              height={560}
+              rx={18}
+              fill="#1E293B"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
 
-        {/* Isometric X / Y / Z Engineering Reference Axes */}
-        {(() => {
-          const origin = isoProject(0, 0, -180);
-          const xAxis = isoProject(480, 0, -180);
-          const yAxis = isoProject(0, 480, -180);
-          const zAxis = isoProject(0, 0, 340);
-          return (
-            <g opacity={0.75}>
-              <line
-                x1={origin.x}
-                y1={origin.y}
-                x2={xAxis.x}
-                y2={xAxis.y}
-                stroke="#38BDF8"
-                strokeWidth={1.5}
-                strokeDasharray="6 6"
+            {/* Warm Yellow Vacuum / Copper Shield Layer (#FACC15) */}
+            <rect
+              x={408}
+              y={792}
+              width={264}
+              height={515}
+              rx={14}
+              fill="#FACC15"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* Inner Beverage Chamber (#93C5FD / #F87171 hot liquid) */}
+            <rect
+              x={430}
+              y={815}
+              width={220}
+              height={470}
+              rx={10}
+              fill="#F87171"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+            <ellipse
+              cx={540}
+              cy={845}
+              rx={110}
+              ry={34}
+              fill="#FCA5A5"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* Heat Reflection Arrows Bouncing Back Inside */}
+            <path
+              d="M 480 980 L 436 1015 L 485 1050"
+              fill="none"
+              stroke="#FEF08A"
+              strokeWidth={4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M 600 980 L 644 1015 L 595 1050"
+              fill="none"
+              stroke="#FEF08A"
+              strokeWidth={4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            {/* Top Lid & Silicone O-Ring Seal */}
+            <path
+              d="M 355 645 L 355 720 A 185 64 0 0 0 725 720 L 725 645 Z"
+              fill="#334155"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+            <ellipse
+              cx={540}
+              cy={645}
+              rx={185}
+              ry={64}
+              fill="#475569"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+            {/* Silicone Seal Band (#86EFAC) */}
+            <rect
+              x={365}
+              y={704}
+              width={350}
+              height={22}
+              rx={10}
+              fill="#86EFAC"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+          </g>
+        ) : (
+          /* =================================================================
+             ARCHETYPE A: CEL-SHADED ISOMETRIC PRESTO 90° CUTAWAY (REFERENCE)
+             ================================================================= */
+          <g>
+            {/* Left & Right Bakelite Side Handles */}
+            <path
+              d="M 250 960 L 165 960 C 145 960, 145 1015, 165 1015 L 250 1015 Z"
+              fill="#334155"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+            <path
+              d="M 830 960 L 915 960 C 935 960, 935 1015, 915 1015 L 830 1015 Z"
+              fill="#334155"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* Pot Bottom Base Shadow & Lower Rim */}
+            <ellipse
+              cx={540}
+              cy={1340}
+              rx={285}
+              ry={105}
+              fill="#CBD5E1"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* Outer Aluminum Pot Cylinder (#E2E8F0 with #1E293B 2.5px outline) */}
+            <path
+              d="M 255 830 L 255 1340 A 285 105 0 0 0 825 1340 L 825 830 Z"
+              fill="#E2E8F0"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* 90-Degree Cross-Section Cutaway Interior Cavity */}
+            <path
+              d="M 290 850 L 290 1315 A 250 88 0 0 0 790 1315 L 790 850 Z"
+              fill="#F1F5F9"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* Cutaway Wall Thickness Faces (Left & Right Cross-Section Edges) */}
+            <rect
+              x={255}
+              y={830}
+              width={35}
+              height={485}
+              fill="#94A3B8"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+            <rect
+              x={790}
+              y={830}
+              width={35}
+              height={485}
+              fill="#94A3B8"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* Trapped Pressurized Steam Zone (Top Half of Pot Interior) */}
+            <path
+              d="M 290 850 L 290 1055 L 790 1055 L 790 850 Z"
+              fill={
+                isPressurized
+                  ? "rgba(250, 204, 21, 0.28)"
+                  : "rgba(226, 232, 240, 0.4)"
+              }
+            />
+
+            {/* Boiling Water Layer (#93C5FD water blue) */}
+            <path
+              d="M 290 1045 L 290 1315 A 250 88 0 0 0 790 1315 L 790 1045 Z"
+              fill="#93C5FD"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+            {/* Isometric Water Surface Ellipse */}
+            <ellipse
+              cx={540}
+              cy={1045}
+              rx={250}
+              ry={72}
+              fill="#BFDBFE"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* Bandeng Fish Cross-Section & Spine Bones Inside Boiling Water */}
+            <g transform="translate(540, 1185)">
+              {/* Fish Body Silhouette */}
+              <path
+                d="M -175 0 C -120 -68, 85 -68, 165 0 C 85 68, -120 68, -175 0 Z"
+                fill={isSoftBones ? "#86EFAC" : "#F87171"}
+                stroke="#1E293B"
+                strokeWidth={2.5}
               />
-              <text
-                x={xAxis.x + 12}
-                y={xAxis.y + 6}
-                fill="#38BDF8"
-                fontSize={13}
-                fontFamily="monospace"
-              >
-                +X (ISO-30°)
-              </text>
-              <line
-                x1={origin.x}
-                y1={origin.y}
-                x2={yAxis.x}
-                y2={yAxis.y}
-                stroke="#22D3EE"
-                strokeWidth={1.5}
-                strokeDasharray="6 6"
+              {/* Fish Tail */}
+              <path
+                d="M 155 0 L 210 -42 L 198 0 L 210 42 Z"
+                fill={isSoftBones ? "#86EFAC" : "#F87171"}
+                stroke="#1E293B"
+                strokeWidth={2.5}
               />
-              <text
-                x={yAxis.x - 95}
-                y={yAxis.y + 6}
-                fill="#22D3EE"
-                fontSize={13}
-                fontFamily="monospace"
-              >
-                +Y (ISO-150°)
-              </text>
+              {/* Fish Skeleton / Rib Bones (Duri Bandeng) */}
               <line
-                x1={origin.x}
-                y1={origin.y}
-                x2={zAxis.x}
-                y2={zAxis.y}
-                stroke="#F59E0B"
-                strokeWidth={1.5}
-                strokeDasharray="4 4"
+                x1={-115}
+                y1={0}
+                x2={125}
+                y2={0}
+                stroke="#1E293B"
+                strokeWidth={3.5}
               />
-              <text
-                x={zAxis.x - 42}
-                y={zAxis.y - 12}
-                fill="#F59E0B"
-                fontSize={13}
-                fontFamily="monospace"
-              >
-                +Z AXIS
-              </text>
+              {[-85, -45, -5, 35, 75, 105].map((ribX, idx) => (
+                <g key={idx}>
+                  <line
+                    x1={ribX}
+                    y1={-34}
+                    x2={ribX - 12}
+                    y2={34}
+                    stroke="#1E293B"
+                    strokeWidth={2.5}
+                    strokeDasharray={isSoftBones ? "5 4" : undefined}
+                  />
+                </g>
+              ))}
+              {/* Fish Eye */}
+              <circle
+                cx={-120}
+                cy={-10}
+                r={10}
+                fill="#FFFFFF"
+                stroke="#1E293B"
+                strokeWidth={2.5}
+              />
+              <circle cx={-120} cy={-10} r={4.5} fill="#1E293B" />
             </g>
-          );
-        })()}
 
-        {/* Render each Isometric Vector Layer with Exploded View & Cross-Section Cutaway */}
-        {layers.map((layer, index) => {
-          const isFocused = activePhase?.activeComponentIds.includes(layer.componentId) ?? true;
-          const layerHighlight = isFocused ? 1 : 0.48;
+            {/* Rising Boiling Water Bubbles */}
+            {[
+              { cx: 380, base: 1260, offset: bubbleRise1, r: 12 },
+              { cx: 465, base: 1280, offset: bubbleRise2, r: 16 },
+              { cx: 615, base: 1270, offset: bubbleRise3, r: 14 },
+              { cx: 705, base: 1250, offset: bubbleRise1 * 0.9, r: 11 },
+              { cx: 535, base: 1290, offset: bubbleRise2 * 0.85, r: 15 },
+            ].map((b, i) => (
+              <circle
+                key={i}
+                cx={b.cx + Math.sin((frame + i * 20) * 0.12) * 8}
+                cy={b.base - b.offset}
+                r={b.r}
+                fill="#FFFFFF"
+                fillOpacity={0.85}
+                stroke="#1E293B"
+                strokeWidth={2}
+              />
+            ))}
 
-          const offsetX = layer.explodeOffsetX * explodeProgress;
-          const offsetY = layer.explodeOffsetY * explodeProgress;
-          const offsetZ = layer.explodeOffsetZ * explodeProgress;
+            {/* Circulating Trapped Steam Arrows Inside Top Cavity */}
+            <path
+              d="M 410 995 C 390 925, 435 885, 495 910"
+              fill="none"
+              stroke={isPressurized ? "#EF4444" : "#64748B"}
+              strokeWidth={3.5}
+              strokeLinecap="round"
+              strokeDasharray="10 8"
+              strokeDashoffset={steamDashOffset}
+            />
+            <path
+              d="M 670 995 C 690 925, 645 885, 585 910"
+              fill="none"
+              stroke={isPressurized ? "#EF4444" : "#64748B"}
+              strokeWidth={3.5}
+              strokeLinecap="round"
+              strokeDasharray="10 8"
+              strokeDashoffset={steamDashOffset}
+            />
 
-          // Center of this layer in screen space
-          const center = {
-            x: 960 + offsetX,
-            y: 550 + offsetY - offsetZ,
-          };
+            {/* Isometric Sealed Lid Assembly */}
+            <path
+              d="M 245 775 L 245 835 A 295 96 0 0 0 835 835 L 835 775 Z"
+              fill="#CBD5E1"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+            <ellipse
+              cx={540}
+              cy={775}
+              rx={295}
+              ry={96}
+              fill="#E2E8F0"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
 
-          return (
+            {/* Red Silicone Sealing Gasket Ring Inside Lid Rim */}
+            <rect
+              x={255}
+              y={822}
+              width={570}
+              height={16}
+              rx={8}
+              fill="#F87171"
+              stroke="#1E293B"
+              strokeWidth={2.5}
+            />
+
+            {/* COMPONENT 1: Center Pressure Regulator Weight ("Pemberat" - #FACC15) */}
             <g
-              key={layer.id}
-              opacity={layerHighlight}
-              style={{
-                transition: "opacity 0.25s ease",
-              }}
+              transform={`translate(540, ${735 + valveLiftY}) rotate(${valveJiggleDeg})`}
             >
-              {/* Layer 0: Outer Austenitic Stainless Shell (Cross-Section Cutaway Cylinder) */}
-              {index === 0 && (
-                <g transform={`translate(${offsetX}, ${offsetY - offsetZ})`}>
-                  {/* Bottom Isometric Ellipse */}
-                  <ellipse
-                    cx={960}
-                    cy={720}
-                    rx={175}
-                    ry={78}
-                    fill="url(#stainlessShellGrad)"
-                    stroke={layer.strokeColor}
-                    strokeWidth={3}
-                  />
-                  {/* Left & Back Outer Wall */}
+              {/* Valve Stem */}
+              <rect
+                x={-14}
+                y={0}
+                width={28}
+                height={42}
+                fill="#94A3B8"
+                stroke="#1E293B"
+                strokeWidth={2.5}
+              />
+              {/* Heavy Regulator Weight Cylinder */}
+              <rect
+                x={-44}
+                y={-68}
+                width={88}
+                height={72}
+                rx={16}
+                fill="#FACC15"
+                stroke="#1E293B"
+                strokeWidth={2.5}
+              />
+              <ellipse
+                cx={0}
+                cy={-68}
+                rx={44}
+                ry={16}
+                fill="#FDE047"
+                stroke="#1E293B"
+                strokeWidth={2.5}
+              />
+              {/* Steam Jets Shooting Out When Pressurized */}
+              {isPressurized && (
+                <g>
                   <path
-                    d="M 785 350 L 785 720 A 175 78 0 0 0 1135 720 L 1135 350"
-                    fill="url(#stainlessShellGrad)"
-                    stroke={layer.strokeColor}
-                    strokeWidth={3}
-                  />
-                  {/* Animated Cross-Section Cutaway Window */}
-                  <rect
-                    x={830}
-                    y={380}
-                    width={260 * crossSectionReveal}
-                    height={310}
-                    rx={12}
-                    fill="#090D16"
-                    fillOpacity={0.82}
-                    stroke="#38BDF8"
-                    strokeWidth={2}
-                    strokeDasharray="8 4"
-                  />
-                  {/* Top Rim Ellipse */}
-                  <ellipse
-                    cx={960}
-                    cy={350}
-                    rx={175}
-                    ry={78}
-                    fill="rgba(15, 23, 42, 0.72)"
-                    stroke={layer.strokeColor}
-                    strokeWidth={3}
-                  />
-                  {/* Ambient Outside Air Vectors Bouncing Off Outer Shell */}
-                  <path
-                    d="M 620 470 L 765 495 L 640 545"
+                    d="M -48 -45 C -95 -75, -135 -115, -165 -165"
                     fill="none"
-                    stroke="#38BDF8"
-                    strokeWidth={2.5}
-                    strokeDasharray="10 8"
-                    strokeDashoffset={dashOffset}
-                  />
-                </g>
-              )}
-
-              {/* Layer 1: High-Vacuum Annulus Chamber (< 10^-3 Pa) */}
-              {index === 1 && (
-                <g transform={`translate(${offsetX}, ${offsetY - offsetZ})`}>
-                  <ellipse
-                    cx={960}
-                    cy={700}
-                    rx={148}
-                    ry={64}
-                    fill="rgba(6, 182, 212, 0.1)"
-                    stroke="#22D3EE"
-                    strokeWidth={2.2}
-                    strokeDasharray="6 6"
-                  />
-                  <path
-                    d="M 812 365 L 812 700 A 148 64 0 0 0 1108 700 L 1108 365"
-                    fill="rgba(8, 145, 178, 0.12)"
-                    stroke="#22D3EE"
-                    strokeWidth={2.2}
-                    strokeDasharray="8 6"
-                    strokeDashoffset={reverseDashOffset}
-                  />
-                  <ellipse
-                    cx={960}
-                    cy={365}
-                    rx={148}
-                    ry={64}
-                    fill="none"
-                    stroke="#22D3EE"
-                    strokeWidth={2}
-                    strokeDasharray="6 6"
-                  />
-                  {/* Zero-Molecule Vacuum Zone Label Inside Cutaway */}
-                  <text
-                    x={960}
-                    y={690}
-                    textAnchor="middle"
-                    fill="#22D3EE"
-                    fontSize={13}
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                  >
-                    VACUUM ANNULUS (P &lt; 0.001 Pa)
-                  </text>
-                </g>
-              )}
-
-              {/* Layer 2: Electrolytic Copper Infrared Radiation Shield */}
-              {index === 2 && (
-                <g transform={`translate(${offsetX}, ${offsetY - offsetZ})`}>
-                  <path
-                    d="M 832 380 L 832 678 A 128 54 0 0 0 1088 678 L 1088 380"
-                    fill="url(#copperShieldGrad)"
-                    stroke="#F59E0B"
-                    strokeWidth={2.8}
-                  />
-                  <ellipse
-                    cx={960}
-                    cy={380}
-                    rx={128}
-                    ry={54}
-                    fill="rgba(217, 119, 6, 0.22)"
-                    stroke="#F59E0B"
-                    strokeWidth={2.5}
-                  />
-                  {/* Infrared Photon Reflection Vectors (Bouncing back inward) */}
-                  <path
-                    d="M 920 490 L 842 520 L 925 550"
-                    fill="none"
-                    stroke="#FBBF24"
-                    strokeWidth={3}
-                    strokeDasharray="8 6"
-                    strokeDashoffset={dashOffset}
-                    filter="url(#isoGlow)"
-                  />
-                  <path
-                    d="M 1000 490 L 1078 520 L 995 550"
-                    fill="none"
-                    stroke="#FBBF24"
-                    strokeWidth={3}
-                    strokeDasharray="8 6"
-                    strokeDashoffset={dashOffset}
-                    filter="url(#isoGlow)"
-                  />
-                </g>
-              )}
-
-              {/* Layer 3: Inner Thermal Core Vessel & Dynamic Fluid / Energy Flow */}
-              {index === 3 && (
-                <g transform={`translate(${offsetX}, ${offsetY - offsetZ})`}>
-                  <path
-                    d="M 852 395 L 852 658 A 108 45 0 0 0 1068 658 L 1068 395"
-                    fill="url(#thermalCoreGrad)"
-                    stroke="#10B981"
-                    strokeWidth={2.8}
-                  />
-                  <ellipse
-                    cx={960}
-                    cy={395}
-                    rx={108}
-                    ry={45}
-                    fill="rgba(244, 63, 94, 0.65)"
-                    stroke="#34D399"
-                    strokeWidth={2.5}
-                  />
-
-                  {/* Dynamic Glowing Internal Convection Loop Vectors using stroke-dashoffset */}
-                  <path
-                    d="M 915 625 C 885 555, 885 465, 930 420 C 955 465, 955 555, 915 625"
-                    fill="none"
-                    stroke="#FEF08A"
-                    strokeWidth={3.2}
+                    stroke="#93C5FD"
+                    strokeWidth={5}
+                    strokeLinecap="round"
                     strokeDasharray="12 10"
-                    strokeDashoffset={dashOffset}
-                    filter="url(#isoGlow)"
+                    strokeDashoffset={steamDashOffset}
                   />
                   <path
-                    d="M 1005 625 C 1035 555, 1035 465, 990 420 C 965 465, 965 555, 1005 625"
+                    d="M 48 -45 C 95 -75, 135 -115, 165 -165"
                     fill="none"
-                    stroke="#FEF08A"
-                    strokeWidth={3.2}
+                    stroke="#93C5FD"
+                    strokeWidth={5}
+                    strokeLinecap="round"
                     strokeDasharray="12 10"
-                    strokeDashoffset={reverseDashOffset}
-                    filter="url(#isoGlow)"
+                    strokeDashoffset={steamDashOffset}
                   />
                 </g>
-              )}
-
-              {/* Layer 4: Upper Seal Cap Assembly & Micro Heat-Bridge Vectors */}
-              {index >= 4 && (
-                <g transform={`translate(${offsetX}, ${offsetY - offsetZ - 35 * explodeProgress})`}>
-                  <path
-                    d="M 815 265 L 815 325 A 145 58 0 0 0 1105 325 L 1105 265"
-                    fill="rgba(30, 41, 59, 0.92)"
-                    stroke="#F43F5E"
-                    strokeWidth={2.8}
-                  />
-                  <ellipse
-                    cx={960}
-                    cy={265}
-                    rx={145}
-                    ry={58}
-                    fill="#1E293B"
-                    stroke="#F43F5E"
-                    strokeWidth={2.8}
-                  />
-                  {/* Silicone O-Ring Gasket Highlight */}
-                  <ellipse
-                    cx={960}
-                    cy={325}
-                    rx={136}
-                    ry={52}
-                    fill="none"
-                    stroke="#38BDF8"
-                    strokeWidth={4}
-                    strokeDasharray="14 8"
-                    strokeDashoffset={dashOffset}
-                  />
-                </g>
-              )}
-
-              {/* Component Anchor Beacon on the Isometric Object */}
-              <g>
-                <circle
-                  cx={layer.anchorScreenCoord.x}
-                  cy={layer.anchorScreenCoord.y}
-                  r={11 * ambientPulse}
-                  fill="none"
-                  stroke={layer.strokeColor}
-                  strokeWidth={1.8}
-                  opacity={0.75}
-                />
-                <circle
-                  cx={layer.anchorScreenCoord.x}
-                  cy={layer.anchorScreenCoord.y}
-                  r={4.5}
-                  fill={layer.strokeColor}
-                />
-              </g>
-
-              {/* Exploded-view alignment guide line when exploded */}
-              {explodeProgress > 0.2 && (
-                <line
-                  x1={960}
-                  y1={540}
-                  x2={center.x}
-                  y2={center.y}
-                  stroke={layer.strokeColor}
-                  strokeWidth={1.2}
-                  strokeDasharray="4 6"
-                  opacity={0.5}
-                />
               )}
             </g>
-          );
-        })}
-      </svg>
 
-      {/* Bottom Engineering Formula & Karaoke Subtitle Bar */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 34,
-          left: 64,
-          right: 64,
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          pointerEvents: "none",
-        }}
-      >
-        {/* Left: Core Governing Physics Equation Box */}
-        <div
-          style={{
-            background: "rgba(15, 23, 42, 0.85)",
-            border: "1px solid rgba(56, 189, 248, 0.35)",
-            borderRadius: 10,
-            padding: "12px 18px",
-            backdropFilter: "blur(12px)",
-            minWidth: 340,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontFamily: "monospace",
-              color: "#38BDF8",
-              letterSpacing: "0.14em",
-              marginBottom: 4,
-            }}
-          >
-            GOVERNING EQUATION // MODEL MATRIKS
-          </div>
-          <div
-            style={{
-              fontSize: 16,
-              fontFamily: "monospace",
-              fontWeight: 700,
-              color: "#F8FAFC",
-            }}
-          >
-            {coreEquationOrLaw}
-          </div>
-        </div>
+            {/* COMPONENT 2: Red Safety Valve ("Katup Pengaman" - #F87171) */}
+            <g transform={`translate(390, ${755 + safetyPinLiftY * 0.5})`}>
+              <rect
+                x={-22}
+                y={-32}
+                width={44}
+                height={38}
+                rx={8}
+                fill="#F87171"
+                stroke="#1E293B"
+                strokeWidth={2.5}
+              />
+              <circle
+                cx={0}
+                cy={-38}
+                r={12}
+                fill="#EF4444"
+                stroke="#1E293B"
+                strokeWidth={2.5}
+              />
+            </g>
 
-        {/* Center/Right: Synchronized Indonesian Narration Subtitles + Word Highlight */}
-        {activePhase && (
-          <div
-            style={{
-              maxWidth: 980,
-              background: "rgba(9, 13, 22, 0.88)",
-              border: "1px solid rgba(148, 163, 184, 0.25)",
-              borderLeft: "4px solid #38BDF8",
-              borderRadius: 12,
-              padding: "14px 24px",
-              backdropFilter: "blur(16px)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12,
-                fontFamily: "monospace",
-                color: "#22D3EE",
-                letterSpacing: "0.1em",
-                marginBottom: 6,
-                fontWeight: 700,
-              }}
-            >
-              [{activePhase.phaseType}] {activePhase.onScreenHeadline}
-            </div>
-            <div
-              style={{
-                fontSize: 21,
-                lineHeight: 1.45,
-                color: "#E2E8F0",
-                fontWeight: 500,
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "6px",
-              }}
-            >
-              {activePhase.wordTimings && activePhase.wordTimings.length > 0
-                ? activePhase.wordTimings.map((wt, idx) => {
-                    const isSpoken = frame >= wt.startFrame && frame <= wt.endFrame;
-                    const isPast = frame > wt.endFrame;
-                    return (
-                      <span
-                        key={`${wt.word}_${idx}`}
-                        style={{
-                          color: isSpoken ? "#38BDF8" : isPast ? "#F8FAFC" : "#94A3B8",
-                          fontWeight: isSpoken ? 700 : 500,
-                          textShadow: isSpoken ? "0 0 14px rgba(56, 189, 248, 0.55)" : "none",
-                        }}
-                      >
-                        {wt.word}
-                      </span>
-                    );
-                  })
-                : activePhase.narrationText}
-            </div>
-          </div>
+            {/* COMPONENT 3: Lid Safety Lock Pin ("Pengunci Tutup" - #86EFAC) */}
+            <g transform={`translate(715, ${765 + safetyPinLiftY})`}>
+              <rect
+                x={-26}
+                y={-36}
+                width={52}
+                height={44}
+                rx={10}
+                fill="#86EFAC"
+                stroke="#1E293B"
+                strokeWidth={2.5}
+              />
+              <rect
+                x={-10}
+                y={-54}
+                width={20}
+                height={22}
+                rx={4}
+                fill="#16A34A"
+                stroke="#1E293B"
+                strokeWidth={2.5}
+              />
+            </g>
+
+            {/* Bottom Stove Flame Under the Pot */}
+            <g transform="translate(540, 1455)">
+              {[-140, -70, 0, 70, 140].map((fx, idx) => (
+                <path
+                  key={idx}
+                  d={`M ${fx - 22} 20 C ${fx - 10} -28, ${fx + 10} -28, ${fx + 22} 20 Z`}
+                  fill={idx % 2 === 0 ? "#FACC15" : "#F87171"}
+                  stroke="#1E293B"
+                  strokeWidth={2.5}
+                />
+              ))}
+            </g>
+          </g>
         )}
-      </div>
-
-      {/* Phase Progress Indicator Bar at very bottom edge */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 5,
-          backgroundColor: "rgba(30, 41, 59, 0.8)",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${Math.min(100, (phaseLocalFrame / phaseDuration) * 100)}%`,
-            background: "linear-gradient(90deg, #0EA5E9, #22D3EE, #10B981)",
-          }}
-        />
-      </div>
+      </svg>
     </AbsoluteFill>
   );
 };

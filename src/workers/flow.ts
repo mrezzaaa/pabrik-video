@@ -40,7 +40,7 @@ export async function enqueueVideoFactoryFlow(params: PipelineJobPayload) {
   const {
     jobId,
     topic,
-    aspectRatioMode = "LANDSCAPE_16_9",
+    aspectRatioMode = "SHORTS_9_16",
     autoRenderMp4 = true,
   } = params;
 
