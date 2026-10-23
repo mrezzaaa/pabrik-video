@@ -3,6 +3,7 @@ import path from "path";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import { env } from "@/config/env";
+import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "@/remotion/constants";
 import type { RemotionCompositionProps } from "@/schemas/video-blueprint";
 
 export async function getOrCreateRemotionBundle(): Promise<string> {
@@ -35,6 +36,11 @@ export async function runRemotionRenderAgent(params: {
 }): Promise<{ outputMp4Url: string; outputFilePath: string }> {
   const { jobId, compositionProps, onProgress } = params;
 
+  // Enforce strictly 1080x1920 @ 30fps
+  compositionProps.fps = VIDEO_FPS;
+  compositionProps.width = VIDEO_WIDTH;
+  compositionProps.height = VIDEO_HEIGHT;
+
   const outputDir = path.join(process.cwd(), "public", "renders", jobId);
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -46,13 +52,11 @@ export async function runRemotionRenderAgent(params: {
   fs.writeFileSync(propsJsonPath, JSON.stringify(compositionProps, null, 2));
 
   const serveUrl = await getOrCreateRemotionBundle();
-  const compositionId =
-    compositionProps.aspectRatioMode === "SHORTS_9_16"
-      ? "BedahVideoShorts"
-      : "BedahVideoComposition";
+  const compositionId = "KitabedahMain";
 
-  // Dedicated port range (3310-3390) to avoid colliding with port 3000 when another IPv6 server is bound to localhost:3000
-  const safePort = 3310 + Math.floor(Math.random() * 80);
+  // Deterministic port offset based on jobId chars
+  const portOffset = (jobId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % 70);
+  const safePort = 3320 + portOffset;
 
   const composition = await selectComposition({
     serveUrl,

@@ -58,18 +58,19 @@ function CameraRig({
 
 interface IsometricStageProps {
   visualScene: IsoSceneGraph;
-  phases: PhaseTimelineBlock[];
+  phases?: PhaseTimelineBlock[];
 }
 
 export const IsometricStage: React.FC<IsometricStageProps> = ({
   visualScene,
-  phases,
+  phases = [],
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
   // Find active phase
   const activePhaseIdx = useMemo(() => {
+    if (!phases || phases.length === 0) return 0;
     const idx = phases.findIndex(
       (p) => frame >= p.startFrame && frame <= p.endFrame
     );

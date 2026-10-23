@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "@/remotion/constants";
 
 export const PhaseTypeSchema = z.enum([
   "EVERYDAY_CONTRAST_HOOK",
@@ -13,17 +14,9 @@ export const Vec3TupleSchema = z
   .tuple([z.coerce.number().catch(0), z.coerce.number().catch(0), z.coerce.number().catch(0)])
   .catch([0, 0, 0]);
 
-export const SubjectArchetypeSchema = z
-  .enum([
-    "AERODYNAMIC_DRONE",       // Quadcopters, UAVs, fixed-wing planes, rockets
-    "ROTARY_PNEUMATIC_ENGINE", // AC compressors, combustion engines, pistons, pumps, turbines
-    "ELECTROCHEMICAL_BATTERY", // Lithium batteries, powerbanks, energy storage cells
-    "ELECTRONIC_COMPUTING",    // Servers, motherboards, CPUs, chips, cloud infrastructure
-    "PHOTOVOLTAIC_ENERGY",     // Solar panels, photovoltaic cells, inverters
-    "ANATOMICAL_ORGAN",        // Human body, heart, kidney, eyes, lungs, biology
-    "UNIVERSAL_CUTAWAY",       // General tools, household appliances, industrial machines
-  ])
-  .catch("UNIVERSAL_CUTAWAY");
+export const SubjectArchetypeSchema = z.string()
+  .default("UNIVERSAL_CUTAWAY")
+  .describe("Bebas. LLM boleh ngarang archetype baru sesuai topik. Contoh: 'FELINE_RIGHTING_REFLEX' untuk kucing, 'VACUUM_INSULATION_DYNAMICS' untuk tumbler, 'ELECTROMAGNETIC_MOTOR' untuk mobil listrik, 'VISCOUS_FLUID_DYNAMICS' untuk kecap. Visual worker harus handle string apapun dengan fallback rakit dari primitive geometry.");
 
 export type SubjectArchetype = z.infer<typeof SubjectArchetypeSchema>;
 
@@ -41,6 +34,7 @@ export const ThreeGeometryTypeSchema = z
     "lathe",            // Custom 2D profile points [r, y] revolved in 3D (bottles, bells, contours)
     "tube",             // 3D curved pipe / channel / wire / vessel along 3D spline path
     "radial-array",     // Repeated 3D sub-elements (turbine blades, fan blades, stator coils, gears)
+    "liquid",           // 3D liquid column / fluid surface / viscous flow
     "drone-assembly",   // Complete 3D drone quadcopter with 4 arms, motors, spinning rotors & cutaway fuselage
     "battery-assembly", // Complete 3D cutaway battery pack with internal cells, busbars, BMS board & terminals
     "piston-assembly",  // Complete 3D cutaway engine/compressor cylinder with reciprocating piston, rod & valves
@@ -95,9 +89,9 @@ export const DeconstructedPhaseSchema = z.object({
 });
 
 export const DeconstructionBlueprintSchema = z.object({
-  topic: z.string().min(1),
-  suggestedArchetype: SubjectArchetypeSchema.default("UNIVERSAL_CUTAWAY"),
-  laymanHookTitle: z.string().min(1),
+  topic: z.string(),
+  suggestedArchetype: SubjectArchetypeSchema, // sekarang bebas, bukan enum
+  laymanHookTitle: z.string(),
   everydayCategory: z.string().min(1),
   coreSimpleTruth: z.string().min(1),
   baselineMetricValue: z.coerce.number().catch(0),
@@ -105,7 +99,7 @@ export const DeconstructionBlueprintSchema = z.object({
   metricUnit: z.string(),
   practicalChecklistTitle: z.string().catch("CEK SEBELUM BELI / PAKAI:"),
   practicalChecklistItems: z.array(z.string()).min(3).max(3),
-  components: z.array(DeconstructedComponentSchema).min(3),
+  components: z.array(DeconstructedComponentSchema).min(3), // INI YANG JADI SUMBER KEBENARAN
   phases: z.array(DeconstructedPhaseSchema).length(4),
 });
 
@@ -210,14 +204,14 @@ export const AudioSegmentTimingSchema = z.object({
 
 export const TtsSynchronizerOutputSchema = z.object({
   jobId: z.string(),
-  fps: z.number().int().default(60),
+  fps: z.number().int().default(VIDEO_FPS),
   voice: z.string().default("Ethan"),
   language: z.string().default("id-ID"),
   speed: z.number().default(1.1),
   engineUsed: z.string(),
   totalDurationInSeconds: z.number().positive(),
   totalDurationInFrames: z.number().int().positive(),
-  segments: z.array(AudioSegmentTimingSchema).length(4),
+  segments: z.array(AudioSegmentTimingSchema).min(1),
   sfxTriggers: z.array(AudioSfxTriggerSchema).default([]),
 });
 
@@ -384,15 +378,73 @@ export const PhaseTimelineBlockSchema = z.object({
   showChecklistCard: z.boolean().default(false),
 });
 
+// ==========================================
+// DYNAMIC KITABEDAH BLUEPRINT SCHEMAS (100% TOPIC-AGNOSTIC)
+// ==========================================
+export const TelemetryChannelSchema = z.object({
+  key: z.string().optional(),
+  label: z.string(),
+  unit: z.string(),
+  start: z.coerce.number(),
+  end: z.coerce.number(),
+  status: z.string().optional(),
+});
+
+export const TelemetryBadgeSchema = z.object({
+  text: z.string(),
+  color: z.string().default("green"),
+});
+
+export const PopupLabelItemSchema = z.object({
+  text: z.string(),
+  x: z.coerce.number().min(0).max(1),
+  y: z.coerce.number().min(0).max(1),
+});
+
+export const WordTimingSimpleSchema = z.object({
+  text: z.string(),
+  startFrame: z.number(),
+  endFrame: z.number(),
+});
+
+export const VideoBlueprintSceneSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  title: z.string(),
+  vo_text: z.string(),
+  durationInFrames: z.number().int().default(120),
+  audioUrl: z.string().optional(),
+  words: z.array(WordTimingSimpleSchema).optional(),
+  telemetry: z.object({
+    channels: z.array(TelemetryChannelSchema),
+    badge: TelemetryBadgeSchema,
+  }),
+  visual: z.object({
+    description: z.string(),
+    popup_labels: z.array(PopupLabelItemSchema),
+    nodes: z.array(ThreeNodeSchema).optional(),
+  }),
+  caption: z.object({
+    text: z.string(),
+    highlights: z.array(z.string()).default([]),
+    words: z.array(WordTimingSimpleSchema).optional(),
+  }),
+});
+
+export type VideoBlueprintScene = z.infer<typeof VideoBlueprintSceneSchema>;
+export type TelemetryChannel = z.infer<typeof TelemetryChannelSchema>;
+export type TelemetryBadge = z.infer<typeof TelemetryBadgeSchema>;
+export type PopupLabelItem = z.infer<typeof PopupLabelItemSchema>;
+export type WordTimingSimple = z.infer<typeof WordTimingSimpleSchema>;
+
 export const RemotionCompositionPropsSchema = z.object({
   jobId: z.string(),
   topic: z.string(),
   laymanHookTitle: z.string(),
   everydayCategory: z.string(),
   coreSimpleTruth: z.string(),
-  width: z.number().int().default(1080),
-  height: z.number().int().default(1920),
-  fps: z.number().int().default(60),
+  width: z.number().int().default(VIDEO_WIDTH),
+  height: z.number().int().default(VIDEO_HEIGHT),
+  fps: z.number().int().default(VIDEO_FPS),
   durationInFrames: z.number().int().positive(),
   aspectRatioMode: z.enum(["SHORTS_9_16", "LANDSCAPE_16_9"]).default("SHORTS_9_16"),
   practicalChecklist: z.object({
@@ -400,10 +452,11 @@ export const RemotionCompositionPropsSchema = z.object({
     items: z.array(z.string()),
   }),
   visualScene: IsoSceneGraphSchema,
-  phases: z.array(PhaseTimelineBlockSchema).length(4),
+  phases: z.array(PhaseTimelineBlockSchema).min(1),
   pillCallouts: z.array(FramePillCalloutSchema),
   sfxOverlays: z.array(FrameSfxOverlaySchema),
   sfxTriggers: z.array(AudioSfxTriggerSchema).default([]),
+  scenes: z.array(VideoBlueprintSceneSchema).optional(),
 });
 
 export type RemotionCompositionProps = z.infer<typeof RemotionCompositionPropsSchema>;
@@ -451,9 +504,20 @@ export const VideoJobStateSchema = z.object({
   script: ScriptArchitectOutputSchema.optional(),
   tts: TtsSynchronizerOutputSchema.optional(),
   compositionProps: RemotionCompositionPropsSchema.optional(),
+  dynamicScenes: z.array(VideoBlueprintSceneSchema).optional(),
   outputMp4Url: z.string().optional(),
   logs: z.array(PipelineLogEntrySchema),
 });
 
 export type VideoJobState = z.infer<typeof VideoJobStateSchema>;
 export type PipelineLogEntry = z.infer<typeof PipelineLogEntrySchema>;
+
+export const KitabedahCompositionPropsSchema = z.object({
+  scenes: z.array(VideoBlueprintSceneSchema),
+  topic: z.string().optional(),
+  fps: z.number().int().default(VIDEO_FPS),
+  width: z.number().int().default(VIDEO_WIDTH),
+  height: z.number().int().default(VIDEO_HEIGHT),
+});
+
+export type KitabedahCompositionProps = z.infer<typeof KitabedahCompositionPropsSchema>;

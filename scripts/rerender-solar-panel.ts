@@ -23,7 +23,7 @@ async function main() {
   });
 
   console.log("\n▶️ [3/5] Agent 3: Synthesizing TTS with silence trimming & 0.35s breathing tail...");
-  const tts = await runTtsSynchronizerAgent({
+  const { ttsOutput: tts } = await runTtsSynchronizerAgent({
     jobId,
     script,
     onSegmentProgress: async (idx, total, url, dur) => {

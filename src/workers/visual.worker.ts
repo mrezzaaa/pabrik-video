@@ -54,6 +54,7 @@ export function startVisualWorker(): Worker {
           blueprint,
           script,
           tts,
+          dynamicScenes: state?.dynamicScenes,
         });
 
         await updateJobState(

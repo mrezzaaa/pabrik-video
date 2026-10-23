@@ -1,5 +1,6 @@
 import { generateStructuredOmniroute } from "@/lib/omniroute";
 import { env } from "@/config/env";
+import { z } from "zod";
 import {
   DeconstructionBlueprintSchema,
   type DeconstructionBlueprint,
@@ -108,11 +109,51 @@ const BLUEPRINT_SCHEMA_TEMPLATE = `{
   ]
 }`;
 
+export const TechnicalResearchOutputSchema = z.object({
+  core_question: z.string(),
+  facts: z.array(z.string()).min(3),
+  mechanism_steps: z.array(z.string()).min(3),
+  key_components: z.array(z.string()).min(3),
+});
+
+export type TechnicalResearchOutput = z.infer<typeof TechnicalResearchOutputSchema>;
+
+export async function runResearchAgent(topic: string): Promise<{
+  research: TechnicalResearchOutput;
+  modelUsed: string;
+}> {
+  const systemPrompt = `Kamu peneliti teknik. Input topik bebas. Output JSON: {core_question, facts:[5 fakta fisika], mechanism_steps:[3-5 langkah], key_components:[komponen yang perlu divisualisasikan]}. Jangan halusinasi angka.`;
+
+  const userPrompt = `Teliti topik ini secara teknis dan faktual:
+TOPIK: "${topic}"
+
+Output JSON valid sesuai schema:
+{
+  "core_question": "Pertanyaan inti fisika/teknik",
+  "facts": ["5 fakta fisika teruji"],
+  "mechanism_steps": ["3-5 langkah kerja berurutan"],
+  "key_components": ["komponen fisik utama yang perlu divisualisasikan"]
+}`;
+
+  const { data, modelUsed } = await generateStructuredOmniroute({
+    systemPrompt,
+    userPrompt,
+    schema: TechnicalResearchOutputSchema,
+    preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
+    temperature: 0.2,
+  });
+
+  return { research: data, modelUsed };
+}
+
 export async function runDeconstructorAgent(topic: string): Promise<{
   blueprint: DeconstructionBlueprint;
   modelUsed: string;
 }> {
-  // Dynamically load the anatomy skill instructions
+  // Step 1: Execute technical research agent
+  const { research, modelUsed: researchModel } = await runResearchAgent(topic);
+
+  // Step 2: Dynamically load the anatomy skill instructions
   const anatomySkill = await loadAgentSkill(".agents/skill/anatomy");
 
   const systemPrompt = `${LAYMAN_DECONSTRUCTOR_SYSTEM_PROMPT}
@@ -125,10 +166,16 @@ ${anatomySkill}
 
 TOPIC: "${topic}"
 
+RESEARCH FINDINGS (FROM TECHNICAL RESEARCHER):
+- Core Question: "${research.core_question}"
+- Physics Facts: ${JSON.stringify(research.facts)}
+- Mechanism Steps: ${JSON.stringify(research.mechanism_steps)}
+- Key Components: ${JSON.stringify(research.key_components)}
+
 REQUIREMENTS:
 1. All 4 phases, physical 3D components, metrics, and checklist items MUST be 100% specific to "${topic}".
 2. Choose the most appropriate metricUnit and realistic baselineMetricValue & peakMetricValue for "${topic}".
-3. Define at least 3-4 distinct physical anatomical components with coordinates in Three.js metric space [-2.5..2.5] following the 4 layers: OUTER_CUTAWAY_SHELL, INTERNAL_CHAMBER, CORE_MECHANISM, ZOOM_SUBPART.
+3. Define at least 3-4 distinct physical anatomical components matching the research key components.
 4. Exactly 3 checklist items with maximum 3 to 4 words per item!
 5. Return ONLY valid JSON conforming to this schema structure:
 ${BLUEPRINT_SCHEMA_TEMPLATE}`;
@@ -141,5 +188,6 @@ ${BLUEPRINT_SCHEMA_TEMPLATE}`;
     temperature: 0.3,
   });
 
-  return { blueprint: data, modelUsed };
+  return { blueprint: data, modelUsed: `${researchModel} -> ${modelUsed}` };
 }
+

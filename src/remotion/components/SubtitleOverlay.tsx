@@ -1,6 +1,7 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import type { PhaseTimelineBlock, WordTiming } from "@/schemas/video-blueprint";
+import { VIDEO_FPS } from "../constants";
 
 interface SubtitleOverlayProps {
   phases: PhaseTimelineBlock[];
@@ -43,7 +44,7 @@ const INDONESIAN_CONJUNCTIONS = new Set([
  */
 export function chunkIntoNaturalPhrases(
   words: WordTiming[],
-  fps = 60,
+  fps = VIDEO_FPS,
   minDisplaySec = 0.8,
   phaseEndFrame = 0
 ): SubtitleChunk[] {

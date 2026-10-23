@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import { env } from "@/config/env";
+import { VIDEO_FPS } from "@/remotion/constants";
 import type { WordTimingSchema } from "@/schemas/video-blueprint";
 import type { z } from "zod";
 
@@ -99,7 +100,7 @@ export function computeWordTimings(
   narrationText: string,
   segmentStartSec: number,
   segmentDurationSec: number,
-  fps = 60,
+  fps = VIDEO_FPS,
   tailPadSec = 0.35
 ): WordTiming[] {
   const words = narrationText
@@ -235,15 +236,15 @@ export async function synthesizeScriptSegment(
   const publicAudioUrl = `/renders/${opts.jobId}/audio/${mp3Filename}`;
   const wordsJsonPath = path.join(audioDir, `${baseName}-words.json`);
 
-  // Audio filter: trim dead silence head & tail, apply speed, add clean 0.35s tail pad
+  // Audio filter: trim silence (-50dB start and stop), apply speed, add clean 0.35s tail pad
   const buildFilter = (sp: number) => {
     const atempo = Math.abs(sp - 1.0) > 0.01 ? `,atempo=${sp}` : "";
-    return `silenceremove=start_periods=1:start_duration=0.03:start_threshold=-42dB,areverse,silenceremove=start_periods=1:start_duration=0.03:start_threshold=-42dB,areverse${atempo},apad=pad_dur=0.35`;
+    return `silenceremove=start_periods=1:start_duration=0:start_threshold=-50dB:stop_periods=1:stop_duration=0.5:stop_threshold=-50dB${atempo},apad=pad_dur=0.35`;
   };
 
   // Helper to save word-level JSON [{word, start, end}]
   const saveWordsJson = (duration: number) => {
-    const wt = computeWordTimings(opts.text, 0, duration, 60, 0.35);
+    const wt = computeWordTimings(opts.text, 0, duration, VIDEO_FPS, 0.35);
     const jsonItems: WordTimingItem[] = wt.map((w) => ({
       word: w.word,
       start: w.startSec,

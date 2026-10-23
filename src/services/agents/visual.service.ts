@@ -12,10 +12,12 @@ import {
   type PhaseTimelineBlock,
   type IsoSceneGraph,
   type ThreeNode,
+  type VideoBlueprintScene,
 } from "@/schemas/video-blueprint";
 import { THREEJS_CUTAWAY_VISUAL_SYSTEM_PROMPT } from "./prompts";
 import { loadAgentSkill } from "@/lib/skill-loader";
 import { project3DTo2D } from "@/remotion/projection";
+import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "@/remotion/constants";
 
 const ISO_SCENE_TEMPLATE = `{
   "subjectTitle": "<Subject Cutaway Title>",
@@ -57,12 +59,53 @@ const ISO_SCENE_TEMPLATE = `{
   ]
 }`;
 
+export function buildUniversalScene(blueprint: DeconstructionBlueprint): IsoSceneGraph {
+  return {
+    subjectTitle: blueprint.topic,
+    objectFormFactor: `${blueprint.suggestedArchetype || "UNIVERSAL"} Cutaway Model`,
+    anatomyDecomposition: {
+      outerHousingShell: blueprint.components[0]?.name || "Outer Shell",
+      primaryInternalMechanism: blueprint.components[1]?.name || "Internal Mechanism",
+      zoomInSubComponents: blueprint.components[2]?.name || "Key Components",
+      physicalStateChange: blueprint.coreSimpleTruth,
+    },
+    cameraPreset: {
+      basePosition: [8, 6.5, 8],
+      baseZoom: 170,
+    },
+    enableSteamWisps: false,
+    nodes: blueprint.components.map((c, idx) => ({
+      nodeId: c.id,
+      componentId: c.id,
+      name: c.name,
+      geometryType: c.recommendedGeometryType || "box",
+      position: c.position3D || [0, idx * 0.3 - 0.4, 0],
+      rotation: [0, 0, 0] as [number, number, number],
+      scale: [1, 1, 1] as [number, number, number],
+      color: c.fillColor || (idx === 0 ? "#E2E8F0" : idx === 1 ? "#93C5FD" : "#FACC15"),
+      materialType: "toon" as const,
+      opacity: 1.0,
+      enableCutawayClip: idx === 0,
+      showEdgesOutline: true,
+      geometryArgs: {},
+      animation: {
+        type: "none" as const,
+        axis: "y" as const,
+        speed: 1.0,
+        amplitude: 0,
+        activeInPhases: [0, 1, 2, 3],
+      },
+    })),
+  };
+}
+
 export async function runVisualChoreographerAgent(params: {
   jobId: string;
   aspectRatioMode?: "SHORTS_9_16" | "LANDSCAPE_16_9";
   blueprint: DeconstructionBlueprint;
   script: ScriptArchitectOutput;
   tts: TtsSynchronizerOutput;
+  dynamicScenes?: VideoBlueprintScene[];
 }): Promise<RemotionCompositionProps> {
   const {
     jobId,
@@ -70,11 +113,12 @@ export async function runVisualChoreographerAgent(params: {
     blueprint,
     script,
     tts,
+    dynamicScenes,
   } = params;
 
   const isLandscape = aspectRatioMode === "LANDSCAPE_16_9";
-  const width = isLandscape ? 1920 : 1080;
-  const height = isLandscape ? 1080 : 1920;
+  const width = isLandscape ? 1920 : VIDEO_WIDTH;
+  const height = isLandscape ? 1080 : VIDEO_HEIGHT;
 
   // Dynamically load the anatomy skill instructions
   const anatomySkill = await loadAgentSkill(".agents/skill/anatomy");
@@ -122,15 +166,23 @@ STRICT 3D GEOMETRY GUIDELINES:
 5. Return ONLY valid JSON conforming to this schema structure:
 ${ISO_SCENE_TEMPLATE}`;
 
-  const response = await generateStructuredOmniroute<IsoSceneGraph>({
-    systemPrompt,
-    userPrompt,
-    schema: IsoSceneGraphSchema,
-    preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
-    temperature: 0.2,
-  });
-
-  const visualScene: IsoSceneGraph = response.data;
+  let visualScene: IsoSceneGraph;
+  try {
+    const response = await generateStructuredOmniroute<IsoSceneGraph>({
+      systemPrompt,
+      userPrompt,
+      schema: IsoSceneGraphSchema,
+      preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
+      temperature: 0.2,
+    });
+    visualScene = response.data;
+    if (!visualScene.nodes || visualScene.nodes.length === 0) {
+      visualScene = buildUniversalScene(blueprint);
+    }
+  } catch (err) {
+    console.warn(`[Visual] LLM 3D graph generation failed, using universal component factory:`, err);
+    visualScene = buildUniversalScene(blueprint);
+  }
 
   // Build Camera Keyframes per beat
   const baseCamPos = visualScene.cameraPreset?.basePosition ?? [8, 6.5, 8];
@@ -290,6 +342,25 @@ ${ISO_SCENE_TEMPLATE}`;
     }
   }
 
+  // Validate dynamicScenes popup_labels to strictly 0.1-0.9 range without random jitter
+  if (dynamicScenes && dynamicScenes.length > 0) {
+    for (const scene of dynamicScenes) {
+      if (scene.visual?.popup_labels) {
+        scene.visual.popup_labels = scene.visual.popup_labels.map((lbl) => ({
+          text: lbl.text,
+          x: Math.min(0.9, Math.max(0.1, Number(lbl.x) || 0.5)),
+          y: Math.min(0.9, Math.max(0.1, Number(lbl.y) || 0.5)),
+        }));
+      }
+      scene.visual.nodes = visualScene.nodes;
+    }
+  }
+
+  const totalFrames =
+    dynamicScenes && dynamicScenes.length > 0
+      ? dynamicScenes.reduce((acc, s) => acc + s.durationInFrames, 0)
+      : tts.totalDurationInFrames;
+
   const compositionProps: RemotionCompositionProps = {
     jobId,
     topic: blueprint.topic,
@@ -298,8 +369,8 @@ ${ISO_SCENE_TEMPLATE}`;
     coreSimpleTruth: blueprint.coreSimpleTruth,
     width,
     height,
-    fps: tts.fps,
-    durationInFrames: tts.totalDurationInFrames,
+    fps: VIDEO_FPS,
+    durationInFrames: totalFrames,
     aspectRatioMode,
     practicalChecklist: script.practicalChecklist,
     visualScene,
@@ -307,6 +378,7 @@ ${ISO_SCENE_TEMPLATE}`;
     pillCallouts,
     sfxOverlays,
     sfxTriggers: tts.sfxTriggers ?? [],
+    scenes: dynamicScenes,
   };
 
   return RemotionCompositionPropsSchema.parse(compositionProps);

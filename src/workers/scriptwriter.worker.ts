@@ -39,19 +39,27 @@ export function startScriptwriterWorker(): Worker {
           throw new Error("Missing DeconstructionBlueprint from Agent 1");
         }
 
-        const { script, modelUsed } = await runScriptwriterAgent(blueprint);
+        const { runDynamicSceneScriptwriterAgent } = await import(
+          "@/services/agents/scriptwriter.service"
+        );
+
+        const { scenes, script, modelUsed } = await runDynamicSceneScriptwriterAgent({
+          topic: state?.topic || job.data.topic,
+          blueprint,
+        });
 
         await updateJobState(
           jobId,
           (prev) => ({
             progressPercent: 46,
             script,
+            dynamicScenes: scenes,
             steps: { ...prev.steps, scriptwriter: "COMPLETED" },
           }),
           {
             agent: "AGENT_2_SCRIPTWRITER",
             level: "SUCCESS",
-            message: `Conversational script & layman metrics compiled (${modelUsed}): ${script.segments.length} acts + checklist card.`,
+            message: `Dynamic scenes & conversational script compiled (${modelUsed}): ${scenes.length} scenes (100% topic-dynamic).`,
           }
         );
 

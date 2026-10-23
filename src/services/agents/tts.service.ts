@@ -1,11 +1,13 @@
 import { env } from "@/config/env";
 import { computeWordTimings, synthesizeScriptSegment } from "@/lib/tts-client";
+import { VIDEO_FPS } from "@/remotion/constants";
 import {
   TtsSynchronizerOutputSchema,
   type AudioSegmentTimingSchema,
   type AudioSfxTrigger,
   type ScriptArchitectOutput,
   type TtsSynchronizerOutput,
+  type VideoBlueprintScene,
 } from "@/schemas/video-blueprint";
 import type { z } from "zod";
 
@@ -14,18 +16,19 @@ type AudioSegmentTiming = z.infer<typeof AudioSegmentTimingSchema>;
 export async function runTtsSynchronizerAgent(params: {
   jobId: string;
   script: ScriptArchitectOutput;
+  dynamicScenes?: VideoBlueprintScene[];
   onSegmentProgress?: (
     segmentIndex: number,
     total: number,
     audioUrl: string,
     durationSec: number
   ) => Promise<void>;
-}): Promise<TtsSynchronizerOutput> {
-  const { jobId, script, onSegmentProgress } = params;
-  const fps = env.REMOTION_FPS || 60;
+}): Promise<{ ttsOutput: TtsSynchronizerOutput; updatedScenes?: VideoBlueprintScene[] }> {
+  const { jobId, script, dynamicScenes, onSegmentProgress } = params;
+  const fps = VIDEO_FPS;
   const voice = env.UNLIMITEDTTS_VOICE || "Ethan";
   const language = env.UNLIMITEDTTS_LANGUAGE || "id-ID";
-  const speed = env.UNLIMITEDTTS_SPEED || 1.0;
+  const speed = env.UNLIMITEDTTS_SPEED || 1.1;
 
   const timedSegments: AudioSegmentTiming[] = [];
   const sfxTriggers: AudioSfxTrigger[] = [];
@@ -49,7 +52,7 @@ export async function runTtsSynchronizerAgent(params: {
     // Exact frame calculation directly from silence-trimmed & tail-padded audio:
     const durationInFrames = Math.max(
       Math.round(synthResult.durationInSeconds * fps),
-      120
+      Math.round(1.5 * fps)
     );
     const exactDurationSec = Number((durationInFrames / fps).toFixed(3));
 
@@ -66,6 +69,18 @@ export async function runTtsSynchronizerAgent(params: {
       fps,
       0.35
     );
+
+    // Update dynamicScenes scene if available
+    if (dynamicScenes && dynamicScenes[i]) {
+      dynamicScenes[i].durationInFrames = durationInFrames;
+      dynamicScenes[i].audioUrl = synthResult.audioUrl;
+      dynamicScenes[i].words = wordTimings.map((w) => ({
+        text: w.word,
+        startFrame: Math.max(0, w.startFrame - startFrame),
+        endFrame: Math.max(0, w.endFrame - startFrame),
+      }));
+      dynamicScenes[i].caption.words = dynamicScenes[i].words;
+    }
 
     timedSegments.push({
       segmentIndex: seg.segmentIndex,
@@ -116,10 +131,11 @@ export async function runTtsSynchronizerAgent(params: {
     speed,
     engineUsed: primaryEngineUsed,
     totalDurationInSeconds: Number(cumulativeSeconds.toFixed(3)),
-    totalDurationInFrames: Math.max(cumulativeFrames, 300),
+    totalDurationInFrames: Math.max(cumulativeFrames, 180),
     segments: timedSegments,
     sfxTriggers,
   };
 
-  return TtsSynchronizerOutputSchema.parse(output);
+  const parsedOutput = TtsSynchronizerOutputSchema.parse(output);
+  return { ttsOutput: parsedOutput, updatedScenes: dynamicScenes };
 }

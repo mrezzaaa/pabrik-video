@@ -3,6 +3,7 @@ import { createWorkerRedisConnection } from "@/config/redis";
 import { QUEUE_NAMES, type PipelineJobPayload } from "./flow";
 import { runTtsSynchronizerAgent } from "@/services/agents/tts.service";
 import { getJobState, updateJobState } from "@/services/job-store";
+import { VIDEO_FPS } from "@/remotion/constants";
 import type {
   ScriptArchitectOutput,
   TtsSynchronizerOutput,
@@ -39,9 +40,10 @@ export function startTtsWorker(): Worker {
           throw new Error("Missing ScriptArchitectOutput from Agent 2");
         }
 
-        const ttsOutput = await runTtsSynchronizerAgent({
+        const { ttsOutput, updatedScenes } = await runTtsSynchronizerAgent({
           jobId,
           script,
+          dynamicScenes: state?.dynamicScenes,
           onSegmentProgress: async (idx, total, audioUrl, durationSec) => {
             const pct = 50 + Math.round((idx / total) * 20);
             await updateJobState(
@@ -52,7 +54,7 @@ export function startTtsWorker(): Worker {
               {
                 agent: "AGENT_3_TTS",
                 level: "INFO",
-                message: `Segment ${idx}/${total} synthesized (${durationSec}s -> ${Math.ceil(durationSec * 60)} frames @ 60fps): ${audioUrl}`,
+                message: `Segment ${idx}/${total} synthesized (${durationSec}s -> ${Math.ceil(durationSec * VIDEO_FPS)} frames @ ${VIDEO_FPS}fps): ${audioUrl}`,
               }
             );
           },
@@ -63,12 +65,13 @@ export function startTtsWorker(): Worker {
           (prev) => ({
             progressPercent: 72,
             tts: ttsOutput,
+            dynamicScenes: updatedScenes || prev.dynamicScenes,
             steps: { ...prev.steps, tts: "COMPLETED" },
           }),
           {
             agent: "AGENT_3_TTS",
             level: "SUCCESS",
-            message: `Audio timing synchronized: ${ttsOutput.totalDurationInSeconds}s (${ttsOutput.totalDurationInFrames} frames @ 60fps) via ${ttsOutput.engineUsed}.`,
+            message: `Audio timing synchronized: ${ttsOutput.totalDurationInSeconds}s (${ttsOutput.totalDurationInFrames} frames @ ${VIDEO_FPS}fps) via ${ttsOutput.engineUsed}.`,
           }
         );
 

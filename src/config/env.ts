@@ -22,7 +22,7 @@ const envSchema = z.object({
 
   // Remotion Settings
   REMOTION_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(4),
-  REMOTION_FPS: z.coerce.number().int().default(60),
+  REMOTION_FPS: z.coerce.number().int().default(30),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

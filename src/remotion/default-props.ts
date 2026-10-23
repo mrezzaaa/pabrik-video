@@ -7,12 +7,13 @@ import type {
   ThreeNode,
 } from "@/schemas/video-blueprint";
 import { project3DTo2D } from "./projection";
+import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "./constants";
 
 function computeClientWordTimings(
   narrationText: string,
   segmentStartSec: number,
   segmentDurationSec: number,
-  fps = 60
+  fps = VIDEO_FPS
 ): WordTiming[] {
   const words = narrationText
     .trim()
@@ -61,7 +62,7 @@ function computeClientWordTimings(
 // ==========================================
 export function buildSolarPanelCompositionProps(): RemotionCompositionProps {
   const topic = "Bagaimana panel surya mengubah cahaya matahari jadi listrik rumah?";
-  const fps = 60;
+  const fps = VIDEO_FPS;
 
   const actNarrations = [
     "Tagihan listrik naik terus. Tapi atap rumahmu bisa menghasilkan jutaan watt gratis langsung dari matahari!",
@@ -392,9 +393,9 @@ export function buildSolarPanelCompositionProps(): RemotionCompositionProps {
     laymanHookTitle: "Cara Solar Panel <highlight>Ubah Cahaya Jadi Listrik</highlight>",
     everydayCategory: "ENERGI & TEKNOLOGI RUMAH TANGGA",
     coreSimpleTruth: "Foton cahaya matahari melepaskan elektron dari atom silikon murni untuk menghasilkan arus DC.",
-    width: 1080,
-    height: 1920,
-    fps: 60,
+    width: VIDEO_WIDTH,
+    height: VIDEO_HEIGHT,
+    fps: VIDEO_FPS,
     durationInFrames: cursorFrames,
     aspectRatioMode: "SHORTS_9_16",
     practicalChecklist: {

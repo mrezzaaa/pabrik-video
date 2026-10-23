@@ -1,12 +1,17 @@
 import React from "react";
 import { Composition } from "remotion";
+import { KitabedahMain } from "./compositions/KitabedahMain";
 import { BedahVideoComposition } from "./compositions/BedahVideoComposition";
-import { RemotionCompositionPropsSchema } from "@/schemas/video-blueprint";
+import {
+  RemotionCompositionPropsSchema,
+  KitabedahCompositionPropsSchema,
+} from "@/schemas/video-blueprint";
 import {
   buildDefaultCompositionProps,
   buildSolarPanelCompositionProps,
   buildTsunamiCompositionProps,
 } from "./default-props";
+import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "./constants";
 
 export const RemotionRoot: React.FC = () => {
   const defaultProps = buildDefaultCompositionProps();
@@ -15,50 +20,58 @@ export const RemotionRoot: React.FC = () => {
 
   return (
     <>
+      {/* 1. Primary Dynamic Composition: KitabedahMain (1080x1920 @ 30fps) */}
       <Composition
-        id="BedahVideoShorts"
-        component={BedahVideoComposition}
+        id="KitabedahMain"
+        component={KitabedahMain as React.FC<any>}
         durationInFrames={defaultProps.durationInFrames}
-        fps={60}
-        width={1080}
-        height={1920}
-        schema={RemotionCompositionPropsSchema}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
         defaultProps={defaultProps}
       />
+
+      {/* 2. BedahVideoShorts alias to KitabedahMain for seamless pipeline rendering */}
       <Composition
-        id="SolarPanelShorts"
-        component={BedahVideoComposition}
-        durationInFrames={solarPanelProps.durationInFrames}
-        fps={60}
-        width={1080}
-        height={1920}
-        schema={RemotionCompositionPropsSchema}
-        defaultProps={solarPanelProps}
+        id="BedahVideoShorts"
+        component={KitabedahMain as React.FC<any>}
+        durationInFrames={defaultProps.durationInFrames}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+        defaultProps={defaultProps}
       />
-      <Composition
-        id="TsunamiShorts"
-        component={BedahVideoComposition}
-        durationInFrames={tsunamiProps.durationInFrames}
-        fps={60}
-        width={1080}
-        height={1920}
-        schema={RemotionCompositionPropsSchema}
-        defaultProps={tsunamiProps}
-      />
+
+      {/* 3. Legacy BedahVideoComposition kept at 1080x1920 30fps */}
       <Composition
         id="BedahVideoComposition"
-        component={BedahVideoComposition}
+        component={KitabedahMain as React.FC<any>}
         durationInFrames={defaultProps.durationInFrames}
-        fps={60}
-        width={1920}
-        height={1080}
-        schema={RemotionCompositionPropsSchema}
-        defaultProps={{
-          ...defaultProps,
-          width: 1920,
-          height: 1080,
-          aspectRatioMode: "LANDSCAPE_16_9",
-        }}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+        defaultProps={defaultProps}
+      />
+
+      {/* 4. Fixture Previews */}
+      <Composition
+        id="SolarPanelShorts"
+        component={KitabedahMain as React.FC<any>}
+        durationInFrames={solarPanelProps.durationInFrames}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+        defaultProps={solarPanelProps}
+      />
+
+      <Composition
+        id="TsunamiShorts"
+        component={KitabedahMain as React.FC<any>}
+        durationInFrames={tsunamiProps.durationInFrames}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+        defaultProps={tsunamiProps}
       />
     </>
   );

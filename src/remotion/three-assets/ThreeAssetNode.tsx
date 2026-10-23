@@ -939,6 +939,20 @@ export const ThreeAssetNode: React.FC<ThreeAssetNodeProps> = ({
         );
       }
 
+      case "liquid": {
+        const r = args.radiusTop ?? args.radiusBottom ?? 0.8;
+        const h = args.height ?? 1.6;
+        return (
+          <mesh>
+            <cylinderGeometry args={[r, r, h, 32]} />
+            {renderMaterial()}
+            {node.showEdgesOutline && (
+              <Edges threshold={22} color="#1E293B" scale={1.001} />
+            )}
+          </mesh>
+        );
+      }
+
       default:
         return (
           <mesh>

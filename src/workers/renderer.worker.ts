@@ -3,6 +3,7 @@ import { createWorkerRedisConnection } from "@/config/redis";
 import { QUEUE_NAMES, type PipelineJobPayload } from "./flow";
 import { runRemotionRenderAgent } from "@/services/agents/renderer.service";
 import { getJobState, updateJobState } from "@/services/job-store";
+import { VIDEO_FPS } from "@/remotion/constants";
 import type { RemotionCompositionProps } from "@/schemas/video-blueprint";
 
 export function startRendererWorker(): Worker {
@@ -88,7 +89,7 @@ export function startRendererWorker(): Worker {
           {
             agent: "AGENT_5_RENDERER",
             level: "SUCCESS",
-            message: `Final 1080p/60fps MP4 rendered to ${outputMp4Url}`,
+            message: `Final 1080x1920 @ ${VIDEO_FPS}fps MP4 rendered to ${outputMp4Url}`,
           }
         );
 
