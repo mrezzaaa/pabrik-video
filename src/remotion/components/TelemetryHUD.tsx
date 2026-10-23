@@ -53,12 +53,26 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ phases }) => {
   const { primaryMetric, statusBadge, secondaryMetric, chapterTitle } =
     activePhase;
 
-  // Live interpolated primary metric (e.g., 100,0 °C -> 120,5 °C)
-  const rawValue = interpolate(
+  const prevPhaseIndex = Math.max(0, (activePhase?.segmentIndex ?? 0) - 1);
+  const prevPhase = phases[prevPhaseIndex] ?? activePhase;
+
+  // Smoothly blend primary metric across beat boundaries so numbers glide continuously
+  const prevEndingValue = prevPhase.primaryMetric.endValue;
+  const currentTargetValue = interpolate(
     phaseProgress,
     [0, 0.75, 1],
     [primaryMetric.startValue, primaryMetric.endValue, primaryMetric.endValue],
   );
+
+  const blendProgress = interpolate(localFrame, [0, 20], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const easedBlend = 0.5 - 0.5 * Math.cos(blendProgress * Math.PI);
+  const rawValue =
+    activePhase.segmentIndex === 0
+      ? currentTargetValue
+      : interpolate(easedBlend, [0, 1], [prevEndingValue, currentTargetValue]);
 
   // Format with Indonesian comma decimal separator (e.g., 120,5 °C)
   const formattedNumber = rawValue

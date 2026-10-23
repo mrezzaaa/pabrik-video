@@ -79,40 +79,51 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
+  // Anticipatory transition: start moving 0.20s (12 frames at 60fps) before the next beat starts
+  const ANTICIPATION_FRAMES = 12;
+
+  let targetIndex = 0;
+  for (let i = phases.length - 1; i >= 0; i--) {
+    const threshold = phases[i].startFrame - (i === 0 ? 0 : ANTICIPATION_FRAMES);
+    if (frame >= threshold) {
+      targetIndex = i;
+      break;
+    }
+  }
+
+  const targetPhase = phases[targetIndex] ?? phases[0];
+  const sourcePhase = phases[Math.max(0, targetIndex - 1)] ?? targetPhase;
+
   const activePhase =
     phases.find((p) => frame >= p.startFrame && frame < p.endFrame) ??
     phases[phases.length - 1] ??
     phases[0];
 
-  const prevPhaseIndex = Math.max(0, (activePhase?.segmentIndex ?? 0) - 1);
-  const prevPhase = phases[prevPhaseIndex] ?? activePhase;
-
-  const localFrame = Math.max(0, frame - (activePhase?.startFrame ?? 0));
-
-  // Smooth spring camera zoom & pan (damping: 18, stiffness: 120)
-  const camSpring = spring({
-    frame: localFrame,
-    fps,
-    config: {
-      damping: 18,
-      stiffness: 120,
-    },
-  });
+  // Transition window: 24 frames (400ms) with smooth sinusoidal easing
+  const transitionStart = targetPhase.startFrame - (targetIndex === 0 ? 0 : ANTICIPATION_FRAMES);
+  const transitionFrames = 24;
+  const progress = interpolate(
+    frame,
+    [transitionStart, transitionStart + transitionFrames],
+    [0, 1],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+  const easedProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI);
 
   const camX = interpolate(
-    camSpring,
+    easedProgress,
     [0, 1],
-    [prevPhase?.camera.x ?? 0, activePhase?.camera.x ?? 0]
+    [sourcePhase.camera.x, targetPhase.camera.x]
   );
   const camY = interpolate(
-    camSpring,
+    easedProgress,
     [0, 1],
-    [prevPhase?.camera.y ?? 0, activePhase?.camera.y ?? 0]
+    [sourcePhase.camera.y, targetPhase.camera.y]
   );
   const camScale = interpolate(
-    camSpring,
+    easedProgress,
     [0, 1],
-    [prevPhase?.camera.scale ?? 1, activePhase?.camera.scale ?? 1]
+    [sourcePhase.camera.scale, targetPhase.camera.scale]
   );
 
   // Painter's order: sort parts back-to-front (layerOrder 1..100)

@@ -212,6 +212,7 @@ ${ISO_SCENE_GRAPH_TEMPLATE}`;
     });
 
     // Compute pill callout anchor from part's 2D anchorPoint on the 1000x1000 stage
+    // Compute pill callout anchor & trigger from part's 2D anchorPoint synced to spoken narration words
     for (const pill of scriptSeg.pillLabels) {
       const matchedPart = visualScene.parts.find(
         (p) => p.componentId === pill.componentId
@@ -224,18 +225,37 @@ ${ISO_SCENE_GRAPH_TEMPLATE}`;
         y: Math.round(Math.max(620, Math.min(1420, 520 + stageY))),
       };
 
-      const triggerOffset = Math.floor(
-        ttsSeg.durationInFrames * (pill.relativeTriggerRatio ?? 0.15)
-      );
-      const startFrame = ttsSeg.startFrame + triggerOffset;
+      // Find word timestamp when this component is actually mentioned in narration
+      const cleanPillTerms = pill.text
+        .replace(/[→←\-><]/g, "")
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length >= 3);
+      const cleanPartTerms = (matchedPart?.name || "")
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length >= 3);
+      const searchTerms = [...cleanPillTerms, ...cleanPartTerms];
+
+      let matchedWord = ttsSeg.wordTimings.find((wt) => {
+        const cleanW = wt.word.toLowerCase().replace(/[^a-z0-9]/g, "");
+        return searchTerms.some(
+          (term) => cleanW.includes(term) || term.includes(cleanW)
+        );
+      });
+
+      // Anticipation offset: show visual 0.20s (12 frames at 60fps) before spoken word
+      const anticipationFrames = Math.round(0.2 * tts.fps);
+      const baseTriggerFrame = matchedWord
+        ? Math.max(ttsSeg.startFrame, matchedWord.startFrame - anticipationFrames)
+        : ttsSeg.startFrame + Math.min(30, Math.floor(ttsSeg.durationInFrames * 0.15));
+
+      const startFrame = baseTriggerFrame;
       const pillDurationFrames = Math.min(
-        Math.round((pill.durationSeconds ?? 4.2) * tts.fps),
-        ttsSeg.endFrame - startFrame - 4
+        Math.round((pill.durationSeconds ?? 4.0) * tts.fps),
+        Math.max(90, ttsSeg.endFrame - startFrame - 6)
       );
-      const endFrame = Math.max(
-        startFrame + 75,
-        startFrame + pillDurationFrames
-      );
+      const endFrame = Math.max(startFrame + 75, startFrame + pillDurationFrames);
 
       pillCallouts.push({
         id: pill.id,
@@ -249,13 +269,18 @@ ${ISO_SCENE_GRAPH_TEMPLATE}`;
     }
 
     if (scriptSeg.sfxCue) {
-      const sfxStartFrame =
-        ttsSeg.startFrame +
-        Math.floor(
-          ttsSeg.durationInFrames *
-            (scriptSeg.sfxCue.relativeTriggerRatio ?? 0.3)
-        );
-      const sfxEndFrame = Math.min(ttsSeg.endFrame - 6, sfxStartFrame + 135);
+      // Find word timestamp matching SFX cue text or fallback
+      const cleanSfx = scriptSeg.sfxCue.text.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const matchedSfxWord = ttsSeg.wordTimings.find((wt) => {
+        const w = wt.word.toLowerCase().replace(/[^a-z0-9]/g, "");
+        return w.includes(cleanSfx) || cleanSfx.includes(w);
+      });
+
+      const sfxStartFrame = matchedSfxWord
+        ? Math.max(ttsSeg.startFrame, matchedSfxWord.startFrame - Math.round(0.12 * tts.fps))
+        : ttsSeg.startFrame + Math.floor(ttsSeg.durationInFrames * (scriptSeg.sfxCue.relativeTriggerRatio ?? 0.25));
+
+      const sfxEndFrame = Math.min(ttsSeg.endFrame - 6, sfxStartFrame + 120);
 
       sfxOverlays.push({
         id: `sfx_overlay_${i}`,
