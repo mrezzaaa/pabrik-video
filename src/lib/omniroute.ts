@@ -5,12 +5,20 @@ import { env } from "@/config/env";
 /**
  * OpenAI-compatible SDK client configured for Omniroute Gateway (http://localhost:20128/v1)
  */
-export const omnirouteClient = new OpenAI({
-  baseURL: env.OMNIROUTE_BASE_URL,
-  apiKey: env.OMNIROUTE_API_KEY,
-  timeout: 45_000,
-  maxRetries: 2,
-});
+let _omnirouteClient: OpenAI | null = null;
+
+export function getOmnirouteClient(): OpenAI {
+  if (!_omnirouteClient) {
+    _omnirouteClient = new OpenAI({
+      baseURL: env.OMNIROUTE_BASE_URL,
+      apiKey: env.OMNIROUTE_API_KEY,
+      timeout: 45_000,
+      maxRetries: 2,
+      dangerouslyAllowBrowser: true,
+    });
+  }
+  return _omnirouteClient;
+}
 
 const MODEL_FALLBACK_CASCADE = [
   env.OMNIROUTE_PRIMARY_MODEL,
@@ -60,7 +68,7 @@ export async function generateStructuredOmniroute<T>(params: {
   for (const model of modelsToTry) {
     try {
       const combinedPrompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
-      const response = await omnirouteClient.chat.completions.create({
+      const response = await getOmnirouteClient().chat.completions.create({
         model,
         temperature,
         max_tokens: maxTokens,

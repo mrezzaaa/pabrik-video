@@ -53,7 +53,11 @@ export function startRendererWorker(): Worker {
       );
 
       try {
-        const { outputMp4Url } = await runRemotionRenderAgent({
+        // Dynamically resolve renderer.service on every job so Next.js dev mode always uses the latest module code
+        const { runRemotionRenderAgent: executeRender } = await import(
+          "@/services/agents/renderer.service"
+        );
+        const { outputMp4Url } = await executeRender({
           jobId,
           compositionProps,
           onProgress: async (pct) => {
@@ -78,6 +82,7 @@ export function startRendererWorker(): Worker {
             status: "COMPLETED",
             progressPercent: 100,
             outputMp4Url,
+            error: undefined,
             steps: { ...prev.steps, renderer: "COMPLETED" },
           }),
           {
