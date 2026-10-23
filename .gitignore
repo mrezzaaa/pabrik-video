@@ -30,3 +30,4 @@ next-env.d.ts
 # generated renders (keep directory structure if needed)
 /public/renders/*
 !/public/renders/.gitkeep
+tsconfig.tsbuildinfo
