@@ -21,6 +21,7 @@ export const Point3DSchema = z.object({
   y: z.number().catch(0),
   z: z.number().catch(0),
 });
+export type Point3D = z.infer<typeof Point3DSchema>;
 
 /**
  * 1. AGENT 1 OUTPUT: Layman Storyboarder (`deconstructor.worker.ts`)

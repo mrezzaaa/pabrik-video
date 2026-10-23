@@ -66,14 +66,35 @@ export function isFaceFacingCamera(normal: Point3D): boolean {
 /**
  * Menghitung normal segitiga/poligon dari 3 titik pertama (counter-clockwise outward).
  */
-export function calculateFaceNormal(p0: Point3D, p1: Point3D, p2: Point3D): Point3D {
-  const ax = p1.x - p0.x;
-  const ay = p1.y - p0.y;
-  const az = p1.z - p0.z;
+export function calculateFaceNormal(
+  ptsOrP0: Point3D[] | Point3D,
+  p1?: Point3D,
+  p2?: Point3D
+): Point3D {
+  let pt0: Point3D;
+  let pt1: Point3D;
+  let pt2: Point3D;
 
-  const bx = p2.x - p0.x;
-  const by = p2.y - p0.y;
-  const bz = p2.z - p0.z;
+  if (Array.isArray(ptsOrP0)) {
+    if (ptsOrP0.length < 3) {
+      return { x: 0, y: 0, z: 1 };
+    }
+    pt0 = ptsOrP0[0];
+    pt1 = ptsOrP0[1];
+    pt2 = ptsOrP0[2];
+  } else {
+    pt0 = ptsOrP0;
+    pt1 = p1 ?? { x: pt0.x + 1, y: pt0.y, z: pt0.z };
+    pt2 = p2 ?? { x: pt0.x, y: pt0.y + 1, z: pt0.z };
+  }
+
+  const ax = pt1.x - pt0.x;
+  const ay = pt1.y - pt0.y;
+  const az = pt1.z - pt0.z;
+
+  const bx = pt2.x - pt0.x;
+  const by = pt2.y - pt0.y;
+  const bz = pt2.z - pt0.z;
 
   const nx = ay * bz - az * by;
   const ny = az * bx - ax * bz;
@@ -105,3 +126,6 @@ export function rotateZ(pt: Point3D, angleDeg: number, cx = 0, cy = 0): Point3D 
     z: pt.z,
   };
 }
+
+export const rotatePointZ = rotateZ;
+

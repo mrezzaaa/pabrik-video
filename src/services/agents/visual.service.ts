@@ -265,10 +265,10 @@ export function validateSemanticScene(
 
   // 3. All blueprint componentIds represented (multiple parts may share a componentId)
   for (const comp of blueprint.components) {
-    const hasPart = scene.parts.some((p) => p.componentId === comp.componentId);
+    const hasPart = scene.parts.some((p) => p.componentId === comp.id);
     if (!hasPart) {
       errors.push(
-        `Blueprint component "${comp.name}" (id: ${comp.componentId}) has no corresponding visual part.`
+        `Blueprint component "${comp.name}" (id: ${comp.id}) has no corresponding visual part.`
       );
     }
   }

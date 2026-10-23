@@ -371,11 +371,12 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
 
         // Part static rotationZ
         if (part.rotationZ) {
-          const pr = rotatePointZ({ x, y, z }, part.rotationZ, {
-            x: partCenter.x,
-            y: partCenter.y,
-            z: 0,
-          });
+          const pr = rotatePointZ(
+            { x, y, z },
+            part.rotationZ,
+            partCenter.x,
+            partCenter.y
+          );
           x = pr.x;
           y = pr.y;
           z = pr.z;
@@ -555,7 +556,7 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
               .join(" ");
 
             const shading = getFaceShading(
-              face.colorToken,
+              face.colorToken ?? "metal",
               face.role,
               face.material
             );

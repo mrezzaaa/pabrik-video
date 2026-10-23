@@ -1,7 +1,13 @@
 import type {
   RemotionCompositionProps,
   WordTiming,
+  SemanticIsoScene,
+  FramePillCallout,
+  PhaseTimelineBlock,
+  Point3D,
 } from "@/schemas/video-blueprint";
+import { computeStageFit, project3DAnchor, type Point2D } from "@/iso";
+
 function computeClientWordTimings(
   narrationText: string,
   segmentStartSec: number,
@@ -50,30 +56,52 @@ function computeClientWordTimings(
   });
 }
 
-function projectStageAnchor(stageX: number, stageY: number) {
-  return {
-    x: Math.round(Math.max(200, Math.min(880, 40 + stageX))),
-    y: Math.round(Math.max(620, Math.min(1420, 520 + stageY))),
-  };
+function computeSceneSamplePoints(scene: SemanticIsoScene): Point3D[] {
+  const pts: Point3D[] = [];
+  for (const part of scene.parts) {
+    const p = part.position;
+    const s = part.shape;
+    if (s.type === "box" || s.type === "cutawayBox") {
+      pts.push({ x: p.x, y: p.y, z: p.z });
+      pts.push({ x: p.x + s.dx, y: p.y + s.dy, z: p.z + s.dz });
+    } else if (s.type === "sheet") {
+      pts.push({ x: p.x, y: p.y, z: p.z });
+      pts.push({ x: p.x + s.dx, y: p.y + s.dy, z: p.z + (s.thickness ?? 0.2) });
+    } else if (s.type === "wedge") {
+      pts.push({ x: p.x, y: p.y, z: p.z });
+      pts.push({ x: p.x + s.dx, y: p.y + s.dy, z: p.z + s.dz });
+    } else if (s.type === "cylinder" || s.type === "cutawayCylinder") {
+      pts.push({ x: p.x - s.radius, y: p.y - s.radius, z: p.z });
+      pts.push({ x: p.x + s.radius, y: p.y + s.radius, z: p.z + s.height });
+    } else if (s.type === "pipe") {
+      for (const pt of s.points) {
+        pts.push({ x: p.x + pt.x, y: p.y + pt.y, z: p.z + pt.z });
+      }
+    } else if (s.type === "waveSurface") {
+      pts.push({ x: p.x, y: p.y, z: p.z });
+      pts.push({ x: p.x + s.dx, y: p.y + s.dy, z: p.z + (s.amplitude ?? 0.4) * 2 });
+    } else {
+      pts.push({ x: p.x, y: p.y, z: p.z });
+    }
+  }
+  return pts;
 }
 
-/**
- * Default Studio Preview Composition Props:
- * "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W"
- * Compiled with Freeform Multi-Layered Isometric Vector Cutaway Stage (viewBox="0 0 1000 1000")
- */
-export function buildDefaultCompositionProps(): RemotionCompositionProps {
-  const topic = "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W";
+// ==========================================
+// FIXTURE 1: SOLAR PANEL (PANEL SURYA)
+// ==========================================
+export function buildSolarPanelCompositionProps(): RemotionCompositionProps {
+  const topic = "Bagaimana panel surya mengubah cahaya matahari jadi listrik rumah?";
   const fps = 60;
 
   const actNarrations = [
-    "Cas HP biasa butuh sejam. Pakai fast charging dua ratus Watt, cuma sepuluh menit penuh!",
-    "Rahasianya baterai dibagi dua sel paralel. Ion Lithium nyebrang dua kali lebih cepat dari katoda ke anoda.",
-    "Membran separator jaga agar gak korslet. Chip pintar juga atur arus biar suhu tetap adem.",
-    "Baterai penuh kilat dan tetap awet. Sebelum pakai cas dua ratus Watt, cek tiga hal ini ya!",
+    "Tagihan listrik naik terus. Tapi atap rumahmu bisa menghasilkan jutaan watt gratis langsung dari matahari!",
+    "Rahasianya ada di lapisan silikon murni. Saat partikel foton menghantam atom silikon, elektron melompat lepas dan menghasilkan arus DC.",
+    "Busbar tembaga menangkap jutaan elektron ini lalu dialirkan ke inverter untuk diubah jadi listrik rumah tangga.",
+    "Listrik gratis puluhan tahun tanpa polusi. Sebelum pasang solar panel, perhatikan tiga syarat ini ya!",
   ];
 
-  const durations = [7, 11, 10, 9];
+  const durations = [7, 10, 9, 8];
   let cursorSec = 0;
   let cursorFrames = 0;
 
@@ -91,382 +119,689 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
       startFrame,
       endFrame,
       durationInFrames,
-      wordTimings: computeClientWordTimings(
-        actNarrations[idx],
-        startSec,
-        dur,
-        fps
-      ),
+      wordTimings: computeClientWordTimings(actNarrations[idx], startSec, dur, fps),
     };
   });
 
-  const anchorCathode = projectStageAnchor(380, 460);
-  const anchorSeparator = projectStageAnchor(500, 460);
-  const anchorAnode = projectStageAnchor(620, 460);
-  const anchorBms = projectStageAnchor(500, 720);
+  const visualScene: SemanticIsoScene = {
+    subjectTitle: "SOLAR PANEL PHOTOVOLTAIC CUTAWAY",
+    objectFormFactor: "Multi-Layer Monocrystalline Solar Cell",
+    anatomyDecomposition: {
+      outerStructure: "Kaca pelindung tempered & bingkai aluminium berarsir cutaway",
+      cutawayCrossSection: "Penampang melintang belahan lapisan silikon fotovoltaik P-N",
+      coreInternalParts: "Wafer silikon doping dan busbar grid konduktor tembaga",
+      movingMechanism: "Eksitasi elektron terbebas mengalir menjadi arus searah DC",
+    },
+    parts: [
+      {
+        partId: "part_frame_glass",
+        componentId: "comp_1",
+        name: "Rangka & Kaca Tempered",
+        shape: {
+          type: "cutawayBox",
+          dx: 8,
+          dy: 6,
+          dz: 2.2,
+          cutRatioX: 0.5,
+          cutRatioY: 0.5,
+          floor: 0.4,
+        },
+        position: { x: 2, y: 3, z: 1 },
+        rotationZ: 0,
+        color: "shell",
+        material: "glass",
+        animation: {
+          type: "none",
+          axis: "z",
+          amplitude: 0,
+          speed: 1,
+          activeInPhases: [0, 1, 2, 3],
+        },
+        states: [
+          { phase: 0, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 1, visible: true, offset3D: { x: 0, y: 0, z: 1.8 }, emphasis: "normal" },
+          { phase: 2, visible: true, offset3D: { x: 0, y: 0, z: 1.8 }, emphasis: "dim" },
+          { phase: 3, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+        ],
+      },
+      {
+        partId: "part_silicon_cells",
+        componentId: "comp_2",
+        name: "Sel Silikon P-N",
+        shape: {
+          type: "sheet",
+          dx: 7.2,
+          dy: 5.2,
+          thickness: 0.35,
+        },
+        position: { x: 2.4, y: 3.4, z: 1.4 },
+        rotationZ: 0,
+        color: "accent",
+        material: "solid",
+        animation: {
+          type: "pulse",
+          axis: "z",
+          amplitude: 0.08,
+          speed: 1.5,
+          activeInPhases: [1, 2],
+        },
+        states: [
+          { phase: 0, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 1, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "focus" },
+          { phase: 2, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "focus" },
+          { phase: 3, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+        ],
+      },
+      {
+        partId: "part_busbar_grid",
+        componentId: "comp_3",
+        name: "Busbar Pita Tembaga",
+        shape: {
+          type: "pipe",
+          points: [
+            { x: 3, y: 4, z: 1.8 },
+            { x: 8.5, y: 4, z: 1.8 },
+            { x: 8.5, y: 7.5, z: 1.8 },
+          ],
+          radius: 0.22,
+        },
+        position: { x: 0, y: 0, z: 0 },
+        rotationZ: 0,
+        color: "metal",
+        material: "solid",
+        animation: {
+          type: "flow",
+          axis: "x",
+          amplitude: 1,
+          speed: 2,
+          activeInPhases: [1, 2, 3],
+        },
+        states: [
+          { phase: 0, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 1, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 2, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "focus" },
+          { phase: 3, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+        ],
+      },
+      {
+        partId: "part_junction_box",
+        componentId: "comp_4",
+        name: "Junction Box & Dioda",
+        shape: {
+          type: "box",
+          dx: 2.2,
+          dy: 1.8,
+          dz: 1.0,
+        },
+        position: { x: 7, y: 3.5, z: 0.2 },
+        rotationZ: 0,
+        color: "hot",
+        material: "solid",
+        animation: {
+          type: "none",
+          axis: "z",
+          amplitude: 0,
+          speed: 1,
+          activeInPhases: [0, 1, 2, 3],
+        },
+        states: [
+          { phase: 0, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 1, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 2, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "dim" },
+          { phase: 3, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+        ],
+      },
+    ],
+  };
+
+  const samplePoints = computeSceneSamplePoints(visualScene);
+  const fitConfig = computeStageFit(samplePoints, {
+    stageCenterX: 540,
+    stageCenterY: 1000,
+    maxStageWidth: 800,
+    maxStageHeight: 860,
+  });
+
+  const anchorComp1 = project3DAnchor({ x: 6, y: 6, z: 2.5 }, fitConfig);
+  const anchorComp2 = project3DAnchor({ x: 6, y: 6, z: 1.6 }, fitConfig);
+  const anchorComp3 = project3DAnchor({ x: 5.5, y: 4, z: 1.8 }, fitConfig);
+  const anchorComp4 = project3DAnchor({ x: 8.1, y: 4.4, z: 0.7 }, fitConfig);
+
+  // Prevent overlap between comp1 and comp2
+  if (Math.abs(anchorComp2.y - anchorComp1.y) < 80) {
+    anchorComp2.y = anchorComp1.y + 85;
+  }
+
+  const phases: PhaseTimelineBlock[] = [
+    {
+      segmentIndex: 0,
+      phaseType: "EVERYDAY_CONTRAST_HOOK",
+      chapterTitle: "MATAHARI JADI LISTRIK",
+      narrationText: actNarrations[0],
+      audioUrl: "",
+      startFrame: timings[0].startFrame,
+      endFrame: timings[0].endFrame,
+      durationInFrames: timings[0].durationInFrames,
+      wordTimings: timings[0].wordTimings,
+      camera: { startFrame: timings[0].startFrame, endFrame: timings[0].endFrame, x: 0, y: 0, scale: 1.0 },
+      primaryMetric: {
+        startValue: 0,
+        endValue: 0,
+        unit: "W",
+        decimals: 0,
+        isHighActive: false,
+        baselineValue: 0,
+        peakValue: 450,
+        sparklinePoints: [0, 0, 0, 0],
+      },
+      statusBadge: { text: "STANDBY", variant: "amber" },
+      secondaryMetric: "0 Wp / Standby",
+      activeComponentIds: ["comp_1", "comp_2", "comp_3", "comp_4"],
+      showChecklistCard: false,
+    },
+    {
+      segmentIndex: 1,
+      phaseType: "CORE_MECHANISM_CUTAWAY",
+      chapterTitle: "EFEK FOTOVOLTAIK",
+      narrationText: actNarrations[1],
+      audioUrl: "",
+      startFrame: timings[1].startFrame,
+      endFrame: timings[1].endFrame,
+      durationInFrames: timings[1].durationInFrames,
+      wordTimings: timings[1].wordTimings,
+      camera: { startFrame: timings[1].startFrame, endFrame: timings[1].endFrame, x: 0, y: -25, scale: 1.18 },
+      primaryMetric: {
+        startValue: 0,
+        endValue: 380,
+        unit: "W",
+        decimals: 0,
+        isHighActive: true,
+        baselineValue: 0,
+        peakValue: 450,
+        sparklinePoints: [20, 120, 260, 380],
+      },
+      statusBadge: { text: "AKTIF", variant: "green" },
+      secondaryMetric: "Arus DC 9.8 Ampere",
+      activeComponentIds: ["comp_2", "comp_3"],
+      showChecklistCard: false,
+    },
+    {
+      segmentIndex: 2,
+      phaseType: "COMPONENT_ZOOM_INS",
+      chapterTitle: "JARINGAN BUSBAR",
+      narrationText: actNarrations[2],
+      audioUrl: "",
+      startFrame: timings[2].startFrame,
+      endFrame: timings[2].endFrame,
+      durationInFrames: timings[2].durationInFrames,
+      wordTimings: timings[2].wordTimings,
+      camera: { startFrame: timings[2].startFrame, endFrame: timings[2].endFrame, x: 20, y: 60, scale: 1.55 },
+      primaryMetric: {
+        startValue: 380,
+        endValue: 450,
+        unit: "Wp",
+        decimals: 0,
+        isHighActive: true,
+        baselineValue: 0,
+        peakValue: 450,
+        sparklinePoints: [380, 400, 430, 450],
+      },
+      statusBadge: { text: "OPTIMAL", variant: "green" },
+      secondaryMetric: "Efisiensi Sel 21.4%",
+      activeComponentIds: ["comp_3"],
+      showChecklistCard: false,
+    },
+    {
+      segmentIndex: 3,
+      phaseType: "PRACTICAL_TAKEAWAY_LOOP",
+      chapterTitle: "CHECKLIST PEMASANGAN",
+      narrationText: actNarrations[3],
+      audioUrl: "",
+      startFrame: timings[3].startFrame,
+      endFrame: timings[3].endFrame,
+      durationInFrames: timings[3].durationInFrames,
+      wordTimings: timings[3].wordTimings,
+      camera: { startFrame: timings[3].startFrame, endFrame: timings[3].endFrame, x: 0, y: 10, scale: 1.02 },
+      primaryMetric: {
+        startValue: 450,
+        endValue: 450,
+        unit: "W",
+        decimals: 0,
+        isHighActive: true,
+        baselineValue: 0,
+        peakValue: 450,
+        sparklinePoints: [450, 450, 450, 450],
+      },
+      statusBadge: { text: "SIAP PASANG", variant: "green" },
+      secondaryMetric: "Garansi 25 Tahun",
+      activeComponentIds: ["comp_1", "comp_2", "comp_3", "comp_4"],
+      showChecklistCard: true,
+    },
+  ];
+
+  const pillCallouts: FramePillCallout[] = [
+    {
+      id: "pill_0",
+      componentId: "comp_1",
+      startFrame: timings[0].startFrame + 30,
+      endFrame: timings[0].endFrame - 15,
+      text: "KACA TEMPERED →",
+      direction: "RIGHT",
+      anchor: anchorComp1,
+    },
+    {
+      id: "pill_1",
+      componentId: "comp_2",
+      startFrame: timings[1].startFrame + 25,
+      endFrame: timings[1].endFrame - 20,
+      text: "← SEL SILIKON P-N",
+      direction: "LEFT",
+      anchor: anchorComp2,
+    },
+    {
+      id: "pill_2",
+      componentId: "comp_3",
+      startFrame: timings[2].startFrame + 20,
+      endFrame: timings[2].endFrame - 20,
+      text: "BUSBAR TEMBAGA →",
+      direction: "RIGHT",
+      anchor: anchorComp3,
+    },
+    {
+      id: "pill_3",
+      componentId: "comp_4",
+      startFrame: timings[3].startFrame + 20,
+      endFrame: timings[3].endFrame - 20,
+      text: "← JUNCTION BOX DC",
+      direction: "LEFT",
+      anchor: anchorComp4,
+    },
+  ];
 
   return {
-    jobId: "demo-battery-200w",
+    jobId: "fixture-solar-panel",
     topic,
-    laymanHookTitle: "Cas baterai 200W <highlight>kok bisa kilat?</highlight>",
-    everydayCategory: "TEKNOLOGI BATERAI & FAST CHARGING",
-    coreSimpleTruth:
-      "Arsitektur Dual-Cell membagi arus 200W ke dua jalur paralel",
+    laymanHookTitle: "Panel surya atap <highlight>bisa bikin listrik gratis?</highlight>",
+    everydayCategory: "ENERGI TERBARUKAN & FISIKA ELEKTRON",
+    coreSimpleTruth: "Partikel foton matahari melepaskan elektron silikon menjadi arus listrik",
     width: 1080,
     height: 1920,
     fps: 60,
     durationInFrames: cursorFrames,
     aspectRatioMode: "SHORTS_9_16",
     practicalChecklist: {
-      title: "CEK SEBELUM FAST CHARGING:",
+      title: "SYARAT PASANG SOLAR PANEL:",
       items: [
-        "Kabel asli 10A / E-Marker",
-        "Adaptor resmi GaN 200W",
-        "Suhu HP di bawah 40°C",
+        "Arah atap menghadap utara/selatan",
+        "Tanpa bayangan pohon/gedung",
+        "Inverter bersertifikasi SNI",
       ],
     },
-    visualScene: {
-      subjectTitle: "DUAL-CELL LITHIUM-ION 200W",
-      objectFormFactor: "Dual-Cell Fast Charging Li-Ion Cutaway",
-      anatomyDecomposition: {
-        outerStructure:
-          "Casing aluminium pelindung baterai Dual-Cell dengan belahan melintang 90°",
-        cutawayCrossSection:
-          "Penampang melintang memperlihatkan katoda LiCoO2 dan anoda grafit",
-        coreInternalParts:
-          "Membran separator polimer mikro dan modul chip BMS dual-charge pump",
-        movingMechanism:
-          "Distribusi arus elektron 200W dari port USB-C menuju sel kembar",
-      },
-      svgDefsMarkup: `
-        <linearGradient id="grad-alu" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#F1F5F9" />
-          <stop offset="100%" stop-color="#CBD5E1" />
-        </linearGradient>
-        <linearGradient id="grad-cathode" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#BFDBFE" />
-          <stop offset="100%" stop-color="#60A5FA" />
-        </linearGradient>
-        <linearGradient id="grad-anode" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#BBF7D0" />
-          <stop offset="100%" stop-color="#4ADE80" />
-        </linearGradient>
-        <linearGradient id="grad-sep" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#FEF08A" />
-          <stop offset="100%" stop-color="#FACC15" />
-        </linearGradient>
-      `,
-      parts: [
-        {
-          partId: "part_outer_housing",
-          componentId: "comp_bms",
-          name: "Casing Dual-Cell Aluminium",
-          layerOrder: 10,
-          isCutawayWall: true,
-          anchorPoint: { x: 300, y: 340 },
-          svgMarkup: `<path d="M 220 280 L 500 120 L 780 280 L 780 620 L 500 780 L 220 620 Z" fill="url(#grad-alu)" stroke="#1E293B" stroke-width="2.5" fill-opacity="0.3" stroke-dasharray="6 4" stroke-linejoin="round" />`,
-          animation: {
-            type: "none",
-            dx: 0,
-            dy: 0,
-            rotateDeg: 0,
-            scaleFactor: 1,
-            speed: 1,
-            activeInPhases: [0, 1, 2, 3],
-          },
-        },
-        {
-          partId: "part_cathode_cell",
-          componentId: "comp_cathode",
-          name: "Katoda LiCoO₂ (+)",
-          layerOrder: 20,
-          isCutawayWall: false,
-          anchorPoint: { x: 380, y: 460 },
-          svgMarkup: `<path d="M 320 400 L 440 330 L 440 600 L 320 670 Z" fill="url(#grad-cathode)" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round" />`,
-          animation: {
-            type: "pulse",
-            dx: 0,
-            dy: 0,
-            rotateDeg: 0,
-            scaleFactor: 1.05,
-            speed: 1.2,
-            activeInPhases: [0, 1, 2, 3],
-          },
-        },
-        {
-          partId: "part_separator_membrane",
-          componentId: "comp_separator",
-          name: "Membran Separator",
-          layerOrder: 30,
-          isCutawayWall: false,
-          anchorPoint: { x: 500, y: 460 },
-          svgMarkup: `<path d="M 460 320 L 520 285 L 520 570 L 460 605 Z" fill="url(#grad-sep)" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round" />`,
-          animation: {
-            type: "translate",
-            dx: 0,
-            dy: 5,
-            rotateDeg: 0,
-            scaleFactor: 1,
-            speed: 1.1,
-            activeInPhases: [1, 2, 3],
-          },
-        },
-        {
-          partId: "part_anode_graphite",
-          componentId: "comp_anode",
-          name: "Anoda Grafit (-)",
-          layerOrder: 40,
-          isCutawayWall: false,
-          anchorPoint: { x: 620, y: 460 },
-          svgMarkup: `<path d="M 540 275 L 660 345 L 660 615 L 540 545 Z" fill="url(#grad-anode)" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round" />`,
-          animation: {
-            type: "pulse",
-            dx: 0,
-            dy: 0,
-            rotateDeg: 0,
-            scaleFactor: 1.05,
-            speed: 1.2,
-            activeInPhases: [0, 1, 2, 3],
-          },
-        },
-        {
-          partId: "part_bms_controller",
-          componentId: "comp_bms",
-          name: "Chip BMS Dual-Pump 200W",
-          layerOrder: 50,
-          isCutawayWall: false,
-          anchorPoint: { x: 500, y: 720 },
-          svgMarkup: `<polygon points="360,680 640,680 580,760 300,760" fill="#F87171" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round" />`,
-          animation: {
-            type: "none",
-            dx: 0,
-            dy: 0,
-            rotateDeg: 0,
-            scaleFactor: 1,
-            speed: 1,
-            activeInPhases: [0, 1, 2, 3],
-          },
-        },
-      ],
-    },
-    phases: [
-      {
-        segmentIndex: 0,
-        phaseType: "EVERYDAY_CONTRAST_HOOK",
-        chapterTitle:
-          "Cas baterai 200W <highlight>kok bisa kilat?</highlight>",
-        narrationText: actNarrations[0],
-        audioUrl: "",
-        startFrame: timings[0].startFrame,
-        endFrame: timings[0].endFrame,
-        durationInFrames: timings[0].durationInFrames,
-        wordTimings: timings[0].wordTimings,
-        camera: {
-          startFrame: timings[0].startFrame,
-          endFrame: timings[0].endFrame,
-          x: 0,
-          y: 0,
-          scale: 1.0,
-        },
-        primaryMetric: {
-          startValue: 18,
-          endValue: 200,
-          unit: "W",
-          decimals: 0,
-          isHighActive: true,
-          baselineValue: 18,
-          peakValue: 200,
-          sparklinePoints: [18, 45, 90, 145, 200],
-        },
-        statusBadge: {
-          text: "FAST CHARGE",
-          variant: "red",
-        },
-        secondaryMetric: "20V / 10A Arus",
-        activeComponentIds: ["comp_bms", "comp_cathode"],
-        showChecklistCard: false,
-      },
-      {
-        segmentIndex: 1,
-        phaseType: "CORE_MECHANISM_CUTAWAY",
-        chapterTitle: "Dibagi dua sel, <highlight>ion ngebut 2x!</highlight>",
-        narrationText: actNarrations[1],
-        audioUrl: "",
-        startFrame: timings[1].startFrame,
-        endFrame: timings[1].endFrame,
-        durationInFrames: timings[1].durationInFrames,
-        wordTimings: timings[1].wordTimings,
-        camera: {
-          startFrame: timings[1].startFrame,
-          endFrame: timings[1].endFrame,
-          x: 0,
-          y: -25,
-          scale: 1.18,
-        },
-        primaryMetric: {
-          startValue: 15,
-          endValue: 75,
-          unit: "%",
-          decimals: 0,
-          isHighActive: true,
-          baselineValue: 0,
-          peakValue: 100,
-          sparklinePoints: [15, 30, 48, 62, 75],
-        },
-        statusBadge: {
-          text: "DUAL-CELL",
-          variant: "red",
-        },
-        secondaryMetric: "2x 100W Paralel",
-        activeComponentIds: ["comp_cathode", "comp_anode"],
-        showChecklistCard: false,
-      },
-      {
-        segmentIndex: 2,
-        phaseType: "COMPONENT_ZOOM_INS",
-        chapterTitle: "Separator & BMS: <highlight>penjaga suhu</highlight>",
-        narrationText: actNarrations[2],
-        audioUrl: "",
-        startFrame: timings[2].startFrame,
-        endFrame: timings[2].endFrame,
-        durationInFrames: timings[2].durationInFrames,
-        wordTimings: timings[2].wordTimings,
-        camera: {
-          startFrame: timings[2].startFrame,
-          endFrame: timings[2].endFrame,
-          x: 0,
-          y: -75,
-          scale: 1.48,
-        },
-        primaryMetric: {
-          startValue: 34.5,
-          endValue: 38.2,
-          unit: "°C",
-          decimals: 1,
-          isHighActive: false,
-          baselineValue: 30,
-          peakValue: 45,
-          sparklinePoints: [34.5, 35.8, 37.0, 37.8, 38.2],
-        },
-        statusBadge: {
-          text: "SUHU AMAN",
-          variant: "green",
-        },
-        secondaryMetric: "4,2 V Stabil",
-        activeComponentIds: ["comp_separator", "comp_bms"],
-        showChecklistCard: false,
-      },
-      {
-        segmentIndex: 3,
-        phaseType: "PRACTICAL_TAKEAWAY_LOOP",
-        chapterTitle:
-          "Penuh 10 menit, <highlight>baterai tetap awet!</highlight>",
-        narrationText: actNarrations[3],
-        audioUrl: "",
-        startFrame: timings[3].startFrame,
-        endFrame: timings[3].endFrame,
-        durationInFrames: timings[3].durationInFrames,
-        wordTimings: timings[3].wordTimings,
-        camera: {
-          startFrame: timings[3].startFrame,
-          endFrame: timings[3].endFrame,
-          x: 0,
-          y: 10,
-          scale: 1.02,
-        },
-        primaryMetric: {
-          startValue: 80,
-          endValue: 100,
-          unit: "%",
-          decimals: 0,
-          isHighActive: false,
-          baselineValue: 0,
-          peakValue: 100,
-          sparklinePoints: [80, 86, 92, 97, 100],
-        },
-        statusBadge: {
-          text: "PENUH 100%",
-          variant: "green",
-        },
-        secondaryMetric: "10 menit selesai",
-        activeComponentIds: [
-          "comp_cathode",
-          "comp_separator",
-          "comp_anode",
-          "comp_bms",
-        ],
-        showChecklistCard: true,
-      },
-    ],
-    pillCallouts: [
-      {
-        id: "pill_bat_0",
-        componentId: "comp_bms",
-        startFrame: timings[0].startFrame + 35,
-        endFrame: timings[0].endFrame - 15,
-        text: "ARUS 200W MASUK →",
-        direction: "RIGHT",
-        anchor: anchorBms,
-      },
-      {
-        id: "pill_bat_1",
-        componentId: "comp_cathode",
-        startFrame: timings[1].startFrame + 30,
-        endFrame: timings[1].endFrame - 20,
-        text: "KATODA LiCoO₂ →",
-        direction: "RIGHT",
-        anchor: anchorCathode,
-      },
-      {
-        id: "pill_bat_2",
-        componentId: "comp_anode",
-        startFrame: timings[1].startFrame + 120,
-        endFrame: timings[1].endFrame - 15,
-        text: "← ANODA GRAFIT",
-        direction: "LEFT",
-        anchor: anchorAnode,
-      },
-      {
-        id: "pill_bat_3",
-        componentId: "comp_separator",
-        startFrame: timings[2].startFrame + 30,
-        endFrame: timings[2].endFrame - 20,
-        text: "PEMISAH (SEPARATOR) →",
-        direction: "RIGHT",
-        anchor: anchorSeparator,
-      },
-      {
-        id: "pill_bat_4",
-        componentId: "comp_bms",
-        startFrame: timings[3].startFrame + 30,
-        endFrame: timings[3].endFrame - 20,
-        text: "← DUAL-CELL AMAN",
-        direction: "LEFT",
-        anchor: anchorBms,
-      },
-    ],
-    sfxOverlays: [
-      {
-        id: "sfx_bat_0",
-        startFrame: timings[0].startFrame + 60,
-        endFrame: timings[0].startFrame + 190,
-        text: "200 WATT!",
-        variant: "STEAM_YELLOW_BLUE",
-        x: 720,
-        y: 610,
-        rotateDeg: -8,
-      },
-      {
-        id: "sfx_bat_1",
-        startFrame: timings[1].startFrame + 75,
-        endFrame: timings[1].startFrame + 210,
-        text: "DUAL-CELL",
-        variant: "RED_STAMP",
-        x: 730,
-        y: 640,
-        rotateDeg: -7,
-      },
-    ],
+    visualScene,
+    phases,
+    pillCallouts,
+    sfxOverlays: [],
     sfxTriggers: [],
   };
+}
+
+// ==========================================
+// FIXTURE 2: TSUNAMI MEGATHRUST
+// ==========================================
+export function buildTsunamiCompositionProps(): RemotionCompositionProps {
+  const topic = "Bagaimana gempa megathrust bawah laut memicu gelombang tsunami?";
+  const fps = 60;
+
+  const actNarrations = [
+    "Di tepi pantai airnya tenang. Tapi ribuan meter di dasar laut, bencana dahsyat sedang bersiap menyapu daratan!",
+    "Lempeng samudra menunjam ke bawah dan mengunci lempeng benua, sampai energinya tak tertahan dan patahan melenting naik mendadak.",
+    "Lentingan jutaan ton batu mendorong kolom air ke atas, membentuk gelombang raksasa dengan kecepatan jet.",
+    "Saat mendekati pantai, gelombang melambat tapi tingginya membubung. Segera lari ke tempat tinggi saat gempa terasa!",
+  ];
+
+  const durations = [7, 10, 10, 8];
+  let cursorSec = 0;
+  let cursorFrames = 0;
+
+  const timings = durations.map((dur, idx) => {
+    const startSec = cursorSec;
+    const endSec = cursorSec + dur;
+    const startFrame = cursorFrames;
+    const durationInFrames = dur * fps;
+    const endFrame = startFrame + durationInFrames;
+    cursorSec = endSec;
+    cursorFrames = endFrame;
+    return {
+      startSec,
+      endSec,
+      startFrame,
+      endFrame,
+      durationInFrames,
+      wordTimings: computeClientWordTimings(actNarrations[idx], startSec, dur, fps),
+    };
+  });
+
+  const visualScene: SemanticIsoScene = {
+    subjectTitle: "MEKANISME TSUNAMI MEGATHRUST",
+    objectFormFactor: "Subduction Fault Thrust Cutaway Block",
+    anatomyDecomposition: {
+      outerStructure: "Blok kerak benua dan lempeng samudra dengan belahan cutaway 90°",
+      cutawayCrossSection: "Penampang melintang bidang geser patahan sesar naik megathrust",
+      coreInternalParts: "Baji sesar benua dan kolom air laut terdesak vertikal",
+      movingMechanism: "Lentingan elastis kerak bumi memicu penjalaran gelombang tsunami",
+    },
+    parts: [
+      {
+        partId: "part_subducting_plate",
+        componentId: "comp_1",
+        name: "Lempeng Samudra Penunjam",
+        shape: {
+          type: "cutawayBox",
+          dx: 8,
+          dy: 7,
+          dz: 3,
+          cutRatioX: 0.5,
+          cutRatioY: 0.5,
+          floor: 0.5,
+        },
+        position: { x: 2, y: 2, z: 0.5 },
+        rotationZ: 0,
+        color: "shell",
+        material: "cut",
+        animation: {
+          type: "none",
+          axis: "z",
+          amplitude: 0,
+          speed: 1,
+          activeInPhases: [0, 1, 2, 3],
+        },
+        states: [
+          { phase: 0, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 1, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 2, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "dim" },
+          { phase: 3, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+        ],
+      },
+      {
+        partId: "part_continental_wedge",
+        componentId: "comp_2",
+        name: "Zona Patahan Lempeng",
+        shape: {
+          type: "wedge",
+          dx: 4,
+          dy: 3.5,
+          dz: 2.2,
+          slopeAxis: "x",
+        },
+        position: { x: 5.8, y: 5.3, z: 1.0 },
+        rotationZ: 0,
+        color: "hot",
+        material: "solid",
+        animation: {
+          type: "translate3D",
+          axis: "z",
+          amplitude: 0.7,
+          speed: 2,
+          activeInPhases: [1, 2],
+        },
+        states: [
+          { phase: 0, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 1, visible: true, offset3D: { x: 0, y: 0, z: 1.2 }, emphasis: "focus" },
+          { phase: 2, visible: true, offset3D: { x: 0, y: 0, z: 1.2 }, emphasis: "focus" },
+          { phase: 3, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+        ],
+      },
+      {
+        partId: "part_water_column",
+        componentId: "comp_3",
+        name: "Kolom Air Terdesak",
+        shape: {
+          type: "box",
+          dx: 3.8,
+          dy: 3.4,
+          dz: 2.0,
+        },
+        position: { x: 5.8, y: 5.3, z: 3.3 },
+        rotationZ: 0,
+        color: "water",
+        material: "glass",
+        animation: {
+          type: "pulse",
+          axis: "z",
+          amplitude: 0.15,
+          speed: 2,
+          activeInPhases: [1, 2],
+        },
+        states: [
+          { phase: 0, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 1, visible: true, offset3D: { x: 0, y: 0, z: 1.0 }, emphasis: "focus" },
+          { phase: 2, visible: true, offset3D: { x: 0, y: 0, z: 1.0 }, emphasis: "focus" },
+          { phase: 3, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+        ],
+      },
+      {
+        partId: "part_ocean_wave_surface",
+        componentId: "comp_4",
+        name: "Gelombang Permukaan Laut",
+        shape: {
+          type: "waveSurface",
+          dx: 7.6,
+          dy: 6.6,
+          amplitude: 0.45,
+          wavelength: 2.8,
+        },
+        position: { x: 2.2, y: 2.2, z: 5.4 },
+        rotationZ: 0,
+        color: "accent",
+        material: "solid",
+        animation: {
+          type: "flow",
+          axis: "x",
+          amplitude: 1,
+          speed: 2.5,
+          activeInPhases: [1, 2, 3],
+        },
+        states: [
+          { phase: 0, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 1, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+          { phase: 2, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "focus" },
+          { phase: 3, visible: true, offset3D: { x: 0, y: 0, z: 0 }, emphasis: "normal" },
+        ],
+      },
+    ],
+  };
+
+  const samplePoints = computeSceneSamplePoints(visualScene);
+  const fitConfig = computeStageFit(samplePoints, {
+    stageCenterX: 540,
+    stageCenterY: 1000,
+    maxStageWidth: 800,
+    maxStageHeight: 860,
+  });
+
+  const anchorComp1 = project3DAnchor({ x: 6, y: 5.5, z: 2 }, fitConfig);
+  const anchorComp2 = project3DAnchor({ x: 7.8, y: 7, z: 2.5 }, fitConfig);
+  const anchorComp3 = project3DAnchor({ x: 7.8, y: 7, z: 4.5 }, fitConfig);
+  const anchorComp4 = project3DAnchor({ x: 6, y: 5.5, z: 5.5 }, fitConfig);
+
+  // Prevent overlap between comp2 and comp3
+  if (Math.abs(anchorComp3.y - anchorComp2.y) < 85) {
+    anchorComp3.y = anchorComp2.y - 90;
+  }
+
+  const phases: PhaseTimelineBlock[] = [
+    {
+      segmentIndex: 0,
+      phaseType: "EVERYDAY_CONTRAST_HOOK",
+      chapterTitle: "TENANG TAPI MEMATIKAN",
+      narrationText: actNarrations[0],
+      audioUrl: "",
+      startFrame: timings[0].startFrame,
+      endFrame: timings[0].endFrame,
+      durationInFrames: timings[0].durationInFrames,
+      wordTimings: timings[0].wordTimings,
+      camera: { startFrame: timings[0].startFrame, endFrame: timings[0].endFrame, x: 0, y: 0, scale: 1.0 },
+      primaryMetric: {
+        startValue: 0,
+        endValue: 0,
+        unit: "Mw",
+        decimals: 1,
+        isHighActive: false,
+        baselineValue: 0,
+        peakValue: 9.1,
+        sparklinePoints: [0, 0, 0, 0],
+      },
+      statusBadge: { text: "TERKUNCI", variant: "amber" },
+      secondaryMetric: "Akumulasi Tegangan",
+      activeComponentIds: ["comp_1", "comp_2", "comp_3", "comp_4"],
+      showChecklistCard: false,
+    },
+    {
+      segmentIndex: 1,
+      phaseType: "CORE_MECHANISM_CUTAWAY",
+      chapterTitle: "LENTINGAN SESAR NAIK",
+      narrationText: actNarrations[1],
+      audioUrl: "",
+      startFrame: timings[1].startFrame,
+      endFrame: timings[1].endFrame,
+      durationInFrames: timings[1].durationInFrames,
+      wordTimings: timings[1].wordTimings,
+      camera: { startFrame: timings[1].startFrame, endFrame: timings[1].endFrame, x: 0, y: -25, scale: 1.18 },
+      primaryMetric: {
+        startValue: 0,
+        endValue: 9.1,
+        unit: "Mw",
+        decimals: 1,
+        isHighActive: true,
+        baselineValue: 0,
+        peakValue: 9.1,
+        sparklinePoints: [1.0, 4.5, 7.8, 9.1],
+      },
+      statusBadge: { text: "PELEPASAN ENERGI", variant: "red" },
+      secondaryMetric: "Slip Sesar 15 Meter",
+      activeComponentIds: ["comp_2", "comp_3"],
+      showChecklistCard: false,
+    },
+    {
+      segmentIndex: 2,
+      phaseType: "COMPONENT_ZOOM_INS",
+      chapterTitle: "KOLOM AIR TERDESAK",
+      narrationText: actNarrations[2],
+      audioUrl: "",
+      startFrame: timings[2].startFrame,
+      endFrame: timings[2].endFrame,
+      durationInFrames: timings[2].durationInFrames,
+      wordTimings: timings[2].wordTimings,
+      camera: { startFrame: timings[2].startFrame, endFrame: timings[2].endFrame, x: 25, y: 40, scale: 1.55 },
+      primaryMetric: {
+        startValue: 200,
+        endValue: 800,
+        unit: "km/j",
+        decimals: 0,
+        isHighActive: true,
+        baselineValue: 0,
+        peakValue: 800,
+        sparklinePoints: [200, 450, 680, 800],
+      },
+      statusBadge: { text: "MERAMBAT", variant: "red" },
+      secondaryMetric: "Kecepatan 800 km/jam",
+      activeComponentIds: ["comp_3"],
+      showChecklistCard: false,
+    },
+    {
+      segmentIndex: 3,
+      phaseType: "PRACTICAL_TAKEAWAY_LOOP",
+      chapterTitle: "EVAKUASI TSUNAMI",
+      narrationText: actNarrations[3],
+      audioUrl: "",
+      startFrame: timings[3].startFrame,
+      endFrame: timings[3].endFrame,
+      durationInFrames: timings[3].durationInFrames,
+      wordTimings: timings[3].wordTimings,
+      camera: { startFrame: timings[3].startFrame, endFrame: timings[3].endFrame, x: 0, y: 10, scale: 1.02 },
+      primaryMetric: {
+        startValue: 20,
+        endValue: 20,
+        unit: "MENIT",
+        decimals: 0,
+        isHighActive: false,
+        baselineValue: 0,
+        peakValue: 20,
+        sparklinePoints: [20, 20, 20, 20],
+      },
+      statusBadge: { text: "SIAGA 1", variant: "red" },
+      secondaryMetric: "Waktu Evakuasi",
+      activeComponentIds: ["comp_1", "comp_2", "comp_3", "comp_4"],
+      showChecklistCard: true,
+    },
+  ];
+
+  const pillCallouts: FramePillCallout[] = [
+    {
+      id: "pill_0",
+      componentId: "comp_1",
+      startFrame: timings[0].startFrame + 30,
+      endFrame: timings[0].endFrame - 15,
+      text: "LEMPENG SAMUDRA →",
+      direction: "RIGHT",
+      anchor: anchorComp1,
+    },
+    {
+      id: "pill_1",
+      componentId: "comp_2",
+      startFrame: timings[1].startFrame + 25,
+      endFrame: timings[1].endFrame - 20,
+      text: "← PATAHAN NAIK",
+      direction: "LEFT",
+      anchor: anchorComp2,
+    },
+    {
+      id: "pill_2",
+      componentId: "comp_3",
+      startFrame: timings[2].startFrame + 20,
+      endFrame: timings[2].endFrame - 20,
+      text: "KOLOM AIR NAIK →",
+      direction: "RIGHT",
+      anchor: anchorComp3,
+    },
+    {
+      id: "pill_3",
+      componentId: "comp_4",
+      startFrame: timings[3].startFrame + 20,
+      endFrame: timings[3].endFrame - 20,
+      text: "← GELOMBANG TSUNAMI",
+      direction: "LEFT",
+      anchor: anchorComp4,
+    },
+  ];
+
+  return {
+    jobId: "fixture-tsunami",
+    topic,
+    laymanHookTitle: "Gempa dasar laut <highlight>kok bisa picu tsunami raksasa?</highlight>",
+    everydayCategory: "GEOFISIKA & BENCANA ALAM",
+    coreSimpleTruth: "Patahan megathrust mendadak melenting naik dan mendesak miliaran ton kolom air laut",
+    width: 1080,
+    height: 1920,
+    fps: 60,
+    durationInFrames: cursorFrames,
+    aspectRatioMode: "SHORTS_9_16",
+    practicalChecklist: {
+      title: "ATURAN 20-20-20 TSUNAMI:",
+      items: [
+        "Gempa terasa lebih dari 20 detik",
+        "Waktu evakuasi hanya 20 menit",
+        "Lari ke ketinggian minimal 20 meter",
+      ],
+    },
+    visualScene,
+    phases,
+    pillCallouts,
+    sfxOverlays: [],
+    sfxTriggers: [],
+  };
+}
+
+export function buildDefaultCompositionProps(): RemotionCompositionProps {
+  return buildSolarPanelCompositionProps();
 }

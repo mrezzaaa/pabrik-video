@@ -710,14 +710,62 @@ export function createPipe(params: {
 
 /**
  * 8. SPHERE (Bola Isometrik)
- * Dalam proyeksi isometrik, bola berpusat di (x,y,z) memproyeksikan lingkaran sempurna 2D
+ * Menghasilkan face lingkaran yang menghadap kamera dengan tutup highlight atas.
  */
-export interface SpherePrimitive {
-  type: "sphere";
+export function createSphere(params: {
   partId: string;
-  center: Point3D;
+  x: number;
+  y: number;
+  z: number;
   radius: number;
-  depthKey: number;
+  segments?: number;
+}): Face3D[] {
+  const { partId, x, y, z, radius: r } = params;
+  const segments = params.segments || 16;
+  const faces: Face3D[] = [];
+
+  const mainCirclePts: Point3D[] = [];
+  for (let i = 0; i < segments; i++) {
+    const angle = (i * 2 * Math.PI) / segments;
+    mainCirclePts.push({
+      x: x + r * Math.cos(angle),
+      y: y + r * Math.sin(angle),
+      z: z + r,
+    });
+  }
+  const centroid = computeCentroid(mainCirclePts);
+  faces.push({
+    id: `${partId}_sphere_body`,
+    partId,
+    points3D: mainCirclePts,
+    normal: { x: 1, y: 1, z: 1 },
+    role: "left",
+    centroid3D: centroid,
+    depthKey: centroid.x + centroid.y + centroid.z,
+  });
+
+  const hlPts: Point3D[] = [];
+  const hlR = r * 0.45;
+  for (let i = 0; i < segments; i++) {
+    const angle = (i * 2 * Math.PI) / segments;
+    hlPts.push({
+      x: x - r * 0.2 + hlR * Math.cos(angle),
+      y: y - r * 0.2 + hlR * Math.sin(angle),
+      z: z + r * 1.4,
+    });
+  }
+  const hlCentroid = computeCentroid(hlPts);
+  faces.push({
+    id: `${partId}_sphere_highlight`,
+    partId,
+    points3D: hlPts,
+    normal: { x: 0, y: 0, z: 1 },
+    role: "top",
+    centroid3D: hlCentroid,
+    depthKey: hlCentroid.x + hlCentroid.y + hlCentroid.z + 0.2,
+  });
+
+  return faces;
 }
 
 /**

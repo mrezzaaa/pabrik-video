@@ -18,10 +18,13 @@
 
 import { type Face3D } from "./primitives";
 import { isFaceFacingCamera } from "./math";
+import { type PaletteToken } from "./shading";
 
 export interface RenderableFace extends Face3D {
   material: "solid" | "glass" | "cut";
   layerBias?: number;
+  colorToken?: PaletteToken;
+  emphasis?: "normal" | "focus" | "dim";
 }
 
 const ROLE_ORDER: Record<string, number> = {

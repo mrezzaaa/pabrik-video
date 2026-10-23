@@ -12,7 +12,8 @@
     "remotion:studio": "remotion studio src/remotion/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
-    "qa:pacing": "tsx scripts/qa-pacing.ts"
+    "qa:pacing": "tsx scripts/qa-pacing.ts",
+    "qa:stills": "tsx scripts/render-qa-stills.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",
