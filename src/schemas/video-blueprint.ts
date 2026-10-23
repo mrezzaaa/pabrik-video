@@ -198,45 +198,95 @@ export type TtsSynchronizerOutput = z.infer<typeof TtsSynchronizerOutputSchema>;
 export type WordTiming = z.infer<typeof WordTimingSchema>;
 export type AudioSfxTrigger = z.infer<typeof AudioSfxTriggerSchema>;
 
-export const SvgAnimationTransformSchema = z.object({
-  type: z.enum(["none", "translate", "rotate", "scale", "pulse"]).catch("none"),
-  dx: z.number().catch(0),
-  dy: z.number().catch(0),
-  rotateDeg: z.number().catch(0),
-  scaleFactor: z.number().catch(1),
+export const ShapeSpecSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("box"),
+    dx: z.number().positive(),
+    dy: z.number().positive(),
+    dz: z.number().positive(),
+  }),
+  z.object({
+    type: z.literal("sheet"),
+    dx: z.number().positive(),
+    dy: z.number().positive(),
+    thickness: z.number().positive().default(0.2),
+  }),
+  z.object({
+    type: z.literal("wedge"),
+    dx: z.number().positive(),
+    dy: z.number().positive(),
+    dz: z.number().positive(),
+    slopeAxis: z.enum(["x", "y"]).default("x"),
+  }),
+  z.object({
+    type: z.literal("cylinder"),
+    radius: z.number().positive(),
+    height: z.number().positive(),
+  }),
+  z.object({
+    type: z.literal("cutawayBox"),
+    dx: z.number().positive(),
+    dy: z.number().positive(),
+    dz: z.number().positive(),
+    cutRatioX: z.number().min(0.2).max(0.8).default(0.5),
+    cutRatioY: z.number().min(0.2).max(0.8).default(0.5),
+  }),
+  z.object({
+    type: z.literal("extrudePolygon"),
+    footprint: z.array(z.object({ x: z.number(), y: z.number() })).min(3),
+    dz: z.number().positive(),
+  }),
+  z.object({
+    type: z.literal("pipe"),
+    points: z.array(Point3DSchema).min(2),
+    radius: z.number().positive().default(0.3),
+  }),
+  z.object({
+    type: z.literal("waveSurface"),
+    dx: z.number().positive(),
+    dy: z.number().positive(),
+    amplitude: z.number().default(0.4),
+    wavelength: z.number().default(3.0),
+  }),
+  z.object({
+    type: z.literal("sphere"),
+    radius: z.number().positive(),
+  }),
+]);
+
+export const PartAnimation3DSchema = z.object({
+  type: z.enum(["none", "translate3D", "rotate3D", "pulse", "flow"]).catch("none"),
+  axis: z.enum(["x", "y", "z"]).default("z"),
+  amplitude: z.number().catch(0),
   speed: z.number().catch(1),
   activeInPhases: z.array(z.number().int()).default([0, 1, 2, 3]),
 });
 
-export const IsoVectorPartSchema = z.object({
+export const PartPhaseStateSchema = z.object({
+  phase: z.number().int().min(0).max(3),
+  visible: z.boolean().default(true),
+  offset3D: Point3DSchema.default({ x: 0, y: 0, z: 0 }),
+  emphasis: z.enum(["normal", "focus", "dim"]).default("normal"),
+});
+
+export const SemanticIsoPartSchema = z.object({
   partId: z.string(),
   componentId: z.string(),
-  name: z.string(), // Layman Indonesian name for pill callout matching
-  layerOrder: z.number().int().min(1).max(100), // Back-to-front painter's order
-  isCutawayWall: z.boolean().catch(false),
-  /**
-   * 2D anchor coordinate (x: 150..850, y: 200..850) on the 1000x1000 stage
-   * where the dark pill callout arrow attaches.
-   */
-  anchorPoint: z.object({
-    x: z.number().min(100).max(900).catch(500),
-    y: z.number().min(150).max(850).catch(500),
-  }),
-  /**
-   * Clean, valid inner SVG markup (<path>, <polygon>, <ellipse>, <g>, <defs>, <linearGradient>)
-   * drawn in isometric projection (30-degree axes) with cel-shaded fills and #1E293B 2.5px strokes.
-   * NO <text> tags and NO floating particle circles allowed.
-   */
-  svgMarkup: z.string().min(20),
-  animation: SvgAnimationTransformSchema.default({
+  name: z.string(),
+  shape: ShapeSpecSchema,
+  position: Point3DSchema, // grid unit coordinates (snap to 0.5)
+  rotationZ: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]).catch(0),
+  color: z.enum(["shell", "water", "hot", "metal", "accent", "leaf", "purple", "cut"]),
+  material: z.enum(["solid", "glass", "cut"]).default("solid"),
+  animation: PartAnimation3DSchema.default({
     type: "none",
-    dx: 0,
-    dy: 0,
-    rotateDeg: 0,
-    scaleFactor: 1,
+    axis: "z",
+    amplitude: 0,
     speed: 1,
     activeInPhases: [0, 1, 2, 3],
   }),
+  states: z.array(PartPhaseStateSchema).default([]),
+  layerBias: z.number().optional(),
 });
 
 export const AnatomyDecompositionSchema = z
@@ -265,20 +315,19 @@ export const AnatomyDecompositionSchema = z
     movingMechanism: "Moving mechanism",
   });
 
-export const IsoSceneGraphRawSchema = z.object({
-  subjectTitle: z.string().catch("ISOMETRIC ANATOMY CUTAWAY"),
-  objectFormFactor: z.string().catch("Isometric Cutaway Assembly"),
+export const SemanticIsoSceneRawSchema = z.object({
+  subjectTitle: z.string().catch("ISOMETRIC CUTAWAY ASSEMBLY"),
+  objectFormFactor: z.string().catch("Technical 3D Cutaway"),
   anatomyDecomposition: AnatomyDecompositionSchema.default({
     outerStructure: "Outer protective casing",
     cutawayCrossSection: "Cross-section cutaway",
     coreInternalParts: "Internal core parts",
     movingMechanism: "Moving mechanism",
   }),
-  svgDefsMarkup: z.string().default(""), // Shared <linearGradient> and clipPaths
-  parts: z.array(IsoVectorPartSchema).min(4),
+  parts: z.array(SemanticIsoPartSchema).min(4).max(8),
 });
 
-export const IsoSceneGraphSchema = z.preprocess((val) => {
+export const SemanticIsoSceneSchema = z.preprocess((val) => {
   if (val && typeof val === "object") {
     const obj = val as Record<string, unknown>;
     if (!obj.parts) {
@@ -289,14 +338,19 @@ export const IsoSceneGraphSchema = z.preprocess((val) => {
     }
   }
   return val;
-}, IsoSceneGraphRawSchema);
+}, SemanticIsoSceneRawSchema);
 
-export const FreeformIsoAnatomySceneSchema = IsoSceneGraphSchema;
+export const IsoSceneGraphSchema = SemanticIsoSceneSchema;
+export const FreeformIsoAnatomySceneSchema = SemanticIsoSceneSchema;
 
-export type SvgAnimationTransform = z.infer<typeof SvgAnimationTransformSchema>;
-export type IsoVectorPart = z.infer<typeof IsoVectorPartSchema>;
-export type IsoSceneGraph = z.infer<typeof IsoSceneGraphSchema>;
-export type FreeformIsoAnatomyScene = z.infer<typeof FreeformIsoAnatomySceneSchema>;
+export type ShapeSpec = z.infer<typeof ShapeSpecSchema>;
+export type PartAnimation3D = z.infer<typeof PartAnimation3DSchema>;
+export type PartPhaseState = z.infer<typeof PartPhaseStateSchema>;
+export type SemanticIsoPart = z.infer<typeof SemanticIsoPartSchema>;
+export type SemanticIsoScene = z.infer<typeof SemanticIsoSceneSchema>;
+export type IsoSceneGraph = SemanticIsoScene;
+export type IsoVectorPart = SemanticIsoPart; // Alias for backward compatibility
+export type SvgAnimationTransform = PartAnimation3D;
 
 export const CameraZoomKeyframeSchema = z.object({
   startFrame: z.number().int().nonnegative(),
