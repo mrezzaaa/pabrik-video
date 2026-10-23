@@ -85,14 +85,22 @@ export function probeAudioDurationSeconds(filePath: string, fallbackSeconds = 6.
   return fallbackSeconds;
 }
 
+export interface WordTimingItem {
+  word: string;
+  start: number;
+  end: number;
+}
+
 /**
- * Computes word-level & phrase-level timestamps synced to exact audio duration and 60fps frames
+ * Computes word-level & phrase-level timestamps synced to exact audio duration and 60fps frames.
+ * Words are placed across active speech duration (excluding the 0.35s breathing tail).
  */
 export function computeWordTimings(
   narrationText: string,
   segmentStartSec: number,
   segmentDurationSec: number,
-  fps = 60
+  fps = 60,
+  tailPadSec = 0.35
 ): WordTiming[] {
   const words = narrationText
     .trim()
@@ -101,11 +109,14 @@ export function computeWordTimings(
 
   if (words.length === 0) return [];
 
+  // Active speech duration excludes the trailing breathing tail
+  const speechDuration = Math.max(0.8, segmentDurationSec - tailPadSec);
+
   // Weight each word by character length + punctuation pause bonus
   const weights = words.map((w) => {
     const baseLen = Math.max(w.replace(/[^a-zA-Z0-9]/g, "").length, 2);
-    const commaPause = /[,;:]/.test(w) ? 2.5 : 0;
-    const periodPause = /[.!?]/.test(w) ? 4.0 : 0;
+    const commaPause = /[,;:]/.test(w) ? 2.0 : 0;
+    const periodPause = /[.!?]/.test(w) ? 3.5 : 0;
     return baseLen + commaPause + periodPause;
   });
 
@@ -113,10 +124,13 @@ export function computeWordTimings(
   let cursorSec = segmentStartSec;
 
   return words.map((word, idx) => {
-    const sliceDuration = (weights[idx] / totalWeight) * segmentDurationSec;
+    const sliceDuration = (weights[idx] / totalWeight) * speechDuration;
     const startSec = Number(cursorSec.toFixed(3));
     const endSec = Number(
-      (idx === words.length - 1 ? segmentStartSec + segmentDurationSec : cursorSec + sliceDuration).toFixed(3)
+      (idx === words.length - 1
+        ? segmentStartSec + speechDuration
+        : cursorSec + sliceDuration
+      ).toFixed(3)
     );
     cursorSec = endSec;
 
@@ -125,13 +139,16 @@ export function computeWordTimings(
       startSec,
       endSec,
       startFrame: Math.floor(startSec * fps),
-      endFrame: Math.max(Math.ceil(endSec * fps), Math.floor(startSec * fps) + 1),
+      endFrame: Math.max(
+        Math.ceil(endSec * fps),
+        Math.floor(startSec * fps) + 1
+      ),
     };
   });
 }
 
 /**
- * Calls unlimitedtts.com Supertonic-3 endpoints (Indonesian, Voice: Ethan / M3, Speed: 1.1x)
+ * Calls unlimitedtts.com Supertonic-3 endpoints (Indonesian, Voice: Ethan / M3)
  */
 async function fetchUnlimitedTtsBuffer(
   text: string,
@@ -183,6 +200,7 @@ export interface SynthesizeSegmentOptions {
   language?: string;
   voice?: string;
   speed?: number;
+  abSpeed?: number; // Optional A/B testing secondary speed render
 }
 
 export interface SynthesizeSegmentResult {
@@ -190,19 +208,22 @@ export interface SynthesizeSegmentResult {
   filePath: string;
   durationInSeconds: number;
   engineUsed: string;
+  wordsJsonPath?: string;
+  abAudioUrl?: string;
+  abDurationInSeconds?: number;
 }
 
 /**
- * Synthesizes a single narration segment via UnlimitedTTS (id-ID, Ethan, 1.1x)
- * and saves to `/public/renders/[jobId]/audio/segment-[index].mp3`.
- * Includes resilient fallbacks (macOS Indonesian TTS / synthetic tone) so rendering never breaks offline.
+ * Synthesizes a single narration segment via UnlimitedTTS.
+ * Trims dead silence at head and tail, and appends a clean 0.35s breathing room tail pad.
+ * Saves word timings JSON to `/public/renders/[jobId]/audio/segment-[index]-words.json`.
  */
 export async function synthesizeScriptSegment(
   opts: SynthesizeSegmentOptions
 ): Promise<SynthesizeSegmentResult> {
   const voice = resolveUnlimitedVoice(opts.voice);
   const lang = resolveUnlimitedLang(opts.language);
-  const speed = Number(opts.speed ?? env.UNLIMITEDTTS_SPEED ?? 1.1);
+  const speed = Number(opts.speed ?? env.UNLIMITEDTTS_SPEED ?? 1.0);
 
   const audioDir = path.join(process.cwd(), "public", "renders", opts.jobId, "audio");
   fs.mkdirSync(audioDir, { recursive: true });
@@ -212,73 +233,150 @@ export async function synthesizeScriptSegment(
   const mp3Filename = `${baseName}.mp3`;
   const mp3Path = path.join(audioDir, mp3Filename);
   const publicAudioUrl = `/renders/${opts.jobId}/audio/${mp3Filename}`;
+  const wordsJsonPath = path.join(audioDir, `${baseName}-words.json`);
 
-  // 1. Primary: UnlimitedTTS (Language: id-ID / Indonesian, Voice: Ethan / M3, Speed: 1.1x)
+  // Audio filter: trim dead silence head & tail, apply speed, add clean 0.35s tail pad
+  const buildFilter = (sp: number) => {
+    const atempo = Math.abs(sp - 1.0) > 0.01 ? `,atempo=${sp}` : "";
+    return `silenceremove=start_periods=1:start_duration=0.03:start_threshold=-42dB,areverse,silenceremove=start_periods=1:start_duration=0.03:start_threshold=-42dB,areverse${atempo},apad=pad_dur=0.35`;
+  };
+
+  // Helper to save word-level JSON [{word, start, end}]
+  const saveWordsJson = (duration: number) => {
+    const wt = computeWordTimings(opts.text, 0, duration, 60, 0.35);
+    const jsonItems: WordTimingItem[] = wt.map((w) => ({
+      word: w.word,
+      start: w.startSec,
+      end: w.endSec,
+    }));
+    fs.writeFileSync(wordsJsonPath, JSON.stringify(jsonItems, null, 2));
+  };
+
+  // 1. Primary: UnlimitedTTS (Language: id-ID / Indonesian, Voice: Ethan / M3)
   try {
-    const wavBuffer = await fetchUnlimitedTtsBuffer(opts.text, voice.id, lang.name);
-    fs.writeFileSync(rawWavPath, wavBuffer);
+    // If text exceeds 280 chars, chunk at sentence boundaries and crossfade with 60ms
+    const sentences = opts.text.length > 280
+      ? opts.text.split(/(?<=[.!?])\s+/).filter(Boolean)
+      : [opts.text];
 
-    const atempoFilter = Math.abs(speed - 1.0) > 0.01 ? `-filter:a "atempo=${speed}"` : "";
+    if (sentences.length === 1) {
+      const wavBuffer = await fetchUnlimitedTtsBuffer(opts.text, voice.id, lang.name);
+      fs.writeFileSync(rawWavPath, wavBuffer);
+    } else {
+      // Chunked sentence synthesis joined with 60ms crossfade without extra silence
+      const partPaths: string[] = [];
+      for (let sIdx = 0; sIdx < sentences.length; sIdx++) {
+        const partBuffer = await fetchUnlimitedTtsBuffer(sentences[sIdx], voice.id, lang.name);
+        const partRaw = path.join(audioDir, `${baseName}-part${sIdx}.wav`);
+        fs.writeFileSync(partRaw, partBuffer);
+        partPaths.push(partRaw);
+      }
+      // Crossfade join chunks
+      if (partPaths.length === 2) {
+        execSync(
+          `ffmpeg -y -i "${partPaths[0]}" -i "${partPaths[1]}" -filter_complex "acrossfade=d=0.06:c1=tri:c2=tri" "${rawWavPath}"`,
+          { stdio: "ignore" }
+        );
+      } else {
+        // Linear concat fallback
+        const listFile = path.join(audioDir, `${baseName}-parts.txt`);
+        fs.writeFileSync(listFile, partPaths.map((p) => `file '${p}'`).join("\n"));
+        execSync(`ffmpeg -y -f concat -safe 0 -i "${listFile}" -c copy "${rawWavPath}"`, { stdio: "ignore" });
+        try { fs.unlinkSync(listFile); } catch {}
+      }
+      for (const p of partPaths) {
+        try { fs.unlinkSync(p); } catch {}
+      }
+    }
+
     execSync(
-      `ffmpeg -y -i "${rawWavPath}" ${atempoFilter} -codec:a libmp3lame -qscale:a 2 "${mp3Path}"`,
+      `ffmpeg -y -i "${rawWavPath}" -af "${buildFilter(speed)}" -codec:a libmp3lame -qscale:a 2 "${mp3Path}"`,
       { stdio: "ignore" }
     );
+
+    // Optional A/B render if abSpeed is provided
+    let abAudioUrl: string | undefined;
+    let abDurationInSeconds: number | undefined;
+    if (opts.abSpeed && Math.abs(opts.abSpeed - speed) > 0.01) {
+      const abMp3Filename = `${baseName}-speed-${opts.abSpeed}.mp3`;
+      const abMp3Path = path.join(audioDir, abMp3Filename);
+      execSync(
+        `ffmpeg -y -i "${rawWavPath}" -af "${buildFilter(opts.abSpeed)}" -codec:a libmp3lame -qscale:a 2 "${abMp3Path}"`,
+        { stdio: "ignore" }
+      );
+      abAudioUrl = `/renders/${opts.jobId}/audio/${abMp3Filename}`;
+      abDurationInSeconds = probeAudioDurationSeconds(abMp3Path, 6.0);
+    }
+
     try {
       fs.unlinkSync(rawWavPath);
     } catch {
       // ignore
     }
 
-    const durationInSeconds = probeAudioDurationSeconds(mp3Path, 6.5);
+    const durationInSeconds = probeAudioDurationSeconds(mp3Path, 6.0);
+    saveWordsJson(durationInSeconds);
+
     return {
       audioUrl: publicAudioUrl,
       filePath: mp3Path,
       durationInSeconds,
       engineUsed: `unlimitedtts.com (${lang.bcp47}, Voice: ${voice.label}, Speed: ${speed}x)`,
+      wordsJsonPath,
+      abAudioUrl,
+      abDurationInSeconds,
     };
   } catch (err) {
     console.warn(
-      `[TTS Client] UnlimitedTTS primary failed for segment ${opts.segmentIndex}, trying local Indonesian neural fallback:`,
+      `[TTS Client] UnlimitedTTS primary failed for segment ${opts.segmentIndex}, trying local neural fallback:`,
       err instanceof Error ? err.message : String(err)
     );
   }
 
-  // 2. Fallback: macOS Indonesian voice ('Damayanti') with speed 1.1x (~195 WPM)
+  // 2. Fallback: macOS Indonesian voice ('Damayanti')
   try {
     const aiffPath = path.join(audioDir, `${baseName}.aiff`);
     const safeText = opts.text.replace(/"/g, '\\"').replace(/`/g, "");
-    const wpm = Math.round(175 * speed);
+    const wpm = Math.round(165 * speed);
     execSync(`say -v Damayanti -r ${wpm} -o "${aiffPath}" "${safeText}"`, { stdio: "ignore" });
-    execSync(`ffmpeg -y -i "${aiffPath}" -codec:a libmp3lame -qscale:a 3 "${mp3Path}"`, {
-      stdio: "ignore",
-    });
+    execSync(
+      `ffmpeg -y -i "${aiffPath}" -af "${buildFilter(1.0)}" -codec:a libmp3lame -qscale:a 3 "${mp3Path}"`,
+      { stdio: "ignore" }
+    );
     try {
       fs.unlinkSync(aiffPath);
     } catch {
       // ignore
     }
 
-    const durationInSeconds = probeAudioDurationSeconds(mp3Path, 6.5);
+    const durationInSeconds = probeAudioDurationSeconds(mp3Path, 6.0);
+    saveWordsJson(durationInSeconds);
+
     return {
       audioUrl: publicAudioUrl,
       filePath: mp3Path,
       durationInSeconds,
       engineUsed: `unlimitedtts-fallback:local-id-ID (Ethan-emulated @ ${speed}x)`,
+      wordsJsonPath,
     };
   } catch {
-    // 3. Final deterministic fallback: silent/ambient audio track calculated from word count at 1.1x speed
+    // 3. Final deterministic fallback: ambient audio track calculated from word count
     const wordCount = opts.text.trim().split(/\s+/).filter(Boolean).length;
-    const estimatedDuration = Number(Math.max((wordCount / 2.8) / speed, 4.5).toFixed(2));
+    const speechEst = Math.max((wordCount / 2.6) / speed, 4.0);
+    const totalEst = Number((speechEst + 0.35).toFixed(2));
     execSync(
-      `ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=mono -t ${estimatedDuration} -q:a 9 -acodec libmp3lame "${mp3Path}"`,
+      `ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=mono -t ${totalEst} -q:a 9 -acodec libmp3lame "${mp3Path}"`,
       { stdio: "ignore" }
     );
-    const durationInSeconds = probeAudioDurationSeconds(mp3Path, estimatedDuration);
+    const durationInSeconds = probeAudioDurationSeconds(mp3Path, totalEst);
+    saveWordsJson(durationInSeconds);
+
     return {
       audioUrl: publicAudioUrl,
       filePath: mp3Path,
       durationInSeconds,
       engineUsed: `synthetic-timing-track (${lang.bcp47}, Ethan @ ${speed}x)`,
+      wordsJsonPath,
     };
   }
 }

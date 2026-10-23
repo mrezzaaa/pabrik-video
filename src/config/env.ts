@@ -18,7 +18,7 @@ const envSchema = z.object({
   // UnlimitedTTS Settings
   UNLIMITEDTTS_LANGUAGE: z.string().default("id-ID"),
   UNLIMITEDTTS_VOICE: z.string().default("Ethan"),
-  UNLIMITEDTTS_SPEED: z.coerce.number().min(0.5).max(2.0).default(1.1),
+  UNLIMITEDTTS_SPEED: z.coerce.number().min(0.5).max(2.0).default(1.0),
 
   // Remotion Settings
   REMOTION_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(4),
