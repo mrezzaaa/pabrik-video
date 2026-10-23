@@ -2,8 +2,6 @@ import type {
   RemotionCompositionProps,
   WordTiming,
 } from "@/schemas/video-blueprint";
-import { DEFAULT_ISO_CONFIG, projectIso3D } from "./iso-engine/iso-math";
-
 function computeClientWordTimings(
   narrationText: string,
   segmentStartSec: number,
@@ -51,18 +49,17 @@ function computeClientWordTimings(
   });
 }
 
-function projectAnchor(x: number, y: number, z: number) {
-  const pt = projectIso3D({ x, y, z }, DEFAULT_ISO_CONFIG);
+function projectStageAnchor(stageX: number, stageY: number) {
   return {
-    x: Math.round(pt.sx),
-    y: Math.round(pt.sy),
+    x: Math.round(Math.max(200, Math.min(880, 40 + stageX))),
+    y: Math.round(Math.max(620, Math.min(1420, 520 + stageY))),
   };
 }
 
 /**
  * Default Studio Preview Composition Props:
  * "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W"
- * Compiled with Universal 3D-to-SVG Isometric Cutaway Builders (hollowBox3D, box3D, tubePath3D, particleStreams)
+ * Compiled with Freeform Multi-Layered Isometric Vector Cutaway Stage (viewBox="0 0 1000 1000")
  */
 export function buildDefaultCompositionProps(): RemotionCompositionProps {
   const topic = "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W";
@@ -102,10 +99,10 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
     };
   });
 
-  const anchorCathode = projectAnchor(-28, 12, 10);
-  const anchorSeparator = projectAnchor(0, 0, 12);
-  const anchorAnode = projectAnchor(28, -12, 10);
-  const anchorBms = projectAnchor(0, 0, -48);
+  const anchorCathode = projectStageAnchor(380, 460);
+  const anchorSeparator = projectStageAnchor(500, 460);
+  const anchorAnode = projectStageAnchor(620, 460);
+  const anchorBms = projectStageAnchor(500, 720);
 
   return {
     jobId: "demo-battery-200w",
@@ -129,191 +126,125 @@ export function buildDefaultCompositionProps(): RemotionCompositionProps {
     },
     visualScene: {
       subjectTitle: "DUAL-CELL LITHIUM-ION 200W",
+      objectFormFactor: "Dual-Cell Fast Charging Li-Ion Cutaway",
       anatomyDecomposition: {
-        outerHousingShell:
+        outerStructure:
           "Casing aluminium pelindung baterai Dual-Cell dengan belahan melintang 90°",
-        primaryInternalMechanism:
-          "Elektroda Katoda LiCoO₂ dan Anoda Grafit kembar yang bekerja paralel",
-        zoomInSubComponents:
-          "Membran Separator berpori mikro dan modul Chip BMS Dual-Charge Pump",
-        physicalMediumFlow:
-          "Aliran ion Lithium (Li+) menyeberangi separator dan elektron 200W dari port USB-C",
+        cutawayCrossSection:
+          "Penampang melintang memperlihatkan katoda LiCoO2 dan anoda grafit",
+        coreInternalParts:
+          "Membran separator polimer mikro dan modul chip BMS dual-charge pump",
+        movingMechanism:
+          "Distribusi arus elektron 200W dari port USB-C menuju sel kembar",
       },
+      svgDefsMarkup: `
+        <linearGradient id="grad-alu" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#F1F5F9" />
+          <stop offset="100%" stop-color="#CBD5E1" />
+        </linearGradient>
+        <linearGradient id="grad-cathode" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#BFDBFE" />
+          <stop offset="100%" stop-color="#60A5FA" />
+        </linearGradient>
+        <linearGradient id="grad-anode" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#BBF7D0" />
+          <stop offset="100%" stop-color="#4ADE80" />
+        </linearGradient>
+        <linearGradient id="grad-sep" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#FEF08A" />
+          <stop offset="100%" stop-color="#FACC15" />
+        </linearGradient>
+      `,
       parts: [
         {
           partId: "part_outer_housing",
           componentId: "comp_bms",
           name: "Casing Dual-Cell Aluminium",
-          builderType: "hollowBox3D",
-          materialColor: "#E2E8F0",
-          cutaway: true,
-          opacity: 1,
-          params: {
-            center: { x: 0, y: 0, z: 0 },
-            axis: "Z",
-            size: { w: 112, d: 96, h: 128 },
-            wallThickness: 10,
-          },
+          layerOrder: 10,
+          isCutawayWall: true,
+          anchorPoint: { x: 300, y: 340 },
+          svgMarkup: `<path d="M 220 280 L 500 120 L 780 280 L 780 620 L 500 780 L 220 620 Z" fill="url(#grad-alu)" stroke="#1E293B" stroke-width="2.5" fill-opacity="0.3" stroke-dasharray="6 4" stroke-linejoin="round" />`,
           animation: {
             type: "none",
-            axis: "Z",
+            dx: 0,
+            dy: 0,
+            rotateDeg: 0,
+            scaleFactor: 1,
             speed: 1,
-            amplitude: 0,
+            activeInPhases: [0, 1, 2, 3],
           },
         },
         {
           partId: "part_cathode_cell",
           componentId: "comp_cathode",
           name: "Katoda LiCoO₂ (+)",
-          builderType: "box3D",
-          materialColor: "#93C5FD",
-          cutaway: false,
-          opacity: 1,
-          params: {
-            center: { x: -28, y: 12, z: 10 },
-            axis: "Z",
-            size: { w: 30, d: 58, h: 74 },
-            wallThickness: 6,
-          },
+          layerOrder: 20,
+          isCutawayWall: false,
+          anchorPoint: { x: 380, y: 460 },
+          svgMarkup: `<path d="M 320 400 L 440 330 L 440 600 L 320 670 Z" fill="url(#grad-cathode)" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round" />`,
           animation: {
             type: "pulse",
-            axis: "Z",
+            dx: 0,
+            dy: 0,
+            rotateDeg: 0,
+            scaleFactor: 1.05,
             speed: 1.2,
-            amplitude: 4,
+            activeInPhases: [0, 1, 2, 3],
           },
         },
         {
           partId: "part_separator_membrane",
           componentId: "comp_separator",
           name: "Membran Separator",
-          builderType: "box3D",
-          materialColor: "#FACC15",
-          cutaway: false,
-          opacity: 0.95,
-          params: {
-            center: { x: 0, y: 0, z: 12 },
-            axis: "Z",
-            size: { w: 10, d: 64, h: 78 },
-            wallThickness: 4,
-          },
+          layerOrder: 30,
+          isCutawayWall: false,
+          anchorPoint: { x: 500, y: 460 },
+          svgMarkup: `<path d="M 460 320 L 520 285 L 520 570 L 460 605 Z" fill="url(#grad-sep)" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round" />`,
           animation: {
-            type: "oscillate",
-            axis: "Z",
+            type: "translate",
+            dx: 0,
+            dy: 5,
+            rotateDeg: 0,
+            scaleFactor: 1,
             speed: 1.1,
-            amplitude: 3,
+            activeInPhases: [1, 2, 3],
           },
         },
         {
           partId: "part_anode_graphite",
           componentId: "comp_anode",
           name: "Anoda Grafit (-)",
-          builderType: "box3D",
-          materialColor: "#86EFAC",
-          cutaway: false,
-          opacity: 1,
-          params: {
-            center: { x: 28, y: -12, z: 10 },
-            axis: "Z",
-            size: { w: 30, d: 58, h: 74 },
-            wallThickness: 6,
-          },
+          layerOrder: 40,
+          isCutawayWall: false,
+          anchorPoint: { x: 620, y: 460 },
+          svgMarkup: `<path d="M 540 275 L 660 345 L 660 615 L 540 545 Z" fill="url(#grad-anode)" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round" />`,
           animation: {
             type: "pulse",
-            axis: "Z",
+            dx: 0,
+            dy: 0,
+            rotateDeg: 0,
+            scaleFactor: 1.05,
             speed: 1.2,
-            amplitude: 4,
+            activeInPhases: [0, 1, 2, 3],
           },
         },
         {
           partId: "part_bms_controller",
           componentId: "comp_bms",
           name: "Chip BMS Dual-Pump 200W",
-          builderType: "box3D",
-          materialColor: "#F87171",
-          cutaway: false,
-          opacity: 1,
-          params: {
-            center: { x: 0, y: 0, z: -46 },
-            axis: "Z",
-            size: { w: 84, d: 62, h: 20 },
-            wallThickness: 6,
-          },
+          layerOrder: 50,
+          isCutawayWall: false,
+          anchorPoint: { x: 500, y: 720 },
+          svgMarkup: `<polygon points="360,680 640,680 580,760 300,760" fill="#F87171" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round" />`,
           animation: {
             type: "none",
-            axis: "Z",
+            dx: 0,
+            dy: 0,
+            rotateDeg: 0,
+            scaleFactor: 1,
             speed: 1,
-            amplitude: 0,
+            activeInPhases: [0, 1, 2, 3],
           },
-        },
-        {
-          partId: "part_dual_busbar",
-          componentId: "comp_bms",
-          name: "Jalur Arus Paralel 10A",
-          builderType: "tubePath3D",
-          materialColor: "#FDBA74",
-          cutaway: false,
-          opacity: 1,
-          params: {
-            center: { x: 0, y: 0, z: -25 },
-            axis: "Z",
-            tubeRadius: 5,
-            wallThickness: 4,
-            path3D: [
-              { x: -28, y: 12, z: -36 },
-              { x: 0, y: 0, z: -44 },
-              { x: 28, y: -12, z: -36 },
-            ],
-          },
-          animation: {
-            type: "none",
-            axis: "Z",
-            speed: 1,
-            amplitude: 0,
-          },
-        },
-      ],
-      particleStreams: [
-        {
-          id: "stream_li_ions_upper",
-          type: "ions",
-          color: "#38BDF8",
-          path3D: [
-            { x: -28, y: 12, z: 26 },
-            { x: 0, y: 0, z: 28 },
-            { x: 28, y: -12, z: 26 },
-          ],
-          count: 10,
-          speed: 1.8,
-          size: 10,
-          activeInPhases: [0, 1, 2, 3],
-        },
-        {
-          id: "stream_li_ions_lower",
-          type: "ions",
-          color: "#38BDF8",
-          path3D: [
-            { x: -28, y: 12, z: -4 },
-            { x: 0, y: 0, z: -2 },
-            { x: 28, y: -12, z: -4 },
-          ],
-          count: 10,
-          speed: 1.8,
-          size: 10,
-          activeInPhases: [1, 2, 3],
-        },
-        {
-          id: "stream_fast_electrons",
-          type: "electrons",
-          color: "#FACC15",
-          path3D: [
-            { x: 0, y: 18, z: -56 },
-            { x: 16, y: 4, z: -36 },
-            { x: 28, y: -12, z: 8 },
-          ],
-          count: 9,
-          speed: 2.2,
-          size: 9,
-          activeInPhases: [0, 1, 2],
         },
       ],
     },

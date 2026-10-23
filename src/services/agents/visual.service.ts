@@ -11,143 +11,95 @@ import {
   type FrameSfxOverlay,
   type PhaseTimelineBlock,
   type IsoSceneGraph,
-  type IsoPart3D,
+  type IsoVectorPart,
 } from "@/schemas/video-blueprint";
-import {
-  DEFAULT_ISO_CONFIG,
-  computeCentroid3D,
-  projectIso3D,
-  type Point3D,
-} from "@/remotion/iso-engine/iso-math";
-import { UNIVERSAL_3D_CAD_VISUAL_SYSTEM_PROMPT } from "./prompts";
+import { FREEFORM_ISOMETRIC_SVG_VISUAL_SYSTEM_PROMPT } from "./prompts";
 
 const ISO_SCENE_GRAPH_TEMPLATE = `{
   "subjectTitle": "<SHORT UPPERCASE SUBJECT NAME>",
+  "objectFormFactor": "<e.g., Dual-Cell Lithium-Ion Fast Charging Cutaway>",
   "anatomyDecomposition": {
-    "outerHousingShell": "<What encloses it? e.g., Casing luar / dinding pelindung>",
-    "primaryInternalMechanism": "<What moves or reacts inside? e.g., Rotor & kumparan / sel anoda-katoda>",
-    "zoomInSubComponents": "<What small parts regulate or lock it? e.g., Katup pengaman / membran separator / chip BMS>",
-    "physicalMediumFlow": "<What flows through it? e.g., Aliran ion / uap bertekanan / fluks magnetik>"
+    "outerStructure": "<What encloses or forms the chassis/shell?>",
+    "cutawayCrossSection": "<What internal anatomy is revealed by the 90-degree cutaway?>",
+    "coreInternalParts": "<What core mechanisms or electrodes/gears are inside?>",
+    "movingMechanism": "<What physical action or flow takes place?>"
   },
+  "svgDefsMarkup": "<linearGradient id=\\"grad_core\\" x1=\\"0%\\" y1=\\"0%\\" x2=\\"100%\\" y2=\\"100%\\"><stop offset=\\"0%\\" stop-color=\\"#93C5FD\\"/><stop offset=\\"100%\\" stop-color=\\"#3B82F6\\"/></linearGradient>",
   "parts": [
     {
       "partId": "part_outer_shell",
       "componentId": "comp_1",
       "name": "<Part 1 Name>",
-      "builderType": "revolveProfile",
-      "materialColor": "#E2E8F0",
-      "cutaway": true,
-      "opacity": 1,
-      "params": {
-        "center": { "x": 0, "y": 0, "z": 0 },
-        "axis": "Z",
-        "wallThickness": 9,
-        "profilePoints": [
-          { "r": 54, "z": -65 },
-          { "r": 58, "z": 0 },
-          { "r": 52, "z": 65 }
-        ]
-      },
+      "layerOrder": 10,
+      "isCutawayWall": true,
+      "anchorPoint": { "x": 320, "y": 380 },
+      "svgMarkup": "<path d=\\"M 220 300 L 500 140 L 780 300 L 780 640 L 500 800 L 220 640 Z\\" fill=\\"#E2E8F0\\" stroke=\\"#1E293B\\" stroke-width=\\"2.5\\" stroke-linejoin=\\"round\\" fill-opacity=\\"0.3\\" stroke-dasharray=\\"6 4\\" />",
       "animation": {
         "type": "none",
-        "axis": "Z",
-        "speed": 1.0,
-        "amplitude": 0
+        "dx": 0,
+        "dy": 0,
+        "rotateDeg": 0,
+        "scaleFactor": 1,
+        "speed": 1,
+        "activeInPhases": [0, 1, 2, 3]
       }
     },
     {
       "partId": "part_core_mechanism",
       "componentId": "comp_2",
       "name": "<Part 2 Name>",
-      "builderType": "radialArray3D",
-      "materialColor": "#93C5FD",
-      "cutaway": false,
-      "opacity": 1,
-      "params": {
-        "center": { "x": 0, "y": 0, "z": 8 },
-        "axis": "Z",
-        "radialCount": 8,
-        "radialRadius": 28,
-        "elementSize": { "w": 14, "d": 10, "h": 42 }
-      },
+      "layerOrder": 20,
+      "isCutawayWall": false,
+      "anchorPoint": { "x": 480, "y": 480 },
+      "svgMarkup": "<path d=\\"M 360 420 L 500 340 L 640 420 L 640 600 L 500 680 L 360 600 Z\\" fill=\\"url(#grad_core)\\" stroke=\\"#1E293B\\" stroke-width=\\"2.5\\" stroke-linejoin=\\"round\\" />",
       "animation": {
-        "type": "rotate",
-        "axis": "Z",
-        "speed": 1.4,
-        "amplitude": 15
+        "type": "pulse",
+        "dx": 0,
+        "dy": 0,
+        "rotateDeg": 0,
+        "scaleFactor": 1.05,
+        "speed": 1.2,
+        "activeInPhases": [0, 1, 2, 3]
       }
     },
     {
       "partId": "part_sub_1",
       "componentId": "comp_3",
       "name": "<Part 3 Name>",
-      "builderType": "tubePath3D",
-      "materialColor": "#FACC15",
-      "cutaway": false,
-      "opacity": 1,
-      "params": {
-        "center": { "x": 0, "y": 0, "z": -18 },
-        "tubeRadius": 8,
-        "path3D": [
-          { "x": -34, "y": -18, "z": -38 },
-          { "x": 0, "y": 0, "z": -15 },
-          { "x": 34, "y": 18, "z": 18 }
-        ]
-      },
+      "layerOrder": 30,
+      "isCutawayWall": false,
+      "anchorPoint": { "x": 420, "y": 620 },
+      "svgMarkup": "<path d=\\"M 380 560 L 500 490 L 500 670 L 380 740 Z\\" fill=\\"#FACC15\\" stroke=\\"#1E293B\\" stroke-width=\\"2.5\\" stroke-linejoin=\\"round\\" />",
       "animation": {
-        "type": "pulse",
-        "axis": "Z",
-        "speed": 1.5,
-        "amplitude": 6
+        "type": "translate",
+        "dx": 0,
+        "dy": 6,
+        "rotateDeg": 0,
+        "scaleFactor": 1,
+        "speed": 1,
+        "activeInPhases": [1, 2, 3]
       }
     },
     {
       "partId": "part_sub_2",
       "componentId": "comp_4",
       "name": "<Part 4 Name>",
-      "builderType": "box3D",
-      "materialColor": "#F87171",
-      "cutaway": false,
-      "opacity": 1,
-      "params": {
-        "center": { "x": 0, "y": 0, "z": -48 },
-        "size": { "w": 46, "d": 36, "h": 20 }
-      },
+      "layerOrder": 40,
+      "isCutawayWall": false,
+      "anchorPoint": { "x": 580, "y": 620 },
+      "svgMarkup": "<polygon points=\\"500,490 620,560 620,740 500,670\\" fill=\\"#86EFAC\\" stroke=\\"#1E293B\\" stroke-width=\\"2.5\\" stroke-linejoin=\\"round\\" />",
       "animation": {
-        "type": "oscillate",
-        "axis": "Z",
+        "type": "rotate",
+        "dx": 0,
+        "dy": 0,
+        "rotateDeg": 360,
+        "scaleFactor": 1,
         "speed": 1.2,
-        "amplitude": 5
+        "activeInPhases": [0, 1, 2, 3]
       }
-    }
-  ],
-  "particleStreams": [
-    {
-      "id": "stream_1",
-      "type": "ions",
-      "color": "#38BDF8",
-      "path3D": [
-        { "x": -35, "y": -20, "z": -40 },
-        { "x": 0, "y": 0, "z": 0 },
-        { "x": 35, "y": 20, "z": 42 }
-      ],
-      "count": 12,
-      "speed": 1.6,
-      "size": 10,
-      "activeInPhases": [0, 1, 2, 3]
     }
   ]
 }`;
-
-/**
- * Computes the representative 3D anchor coordinate of an IsoPart3D
- */
-export function resolvePartAnchor3D(part: IsoPart3D): Point3D {
-  if (part.params.path3D && part.params.path3D.length > 0) {
-    return computeCentroid3D(part.params.path3D);
-  }
-  return part.params.center ?? { x: 0, y: 0, z: 0 };
-}
 
 export async function runVisualChoreographerAgent(params: {
   jobId: string;
@@ -168,8 +120,8 @@ export async function runVisualChoreographerAgent(params: {
   const width = isLandscape ? 1920 : 1080;
   const height = isLandscape ? 1080 : 1920;
 
-  // Ask Agent 4 via Omniroute to execute the 2-Step Anatomy-to-3D CAD Prompt
-  const userPrompt = `Execute the 2-Step Anatomy-to-3D CAD Process to construct a topic-accurate 3D Isometric Cutaway Scene Graph ("IsoSceneGraphSchema") for:
+  // Ask Agent 4 via Omniroute to generate freeform multi-layer isometric vector cutaway
+  const userPrompt = `Illustrate a topic-authentic, multi-layered Freeform Isometric Cutaway Vector Scene ("IsoSceneGraphSchema") for:
 
 TOPIC: "${blueprint.topic}"
 CATEGORY: "${blueprint.everydayCategory}"
@@ -189,21 +141,19 @@ ${JSON.stringify(
   2
 )}
 
-UNIVERSAL 3D BUILDER SELECTION GUIDE:
-- Choose the builders that best represent the real-world physical geometry of "${blueprint.topic}":
-  - Cylindrical / conical / spherical / vessel / cup / lens / pipe housing -> use "revolveProfile" with "cutaway": true and 3-6 "profilePoints" ({ r, z }).
-  - Rectangular / dual-cell battery / electronic / appliance / chamber housing -> use "hollowBox3D" with "cutaway": true and "size": { w, d, h }.
-  - Internal plates / electrodes / chips / blocks -> use "box3D" with "center": { x, y, z } and "size": { w, d, h }.
-  - Organic / tooth / biological / custom prism shapes -> use "extrudePolygon" with "polygon": Array<{ x, y }> and "depth".
-  - Coils / pipes / nerves / blood vessels / fiber cores / wires -> use "tubePath3D" with "path3D": Array<{ x, y, z }> and "tubeRadius".
-  - Turbine blades / motor stator coils / rotor magnets / gears / fins -> use "radialArray3D" with "radialCount", "radialRadius", and "elementSize".
-- Include 2 or 3 "particleStreams" flowing along 3D paths ("path3D") inside the cutaway.
-- Return ONLY valid JSON matching this structure:
+ILLUSTRATION REQUIREMENTS (viewBox="0 0 1000 1000"):
+1. Create 4 to 6 clean, topic-accurate vector parts drawn in classic 30-degree isometric projection.
+2. Sliced Cutaway: Make the outer housing/casing have "isCutawayWall": true so the internal mechanism is clearly visible inside!
+3. Layer Order: Order parts by "layerOrder" (1 to 100) from backmost to frontmost.
+4. Cel-shaded style: Use warm colors (#E2E8F0, #93C5FD, #FACC15, #86EFAC, #F87171, #FDBA74) with crisp stroke="#1E293B" stroke-width="2.5".
+5. NO <text> tags and NO floating particle circles allowed!
+6. Provide an "anchorPoint" { x: 180..820, y: 200..800 } on the 1000x1000 stage for each part where the dark pill callout arrow will point.
+7. Return ONLY valid JSON matching this schema structure:
 ${ISO_SCENE_GRAPH_TEMPLATE}`;
 
   const { data: visualScene } =
     await generateStructuredOmniroute<IsoSceneGraph>({
-      systemPrompt: UNIVERSAL_3D_CAD_VISUAL_SYSTEM_PROMPT,
+      systemPrompt: FREEFORM_ISOMETRIC_SVG_VISUAL_SYSTEM_PROMPT,
       userPrompt,
       schema: IsoSceneGraphSchema,
       preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
@@ -261,22 +211,17 @@ ${ISO_SCENE_GRAPH_TEMPLATE}`;
       showChecklistCard: scriptSeg.showChecklistCard ?? i === 3,
     });
 
-    // Project the 3D part's socket coordinate to 2D SVG screen coordinates via projectIso3D()
+    // Compute pill callout anchor from part's 2D anchorPoint on the 1000x1000 stage
     for (const pill of scriptSeg.pillLabels) {
       const matchedPart = visualScene.parts.find(
         (p) => p.componentId === pill.componentId
       );
-      const matchedComp = blueprint.components.find(
-        (c) => c.id === pill.componentId
-      );
-      const anchor3D: Point3D = matchedPart
-        ? resolvePartAnchor3D(matchedPart)
-        : matchedComp?.center3D ?? { x: 0, y: 0, z: 0 };
-
-      const projected2D = projectIso3D(anchor3D, DEFAULT_ISO_CONFIG);
+      // Normalized 1000x1000 stage is positioned centered at (40, 520) in 1080x1920
+      const stageX = matchedPart?.anchorPoint?.x ?? 500;
+      const stageY = matchedPart?.anchorPoint?.y ?? 500;
       const clampedAnchor = {
-        x: Math.round(Math.max(240, Math.min(840, projected2D.sx))),
-        y: Math.round(Math.max(660, Math.min(1360, projected2D.sy))),
+        x: Math.round(Math.max(200, Math.min(880, 40 + stageX))),
+        y: Math.round(Math.max(620, Math.min(1420, 520 + stageY))),
       };
 
       const triggerOffset = Math.floor(

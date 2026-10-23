@@ -22,32 +22,6 @@ export const Point3DSchema = z.object({
   z: z.number().catch(0),
 });
 
-export const IsoBuilderTypeSchema = z
-  .enum([
-    "revolveProfile",
-    "extrudePolygon",
-    "hollowBox3D",
-    "box3D",
-    "tubePath3D",
-    "radialArray3D",
-  ])
-  .catch("hollowBox3D");
-
-export type IsoBuilderType = z.infer<typeof IsoBuilderTypeSchema>;
-
-export const ParticleFlowTypeSchema = z
-  .enum([
-    "ions",
-    "electrons",
-    "heat-waves",
-    "fluid",
-    "steam",
-    "airflow",
-  ])
-  .catch("ions");
-
-export type ParticleFlowType = z.infer<typeof ParticleFlowTypeSchema>;
-
 /**
  * 1. AGENT 1 OUTPUT: Layman Storyboarder (`deconstructor.worker.ts`)
  */
@@ -58,7 +32,7 @@ export const DeconstructedComponentSchema = z.object({
   simpleCauseEffect: z.string().min(1),
   fillColor: z.string().catch("#E2E8F0"),
   /**
-   * 3D center coordinate in [-100..100] world space (projected automatically by iso-math.ts)
+   * Reference center coordinate in normalized world space
    */
   center3D: Point3DSchema.default({ x: 0, y: 0, z: 0 }),
   zoomTarget: z.object({
@@ -210,101 +184,105 @@ export type TtsSynchronizerOutput = z.infer<typeof TtsSynchronizerOutputSchema>;
 export type WordTiming = z.infer<typeof WordTimingSchema>;
 export type AudioSfxTrigger = z.infer<typeof AudioSfxTriggerSchema>;
 
-/**
- * 4. AGENT 4 OUTPUT: Universal Procedural 3D-to-SVG Isometric Scene Graph (`IsoSceneGraph`)
- * Uses the 6 universal 3D constructive geometry builders in [-100..100, -100..100, -100..100] world space.
- */
-export const IsoPartAnimationSchema = z.object({
-  type: z
-    .enum(["none", "rotate", "oscillate", "pulse", "explodeOffset"])
-    .catch("none"),
-  axis: z.enum(["X", "Y", "Z"]).catch("Z"),
-  speed: z.number().catch(1.0),
-  amplitude: z.number().catch(10),
-  explodeVector: Point3DSchema.optional(),
+export const SvgAnimationTransformSchema = z.object({
+  type: z.enum(["none", "translate", "rotate", "scale", "pulse"]).catch("none"),
+  dx: z.number().catch(0),
+  dy: z.number().catch(0),
+  rotateDeg: z.number().catch(0),
+  scaleFactor: z.number().catch(1),
+  speed: z.number().catch(1),
+  activeInPhases: z.array(z.number().int()).default([0, 1, 2, 3]),
 });
 
-export const IsoBuilderParamsSchema = z.object({
-  center: Point3DSchema.default({ x: 0, y: 0, z: 0 }),
-  axis: z.enum(["X", "Y", "Z"]).catch("Z"),
-  // For `revolveProfile`: 2D profile points `{ r, z }`
-  profilePoints: z
-    .array(z.object({ r: z.number().catch(35), z: z.number().catch(0) }))
-    .optional(),
-  startAngle: z.number().optional(),
-  endAngle: z.number().optional(),
-  // For `extrudePolygon`: 2D polygon `{ x, y }` + `depth`
-  polygon: z
-    .array(z.object({ x: z.number().catch(0), y: z.number().catch(0) }))
-    .optional(),
-  depth: z.number().optional(),
-  // For `hollowBox3D` & `box3D`:
-  size: z
-    .object({
-      w: z.number().catch(60),
-      d: z.number().catch(60),
-      h: z.number().catch(60),
-    })
-    .optional(),
-  wallThickness: z.number().catch(8),
-  // For `tubePath3D`:
-  path3D: z.array(Point3DSchema).optional(),
-  tubeRadius: z.number().optional(),
-  // For `radialArray3D`:
-  radialCount: z.number().int().min(3).max(20).optional(),
-  radialRadius: z.number().optional(),
-  elementSize: z
-    .object({
-      w: z.number().catch(14),
-      d: z.number().catch(8),
-      h: z.number().catch(28),
-    })
-    .optional(),
-});
-
-export const IsoPart3DSchema = z.object({
+export const IsoVectorPartSchema = z.object({
   partId: z.string(),
   componentId: z.string(),
-  name: z.string(), // Layman Indonesian name (used for anchor lookup, never drawn as raw SVG text)
-  builderType: IsoBuilderTypeSchema,
-  materialColor: z.string().catch("#E2E8F0"),
-  cutaway: z.boolean().catch(false),
-  opacity: z.number().min(0.15).max(1).catch(1),
-  params: IsoBuilderParamsSchema,
-  animation: IsoPartAnimationSchema.default({
+  name: z.string(), // Layman Indonesian name for pill callout matching
+  layerOrder: z.number().int().min(1).max(100), // Back-to-front painter's order
+  isCutawayWall: z.boolean().catch(false),
+  /**
+   * 2D anchor coordinate (x: 150..850, y: 200..850) on the 1000x1000 stage
+   * where the dark pill callout arrow attaches.
+   */
+  anchorPoint: z.object({
+    x: z.number().min(100).max(900).catch(500),
+    y: z.number().min(150).max(850).catch(500),
+  }),
+  /**
+   * Clean, valid inner SVG markup (<path>, <polygon>, <ellipse>, <g>, <defs>, <linearGradient>)
+   * drawn in isometric projection (30-degree axes) with cel-shaded fills and #1E293B 2.5px strokes.
+   * NO <text> tags and NO floating particle circles allowed.
+   */
+  svgMarkup: z.string().min(20),
+  animation: SvgAnimationTransformSchema.default({
     type: "none",
-    axis: "Z",
+    dx: 0,
+    dy: 0,
+    rotateDeg: 0,
+    scaleFactor: 1,
     speed: 1,
-    amplitude: 10,
+    activeInPhases: [0, 1, 2, 3],
   }),
 });
 
-export const ParticleStream3DSpecSchema = z.object({
-  id: z.string().catch("stream_1"),
-  type: ParticleFlowTypeSchema,
-  color: z.string().catch("#38BDF8"),
-  path3D: z.array(Point3DSchema).min(2),
-  count: z.number().int().min(3).max(24).catch(12),
-  speed: z.number().min(0.4).max(4).catch(1.5),
-  size: z.number().min(4).max(20).catch(10),
-  activeInPhases: z.array(z.number().int()).catch([0, 1, 2, 3]),
-});
+export const AnatomyDecompositionSchema = z
+  .object({
+    outerStructure: z
+      .union([z.string(), z.array(z.string())])
+      .transform((v) => (Array.isArray(v) ? v.join(", ") : v))
+      .catch("Outer protective casing"),
+    cutawayCrossSection: z
+      .union([z.string(), z.array(z.string())])
+      .transform((v) => (Array.isArray(v) ? v.join(", ") : v))
+      .catch("Cross-section cutaway"),
+    coreInternalParts: z
+      .union([z.string(), z.array(z.string())])
+      .transform((v) => (Array.isArray(v) ? v.join(", ") : v))
+      .catch("Internal core parts"),
+    movingMechanism: z
+      .union([z.string(), z.array(z.string())])
+      .transform((v) => (Array.isArray(v) ? v.join(", ") : v))
+      .catch("Moving mechanism"),
+  })
+  .catch({
+    outerStructure: "Outer protective casing",
+    cutawayCrossSection: "Cross-section cutaway",
+    coreInternalParts: "Internal core parts",
+    movingMechanism: "Moving mechanism",
+  });
 
-export const IsoSceneGraphSchema = z.object({
-  subjectTitle: z.string(),
-  anatomyDecomposition: z.object({
-    outerHousingShell: z.string(),
-    primaryInternalMechanism: z.string(),
-    zoomInSubComponents: z.string(),
-    physicalMediumFlow: z.string(),
+export const IsoSceneGraphRawSchema = z.object({
+  subjectTitle: z.string().catch("ISOMETRIC ANATOMY CUTAWAY"),
+  objectFormFactor: z.string().catch("Isometric Cutaway Assembly"),
+  anatomyDecomposition: AnatomyDecompositionSchema.default({
+    outerStructure: "Outer protective casing",
+    cutawayCrossSection: "Cross-section cutaway",
+    coreInternalParts: "Internal core parts",
+    movingMechanism: "Moving mechanism",
   }),
-  parts: z.array(IsoPart3DSchema).min(3),
-  particleStreams: z.array(ParticleStream3DSpecSchema).min(1),
+  svgDefsMarkup: z.string().default(""), // Shared <linearGradient> and clipPaths
+  parts: z.array(IsoVectorPartSchema).min(4),
 });
 
+export const IsoSceneGraphSchema = z.preprocess((val) => {
+  if (val && typeof val === "object") {
+    const obj = val as Record<string, unknown>;
+    if (!obj.parts) {
+      if (obj.visualScene && typeof obj.visualScene === "object") return obj.visualScene;
+      if (obj.isoSceneGraph && typeof obj.isoSceneGraph === "object") return obj.isoSceneGraph;
+      if (obj.scene && typeof obj.scene === "object") return obj.scene;
+      if (obj.data && typeof obj.data === "object") return obj.data;
+    }
+  }
+  return val;
+}, IsoSceneGraphRawSchema);
+
+export const FreeformIsoAnatomySceneSchema = IsoSceneGraphSchema;
+
+export type SvgAnimationTransform = z.infer<typeof SvgAnimationTransformSchema>;
+export type IsoVectorPart = z.infer<typeof IsoVectorPartSchema>;
 export type IsoSceneGraph = z.infer<typeof IsoSceneGraphSchema>;
-export type IsoPart3D = z.infer<typeof IsoPart3DSchema>;
-export type ParticleStream3DSpec = z.infer<typeof ParticleStream3DSpecSchema>;
+export type FreeformIsoAnatomyScene = z.infer<typeof FreeformIsoAnatomySceneSchema>;
 
 export const CameraZoomKeyframeSchema = z.object({
   startFrame: z.number().int().nonnegative(),

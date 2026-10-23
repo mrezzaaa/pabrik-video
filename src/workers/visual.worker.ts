@@ -63,7 +63,7 @@ export function startVisualWorker(): Worker {
           {
             agent: "AGENT_4_VISUAL",
             level: "SUCCESS",
-            message: `3D Isometric Scene Graph compiled: ${compositionProps.visualScene.parts.length} 3D parts (${compositionProps.visualScene.parts.map((p) => p.builderType).join(", ")}), ${compositionProps.visualScene.particleStreams.length} 3D particle streams, ${compositionProps.pillCallouts.length} projected pill sockets.`,
+            message: `Freeform Isometric Anatomy Scene compiled: ${compositionProps.visualScene.parts.length} vector parts (${compositionProps.visualScene.parts.map((p) => p.name).join(", ")}), ${compositionProps.pillCallouts.length} projected callout sockets.`,
           }
         );
 
