@@ -11,7 +11,8 @@
     "start": "next start --port 4000",
     "remotion:studio": "remotion studio src/remotion/index.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint"
+    "lint": "eslint",
+    "qa:pacing": "tsx scripts/qa-pacing.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",
