@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: pabrik-video-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  bull-board:
+    image: deadly0/bull-board:latest
+    container_name: pabrik-video-bull-board
+    restart: unless-stopped
+    ports:
+      - "3005:3000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_USE_TLS: "false"
+      BULL_PREFIX: bull
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis_data:
