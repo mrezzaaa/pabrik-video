@@ -224,12 +224,20 @@ export const ShapeSpecSchema = z.discriminatedUnion("type", [
     height: z.number().positive(),
   }),
   z.object({
+    type: z.literal("cutawayCylinder"),
+    radius: z.number().positive(),
+    height: z.number().positive(),
+    wall: z.number().positive().optional(),
+    cut: z.literal("front").default("front"),
+  }),
+  z.object({
     type: z.literal("cutawayBox"),
     dx: z.number().positive(),
     dy: z.number().positive(),
     dz: z.number().positive(),
     cutRatioX: z.number().min(0.2).max(0.8).default(0.5),
     cutRatioY: z.number().min(0.2).max(0.8).default(0.5),
+    floor: z.number().min(0).default(0.4),
   }),
   z.object({
     type: z.literal("extrudePolygon"),
@@ -260,6 +268,7 @@ export const PartAnimation3DSchema = z.object({
   amplitude: z.number().catch(0),
   speed: z.number().catch(1),
   activeInPhases: z.array(z.number().int()).default([0, 1, 2, 3]),
+  pivot: z.object({ x: z.number(), y: z.number() }).optional(),
 });
 
 export const PartPhaseStateSchema = z.object({

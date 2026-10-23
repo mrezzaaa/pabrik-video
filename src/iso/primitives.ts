@@ -343,15 +343,77 @@ export function createCutawayBox(params: {
   dy: number;
   dz: number;
   cutRatio?: { x: number; y: number }; // Proporsi sudut depan yang dibelah (default 0.5, 0.5)
+  floor?: number; // Tebal lantai yang tetap ada di area potongan (default 0.4)
 }): Face3D[] {
   const { partId, x, y, z, dx, dy, dz } = params;
   const rx = params.cutRatio?.x ?? 0.5;
   const ry = params.cutRatio?.y ?? 0.5;
+  const floor = Math.max(0, Math.min(dz - 0.1, params.floor ?? 0.4));
 
   const cutX = x + dx * (1 - rx);
   const cutY = y + dy * (1 - ry);
 
-  // Footprint L-shape (menghilangkan kuadran kanan-depan cutX..x+dx, cutY..y+dy)
+  const faces: Face3D[] = [];
+
+  // 1. Jika floor > 0, buat plat lantai di kuadran potongan agar part internal tidak melayang
+  if (floor > 0) {
+    const cavityFloorPts: Point3D[] = [
+      { x: cutX, y: cutY, z: z + floor },
+      { x: x + dx, y: cutY, z: z + floor },
+      { x: x + dx, y: y + dy, z: z + floor },
+      { x: cutX, y: y + dy, z: z + floor },
+    ];
+    const cfCentroid = computeCentroid(cavityFloorPts);
+    faces.push({
+      id: `${partId}_cavity_floor`,
+      partId,
+      points3D: cavityFloorPts,
+      normal: { x: 0, y: 0, z: 1 },
+      role: "top",
+      centroid3D: cfCentroid,
+      depthKey: cfCentroid.x + cfCentroid.y + cfCentroid.z,
+    });
+
+    // Sisi kanan dan kiri tebal lantai
+    const floorRightPts: Point3D[] = [
+      { x: x + dx, y: cutY, z },
+      { x: x + dx, y: y + dy, z },
+      { x: x + dx, y: y + dy, z: z + floor },
+      { x: x + dx, y: cutY, z: z + floor },
+    ];
+    const frCentroid = computeCentroid(floorRightPts);
+    faces.push({
+      id: `${partId}_floor_right`,
+      partId,
+      points3D: floorRightPts,
+      normal: { x: 1, y: 0, z: 0 },
+      role: "right",
+      centroid3D: frCentroid,
+      depthKey: frCentroid.x + frCentroid.y + frCentroid.z,
+    });
+
+    const floorLeftPts: Point3D[] = [
+      { x: cutX, y: y + dy, z },
+      { x: cutX, y: y + dy, z: z + floor },
+      { x: x + dx, y: y + dy, z: z + floor },
+      { x: x + dx, y: y + dy, z },
+    ];
+    const flCentroid = computeCentroid(floorLeftPts);
+    faces.push({
+      id: `${partId}_floor_left`,
+      partId,
+      points3D: floorLeftPts,
+      normal: { x: 0, y: 1, z: 0 },
+      role: "left",
+      centroid3D: flCentroid,
+      depthKey: flCentroid.x + flCentroid.y + flCentroid.z,
+    });
+  }
+
+  // 2. Extrude polygon bentuk L dari z + floor setinggi (dz - floor)
+  const zStart = z + floor;
+  const heightExtrude = dz - floor;
+
   const footprint = [
     { x, y },
     { x: x + dx, y },
@@ -361,22 +423,19 @@ export function createCutawayBox(params: {
     { x, y: y + dy },
   ];
 
-  const faces = createExtrudePolygon({
+  const lFaces = createExtrudePolygon({
     partId,
     footprint,
-    z,
-    dz,
+    z: zStart,
+    dz: heightExtrude,
     isCutaway: false,
   });
+  faces.push(...lFaces);
 
-  // Tandai face potongan interior sebagai "cut"
-  // Wall interior 1: dari (x+dx, cutY) ke (cutX, cutY) -> normal menghadap -y?
-  // Dalam footprint, segmen 2: (x+dx, cutY) ke (cutX, cutY)
-  // segmen 3: (cutX, cutY) ke (cutX, y+dy)
-  // Dinding ini adalah penampang potongan langsung!
+  // 3. Dinding penampang (cut) potongan yang menghadap ke kamera
   const cutWall1Pts: Point3D[] = [
-    { x: x + dx, y: cutY, z },
-    { x: cutX, y: cutY, z },
+    { x: x + dx, y: cutY, z: zStart },
+    { x: cutX, y: cutY, z: zStart },
     { x: cutX, y: cutY, z: z + dz },
     { x: x + dx, y: cutY, z: z + dz },
   ];
@@ -393,8 +452,8 @@ export function createCutawayBox(params: {
   });
 
   const cutWall2Pts: Point3D[] = [
-    { x: cutX, y: cutY, z },
-    { x: cutX, y: y + dy, z },
+    { x: cutX, y: cutY, z: zStart },
+    { x: cutX, y: y + dy, z: zStart },
     { x: cutX, y: y + dy, z: z + dz },
     { x: cutX, y: cutY, z: z + dz },
   ];
@@ -414,7 +473,166 @@ export function createCutawayBox(params: {
 }
 
 /**
- * 6. CYLINDER (Silinder Isometrik)
+ * 6. CUTAWAY CYLINDER
+ * Silinder/tabung dengan 1 kuartal (x > 0, y > 0 dari pusat) dibuang.
+ * Radius dalam = r - wall; wall = r berarti silinder pejal.
+ * Face penampang diberi arsiran dan role "cut".
+ */
+export function createCutawayCylinder(params: {
+  partId: string;
+  x: number; // Pusat X
+  y: number; // Pusat Y
+  z: number; // Dasar Z
+  radius: number;
+  height: number;
+  wall?: number;
+  cut?: "front";
+  segments?: number;
+}): Face3D[] {
+  const { partId, x, y, z, radius: r, height: h } = params;
+  const wall = params.wall ?? r;
+  const rIn = Math.max(0, r - wall);
+  const segments = params.segments || 24;
+  const faces: Face3D[] = [];
+
+  // Potongan kuadran depan: x > 0 dan y > 0 (dari sudut 0 ke PI/2).
+  // Sisa busur yang digambar adalah dari PI/2 ke 2*PI (90° ke 360°).
+  const startAngle = Math.PI / 2;
+  const endAngle = 2 * Math.PI;
+  const arcSegments = Math.max(6, Math.round((segments * 3) / 4));
+
+  const outerArc: Point3D[] = [];
+  const innerArc: Point3D[] = [];
+
+  for (let i = 0; i <= arcSegments; i++) {
+    const angle = startAngle + (i * (endAngle - startAngle)) / arcSegments;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    outerArc.push({ x: x + r * cosA, y: y + r * sinA, z });
+    innerArc.push({ x: x + rIn * cosA, y: y + rIn * sinA, z });
+  }
+
+  // 1. Cut Face pada angle 0 (sepanjang ray rIn..r pada y = y, z..z+h)
+  const cutFace0Pts: Point3D[] = [
+    { x: x + rIn, y, z },
+    { x: x + r, y, z },
+    { x: x + r, y, z: z + h },
+    { x: x + rIn, y, z: z + h },
+  ];
+  const c0Centroid = computeCentroid(cutFace0Pts);
+  faces.push({
+    id: `${partId}_cut_face0`,
+    partId,
+    points3D: cutFace0Pts,
+    normal: { x: 0, y: 1, z: 0 },
+    role: "cut",
+    isCutaway: true,
+    centroid3D: c0Centroid,
+    depthKey: c0Centroid.x + c0Centroid.y + c0Centroid.z + 0.1,
+  });
+
+  // 2. Cut Face pada angle PI/2 (sepanjang ray rIn..r pada x = x, z..z+h)
+  const cutFace90Pts: Point3D[] = [
+    { x, y: y + rIn, z },
+    { x, y: y + rIn, z: z + h },
+    { x, y: y + r, z: z + h },
+    { x, y: y + r, z },
+  ];
+  const c90Centroid = computeCentroid(cutFace90Pts);
+  faces.push({
+    id: `${partId}_cut_face90`,
+    partId,
+    points3D: cutFace90Pts,
+    normal: { x: 1, y: 0, z: 0 },
+    role: "cut",
+    isCutaway: true,
+    centroid3D: c90Centroid,
+    depthKey: c90Centroid.x + c90Centroid.y + c90Centroid.z + 0.1,
+  });
+
+  // 3. Top Faces (di z + h)
+  for (let i = 0; i < arcSegments; i++) {
+    const o0 = { ...outerArc[i], z: z + h };
+    const o1 = { ...outerArc[i + 1], z: z + h };
+    const in0 = { ...innerArc[i], z: z + h };
+    const in1 = { ...innerArc[i + 1], z: z + h };
+
+    const topQuadPts = rIn > 0 ? [o0, o1, in1, in0] : [o0, o1, { x, y, z: z + h }];
+    const tCentroid = computeCentroid(topQuadPts);
+    faces.push({
+      id: `${partId}_top_${i}`,
+      partId,
+      points3D: topQuadPts,
+      normal: { x: 0, y: 0, z: 1 },
+      role: "top",
+      centroid3D: tCentroid,
+      depthKey: tCentroid.x + tCentroid.y + tCentroid.z,
+    });
+  }
+
+  // 4. Dinding silinder luar
+  for (let i = 0; i < arcSegments; i++) {
+    const p0 = outerArc[i];
+    const p1 = outerArc[i + 1];
+    const wallQuad: Point3D[] = [
+      p0,
+      p1,
+      { ...p1, z: z + h },
+      { ...p0, z: z + h },
+    ];
+    const midAngle = startAngle + ((i + 0.5) * (endAngle - startAngle)) / arcSegments;
+    const nx = Math.cos(midAngle);
+    const ny = Math.sin(midAngle);
+    const normal = { x: nx, y: ny, z: 0 };
+    const role: FaceRole = nx > ny ? "right" : "left";
+    const wCentroid = computeCentroid(wallQuad);
+
+    faces.push({
+      id: `${partId}_outer_wall_${i}`,
+      partId,
+      points3D: wallQuad,
+      normal,
+      role,
+      centroid3D: wCentroid,
+      depthKey: wCentroid.x + wCentroid.y + wCentroid.z,
+    });
+  }
+
+  // 5. Jika berongga (rIn > 0), dinding interior tabung menghadap ke dalam rongga
+  if (rIn > 0) {
+    for (let i = 0; i < arcSegments; i++) {
+      const p0 = innerArc[i];
+      const p1 = innerArc[i + 1];
+      const innerWallQuad: Point3D[] = [
+        p1,
+        p0,
+        { ...p0, z: z + h },
+        { ...p1, z: z + h },
+      ];
+      const midAngle = startAngle + ((i + 0.5) * (endAngle - startAngle)) / arcSegments;
+      const nx = -Math.cos(midAngle);
+      const ny = -Math.sin(midAngle);
+      const normal = { x: nx, y: ny, z: 0 };
+      const role: FaceRole = nx > ny ? "right" : "left";
+      const iwCentroid = computeCentroid(innerWallQuad);
+
+      faces.push({
+        id: `${partId}_inner_wall_${i}`,
+        partId,
+        points3D: innerWallQuad,
+        normal,
+        role,
+        centroid3D: iwCentroid,
+        depthKey: iwCentroid.x + iwCentroid.y + iwCentroid.z,
+      });
+    }
+  }
+
+  return faces;
+}
+
+/**
+ * 7. CYLINDER (Silinder Utuh)
  * Tutup elips atas + dinding tabung dengan tepi tangen yang akurat.
  */
 export function createCylinder(params: {
