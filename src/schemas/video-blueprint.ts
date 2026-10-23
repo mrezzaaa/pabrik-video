@@ -13,6 +13,20 @@ export const Vec3TupleSchema = z
   .tuple([z.coerce.number().catch(0), z.coerce.number().catch(0), z.coerce.number().catch(0)])
   .catch([0, 0, 0]);
 
+export const SubjectArchetypeSchema = z
+  .enum([
+    "AERODYNAMIC_DRONE",       // Quadcopters, UAVs, fixed-wing planes, rockets
+    "ROTARY_PNEUMATIC_ENGINE", // AC compressors, combustion engines, pistons, pumps, turbines
+    "ELECTROCHEMICAL_BATTERY", // Lithium batteries, powerbanks, energy storage cells
+    "ELECTRONIC_COMPUTING",    // Servers, motherboards, CPUs, chips, cloud infrastructure
+    "PHOTOVOLTAIC_ENERGY",     // Solar panels, photovoltaic cells, inverters
+    "ANATOMICAL_ORGAN",        // Human body, heart, kidney, eyes, lungs, biology
+    "UNIVERSAL_CUTAWAY",       // General tools, household appliances, industrial machines
+  ])
+  .catch("UNIVERSAL_CUTAWAY");
+
+export type SubjectArchetype = z.infer<typeof SubjectArchetypeSchema>;
+
 export const ThreeGeometryTypeSchema = z
   .enum([
     "gltf-asset",       // Loads .glb/.gltf model from /public/assets/models/ or URL
@@ -20,13 +34,19 @@ export const ThreeGeometryTypeSchema = z
     "cylinder",         // Solid 3D cylinder / shaft / disk / core
     "sphere",           // 3D sphere / dome / organic bulb (supports phiLength cutaway)
     "box",              // 3D cuboid / plate / block / chassis
-    "hollow-box",       // 3D room / casing / battery housing with front cutaway
+    "hollow-box",       // 3D cutaway box / chassis / housing with open side or cutaway
     "torus",            // 3D ring / seal / coil / tire / valve seat
     "cone",             // 3D nozzle / funnel / tip / beam
     "capsule",          // 3D tank / biological cell / chamber
     "lathe",            // Custom 2D profile points [r, y] revolved in 3D (bottles, bells, contours)
     "tube",             // 3D curved pipe / channel / wire / vessel along 3D spline path
-    "radial-array",     // Repeated 3D sub-elements around an axis (turbine blades, stator coils, gears)
+    "radial-array",     // Repeated 3D sub-elements (turbine blades, fan blades, stator coils, gears)
+    "drone-assembly",   // Complete 3D drone quadcopter with 4 arms, motors, spinning rotors & cutaway fuselage
+    "battery-assembly", // Complete 3D cutaway battery pack with internal cells, busbars, BMS board & terminals
+    "piston-assembly",  // Complete 3D cutaway engine/compressor cylinder with reciprocating piston, rod & valves
+    "turbine-assembly", // Complete 3D cutaway jet/turbine nacelle with spinning front fan, shaft & compressor discs
+    "circuit-board",    // Complete 3D electronic PCB with central chip, micro-components, capacitors & bus traces
+    "solar-assembly",   // Complete 3D photovoltaic solar panel with aluminum frame & silicon cell grid
   ])
   .catch("cylinder");
 
@@ -57,6 +77,7 @@ export const DeconstructedComponentSchema = z.object({
   simpleCauseEffect: z.string().min(1),
   fillColor: z.string().catch("#E2E8F0"),
   position3D: Vec3TupleSchema,
+  recommendedGeometryType: ThreeGeometryTypeSchema.optional(),
   zoomTarget: z.object({
     focusPosition3D: Vec3TupleSchema,
     zoomMultiplier: z.coerce.number().min(1).max(2.4).catch(1.6),
@@ -75,6 +96,7 @@ export const DeconstructedPhaseSchema = z.object({
 
 export const DeconstructionBlueprintSchema = z.object({
   topic: z.string().min(1),
+  suggestedArchetype: SubjectArchetypeSchema.default("UNIVERSAL_CUTAWAY"),
   laymanHookTitle: z.string().min(1),
   everydayCategory: z.string().min(1),
   coreSimpleTruth: z.string().min(1),
@@ -95,7 +117,7 @@ export type DeconstructionBlueprint = z.infer<typeof DeconstructionBlueprintSche
 export const PillLabelItemSchema = z.object({
   id: z.string(),
   componentId: z.string(),
-  text: z.string(), // Max 2-3 words, e.g., "DURI LUNAK →", "← UAP TERKURUNG"
+  text: z.string(), // Max 2-3 words directly naming the specific component with arrow, e.g. "Bilah Rotor →" or "← Sel Katoda"
   direction: z.enum(["LEFT", "RIGHT"]).catch("RIGHT"),
   relativeTriggerRatio: z.coerce.number().min(0.05).max(0.85).catch(0.15),
   durationSeconds: z.coerce.number().min(1.5).max(8).catch(4.0),
@@ -215,9 +237,13 @@ export const ThreeGeometryArgsSchema = z.object({
   depth: z.coerce.number().optional(),
   tubeRadius: z.coerce.number().optional(),
   arcAngleDeg: z.coerce.number().min(90).max(360).optional(), // 270 = 90-degree front cutaway
-  radialCount: z.coerce.number().int().min(3).max(24).optional(),
+  radialCount: z.coerce.number().int().min(2).max(32).optional(),
   lathePoints: z.array(z.tuple([z.coerce.number(), z.coerce.number()])).optional(), // [radius, y]
   tubePath: z.array(Vec3TupleSchema).optional(),
+  orientation: z.enum(["horizontal", "vertical"]).optional(),
+  bladeLength: z.coerce.number().optional(),
+  bladeWidth: z.coerce.number().optional(),
+  pitchDeg: z.coerce.number().optional(),
 });
 
 export const ThreeNodeSchema = z.object({

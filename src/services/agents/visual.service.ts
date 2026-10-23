@@ -19,9 +19,9 @@ import { project3DTo2D } from "@/remotion/projection";
 
 const ISO_SCENE_TEMPLATE = `{
   "subjectTitle": "<Subject Cutaway Title>",
-  "objectFormFactor": "<Description of form factor, e.g., Cylindrical Pressure Cooker Assembly>",
+  "objectFormFactor": "<Precise description of form factor, e.g., Quadcopter Drone with 4 Arms and Propellers or Sealed Piston Compressor Assembly>",
   "anatomyDecomposition": {
-    "outerHousingShell": "<Outer shell name and cutaway description>",
+    "outerHousingShell": "<Outer shell/casing and cutaway description>",
     "primaryInternalMechanism": "<Internal chamber and primary mechanism>",
     "zoomInSubComponents": "<Key subcomponents zoomed in>",
     "physicalStateChange": "<Core physical state change>"
@@ -33,108 +33,25 @@ const ISO_SCENE_TEMPLATE = `{
   "enableSteamWisps": false,
   "nodes": [
     {
-      "nodeId": "node_outer_shell",
+      "nodeId": "node_hero_assembly",
       "componentId": "comp_1",
-      "name": "<Outer Housing / Casing>",
-      "geometryType": "hollow-cylinder",
+      "name": "<Hero Assembly / Primary Mechanism>",
+      "geometryType": "<drone-assembly | battery-assembly | piston-assembly | turbine-assembly | circuit-board | solar-assembly | hollow-cylinder | hollow-box | radial-array | cylinder>",
       "position": [0, 0, 0],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
-      "color": "#E2E8F0",
+      "color": "#F8FAFC",
       "materialType": "toon",
       "opacity": 1.0,
       "enableCutawayClip": true,
       "showEdgesOutline": true,
-      "geometryArgs": {
-        "radiusTop": 1.25,
-        "radiusBottom": 1.25,
-        "height": 2.4,
-        "wallThickness": 0.16,
-        "arcAngleDeg": 270
-      },
+      "geometryArgs": {},
       "animation": {
         "type": "none",
         "axis": "y",
         "speed": 1.0,
         "amplitude": 0,
         "activeInPhases": [0, 1, 2, 3]
-      }
-    },
-    {
-      "nodeId": "node_internal_cavity",
-      "componentId": "comp_2",
-      "name": "<Internal Chamber / Fluid Reservoir>",
-      "geometryType": "cylinder",
-      "position": [0, -0.2, 0],
-      "rotation": [0, 0, 0],
-      "scale": [1, 1, 1],
-      "color": "#93C5FD",
-      "materialType": "liquid",
-      "opacity": 0.85,
-      "enableCutawayClip": false,
-      "showEdgesOutline": true,
-      "geometryArgs": {
-        "radiusTop": 1.0,
-        "radiusBottom": 1.0,
-        "height": 1.6
-      },
-      "animation": {
-        "type": "fluid-level",
-        "axis": "y",
-        "speed": 1.2,
-        "amplitude": 0.1,
-        "activeInPhases": [1, 2]
-      }
-    },
-    {
-      "nodeId": "node_core_mechanism",
-      "componentId": "comp_3",
-      "name": "<Primary Active Mechanism>",
-      "geometryType": "lathe",
-      "position": [0, -0.6, 0],
-      "rotation": [0, 0, 0],
-      "scale": [1, 1, 1],
-      "color": "#FACC15",
-      "materialType": "metallic",
-      "opacity": 1.0,
-      "enableCutawayClip": false,
-      "showEdgesOutline": true,
-      "geometryArgs": {
-        "radiusTop": 0.7,
-        "height": 1.2,
-        "lathePoints": [[0.1, -0.6], [0.6, -0.3], [0.7, 0.2], [0.4, 0.6]]
-      },
-      "animation": {
-        "type": "rotate",
-        "axis": "y",
-        "speed": 1.5,
-        "amplitude": 0.2,
-        "activeInPhases": [1, 2, 3]
-      }
-    },
-    {
-      "nodeId": "node_safety_valve",
-      "componentId": "comp_4",
-      "name": "<Precision Valve / Zoom Sub-Part>",
-      "geometryType": "capsule",
-      "position": [0, 1.35, 0],
-      "rotation": [0, 0, 0],
-      "scale": [1, 1, 1],
-      "color": "#F87171",
-      "materialType": "metallic",
-      "opacity": 1.0,
-      "enableCutawayClip": false,
-      "showEdgesOutline": true,
-      "geometryArgs": {
-        "radiusTop": 0.25,
-        "height": 0.6
-      },
-      "animation": {
-        "type": "oscillate-position",
-        "axis": "y",
-        "speed": 2.2,
-        "amplitude": 0.18,
-        "activeInPhases": [1, 2]
       }
     }
   ]
@@ -171,6 +88,7 @@ ${anatomySkill}
   const userPrompt = `Design a high-fidelity Three.js 3D Isometric Cutaway Scene ("IsoSceneGraphSchema") for:
 
 TOPIC: "${blueprint.topic}"
+SUGGESTED ARCHETYPE: "${blueprint.suggestedArchetype || "UNIVERSAL_CUTAWAY"}"
 CATEGORY: "${blueprint.everydayCategory}"
 CORE MECHANISM: "${blueprint.coreSimpleTruth}"
 
@@ -188,11 +106,19 @@ ${JSON.stringify(
   2
 )}
 
-GEOMETRY & SCENE SPECIFICATIONS:
-1. Provide 4 to 8 Three.js nodes in normalized metric space [-2.5..2.5].
-2. Outer housing/shell MUST have enableCutawayClip: true or geometryType: "hollow-cylinder" with arcAngleDeg: 270 so interior mechanisms are visible.
-3. Coaxially nest internal chambers and core mechanisms cleanly inside the outer shell.
-4. Set enableSteamWisps to true ONLY if topic involves boiling, steaming, exhaust fumes, or vapor release.
+STRICT 3D GEOMETRY GUIDELINES:
+1. Select the geometryType that accurately models this topic's physical reality:
+   - For Drone/UAV -> Use "drone-assembly" as the primary node (or combine with focused sub-nodes for Act 3 zoom-in)!
+   - For Battery/Powerbank -> Use "battery-assembly"!
+   - For AC Compressor/Engine/Piston -> Use "piston-assembly"!
+   - For Turbine/Jet -> Use "turbine-assembly"!
+   - For Computer/Server/CPU/PCB -> Use "circuit-board"!
+   - For Solar Panel -> Use "solar-assembly"!
+   - For Cylindrical machinery/vessels -> Use "hollow-cylinder" with arcAngleDeg: 270!
+   - For Box enclosures -> Use "hollow-box"!
+2. Each node must have a componentId matching one of the blueprint component IDs!
+3. All coordinates must be within normalized Three.js metric space [-2.5..2.5].
+4. Set enableSteamWisps to true ONLY if the topic involves boiling, steaming, exhaust fumes, or gas release.
 5. Return ONLY valid JSON conforming to this schema structure:
 ${ISO_SCENE_TEMPLATE}`;
 

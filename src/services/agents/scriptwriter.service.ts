@@ -21,34 +21,34 @@ const SCRIPT_SCHEMA_TEMPLATE = `{
       "segmentIndex": 0,
       "phaseType": "EVERYDAY_CONTRAST_HOOK",
       "chapterTitle": "<Action Title with <highlight>key words</highlight>>",
-      "narrationText": "<MINIMUM 18 WORDS. Example: 'Nah, ini bagian utamanya. Kuncinya ada di komponen kecil ini. Semakin tinggi tekanannya, semakin keras ia bekerja. Makanya perlu dicek rutin.'>",
+      "narrationText": "<MINIMUM 20 TO 28 SPOKEN WORDS. Chain 3-5 punchy Indonesian sentences, e.g., 'Nah, ini bagian utamanya. Kuncinya ada di komponen kecil ini. Semakin tinggi tekanannya, semakin keras ia bekerja. Makanya perlu dicek rutin.'>",
       "primaryMetric": {
-        "startValue": 18,
-        "endValue": 65,
+        "startValue": 10,
+        "endValue": 85,
         "unit": "<unit from blueprint>",
         "decimals": 0,
         "isHighActive": false,
-        "baselineValue": 18,
-        "peakValue": 200,
-        "sparklinePoints": [0, 20, 60, 100]
+        "baselineValue": 10,
+        "peakValue": 100,
+        "sparklinePoints": [0, 25, 60, 100]
       },
       "statusBadge": {
-        "text": "<SHORT STATUS, e.g., STANDAR / AKTIF>",
+        "text": "<SHORT STATUS, e.g., STANDAR / EFISIEN / OPTIMAL>",
         "variant": "green"
       },
-      "secondaryMetric": "<Short context, e.g., 5V / 3A standar>",
+      "secondaryMetric": "<Short context string strictly relevant to this topic, e.g., Bobot 1.2 kg or Tekanan 18 Bar or Daya 350W or Tegangan 4.2V>",
       "pillLabels": [
         {
           "id": "pill_0_1",
           "componentId": "comp_1",
-          "text": "<2-3 words label> →",
+          "text": "<exact component name from blueprint> →",
           "direction": "RIGHT",
           "relativeTriggerRatio": 0.15,
           "durationSeconds": 4.0
         }
       ],
       "sfxCue": {
-        "text": "<SHORT ONOMATOPOEIA, e.g., PSSST!>",
+        "text": "<SHORT ONOMATOPOEIA / STAMP, e.g., WHOOSH! / KLIK! / SURGE! / BZZZT!>",
         "variant": "STEAM_YELLOW_BLUE",
         "soundEffectFile": "pop-lock.mp3",
         "x": 680,

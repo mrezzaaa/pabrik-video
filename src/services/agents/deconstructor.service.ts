@@ -9,57 +9,62 @@ import { loadAgentSkill } from "@/lib/skill-loader";
 
 const BLUEPRINT_SCHEMA_TEMPLATE = `{
   "topic": "<user topic string>",
+  "suggestedArchetype": "AERODYNAMIC_DRONE | ROTARY_PNEUMATIC_ENGINE | ELECTROCHEMICAL_BATTERY | ELECTRONIC_COMPUTING | PHOTOVOLTAIC_ENERGY | ANATOMICAL_ORGAN | UNIVERSAL_CUTAWAY",
   "laymanHookTitle": "<Short hook title with <highlight>key words</highlight>>",
   "everydayCategory": "<Category in uppercase, e.g., TEKNOLOGI & REKAYASA SEHARI-HARI>",
   "coreSimpleTruth": "<One sentence layman summary of the core physical mechanism>",
-  "baselineMetricValue": 18,
-  "peakMetricValue": 200,
-  "metricUnit": "°C | Bar | W | V | RPM | km/j | Gbps | %",
+  "baselineMetricValue": 10,
+  "peakMetricValue": 100,
+  "metricUnit": "<realistic unit for this topic, e.g., jam | Bar | V | W | RPM | °C | % | km/j>",
   "practicalChecklistTitle": "CEK SEBELUM BELI / PAKAI:",
   "practicalChecklistItems": [
-    "<3-4 words item 1, e.g., Karet perapat silikon>",
-    "<3-4 words item 2, e.g., Katup pengaman uap>",
-    "<3-4 words item 3, e.g., Kunci tuas penutup>"
+    "<3-4 words item 1 strictly tailored to this topic>",
+    "<3-4 words item 2 strictly tailored to this topic>",
+    "<3-4 words item 3 strictly tailored to this topic>"
   ],
   "components": [
     {
       "id": "comp_1",
-      "name": "<Outer Shell / Casing Name>",
+      "name": "<Outer Shell / Casing / Body Name>",
       "anatomicalLayer": "OUTER_CUTAWAY_SHELL",
       "everydayRole": "<Relatable everyday role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#E2E8F0",
       "position3D": [0, 0, 0],
+      "recommendedGeometryType": "<drone-assembly | battery-assembly | piston-assembly | turbine-assembly | circuit-board | solar-assembly | hollow-cylinder | hollow-box>",
       "zoomTarget": { "focusPosition3D": [0, 0, 0], "zoomMultiplier": 1.2 }
     },
     {
       "id": "comp_2",
-      "name": "<Internal Chamber / Fluid Reservoir>",
+      "name": "<Internal Chamber / Battery Bay / Reservoir>",
       "anatomicalLayer": "INTERNAL_CHAMBER",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#93C5FD",
       "position3D": [0, 0.2, 0],
+      "recommendedGeometryType": "<box | cylinder | hollow-box | capsule>",
       "zoomTarget": { "focusPosition3D": [0, 0.2, 0], "zoomMultiplier": 1.4 }
     },
     {
       "id": "comp_3",
-      "name": "<Core Active Mechanism>",
+      "name": "<Core Active Mechanism, e.g., Rotor / Piston / Cells / CPU>",
       "anatomicalLayer": "CORE_MECHANISM",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#FACC15",
       "position3D": [0, -0.4, 0],
+      "recommendedGeometryType": "<radial-array | cylinder | lathe | box>",
       "zoomTarget": { "focusPosition3D": [0, -0.4, 0], "zoomMultiplier": 1.6 }
     },
     {
       "id": "comp_4",
-      "name": "<Safety Valve or Zoom Sub-Part>",
+      "name": "<Precision Valve / Controller / Zoom Sub-Part>",
       "anatomicalLayer": "ZOOM_SUBPART",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#F87171",
       "position3D": [0, 1.2, 0],
+      "recommendedGeometryType": "<capsule | lathe | box | torus | tube>",
       "zoomTarget": { "focusPosition3D": [0, 1.2, 0], "zoomMultiplier": 1.8 }
     }
   ],
