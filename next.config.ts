@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     "bullmq",
     "ioredis",
   ],
+  transpilePackages: ["three", "@remotion/three", "@react-three/fiber", "@react-three/drei"]
 };
 
 export default nextConfig;

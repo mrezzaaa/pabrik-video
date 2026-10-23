@@ -17,12 +17,7 @@ async function main() {
 
   console.log("\n▶️ [2/5] Agent 2: Writing conversational spoken-word script & running Jury...");
   const { script } = await runScriptwriterAgent(blueprint);
-  console.log(`   ✅ Script written & evaluated by Jury!`);
-  if (script.juryEvaluation) {
-    console.log(`      Jury Score: ${script.juryEvaluation.score}/100 (Passed: ${script.juryEvaluation.passed})`);
-    console.log(`      Spoken Flow: ${script.juryEvaluation.spokenFlowScore}, Transitions: ${script.juryEvaluation.beatTransitionScore}, Pacing: ${script.juryEvaluation.pacingScore}`);
-    console.log(`      Critique: ${script.juryEvaluation.critique}`);
-  }
+  console.log(`   ✅ Script written: ${script.segments.length} segments!`);
   script.segments.forEach((s, idx) => {
     console.log(`      Beat ${idx} (${s.narrationText.split(/\s+/).filter(Boolean).length} kata): "${s.narrationText}"`);
   });
@@ -45,7 +40,7 @@ async function main() {
     tts,
     aspectRatioMode: "SHORTS_9_16",
   });
-  console.log(`   ✅ Visual scene choreographed: ${compositionProps.visualScene.parts.length} vector parts, ${compositionProps.pillCallouts.length} callouts`);
+  console.log(`   ✅ Visual scene choreographed: ${compositionProps.visualScene.nodes.length} 3D nodes, ${compositionProps.pillCallouts.length} callouts`);
 
   console.log("\n▶️ [5/5] Agent 5: Rendering 1080x1920 60fps MP4 via Remotion...");
   const renderResult = await runRemotionRenderAgent({

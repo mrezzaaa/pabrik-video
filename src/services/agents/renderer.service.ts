@@ -59,6 +59,9 @@ export async function runRemotionRenderAgent(params: {
     id: compositionId,
     inputProps: compositionProps,
     port: safePort,
+    chromiumOptions: {
+      gl: "angle",
+    },
   });
 
   let lastReportedPercent = -1;
@@ -77,6 +80,9 @@ export async function runRemotionRenderAgent(params: {
     outputLocation: outputFilePath,
     inputProps: compositionProps,
     concurrency: env.REMOTION_CONCURRENCY || 4,
+    chromiumOptions: {
+      gl: "angle",
+    },
     onProgress: ({ progress }) => {
       const pct = Math.round(progress * 100);
       if (pct !== lastReportedPercent && pct % 10 === 0 && onProgress) {

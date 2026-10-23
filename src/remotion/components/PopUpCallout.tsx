@@ -25,7 +25,7 @@ export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const activePills = pillCallouts.filter(
+  const rawActivePills = pillCallouts.filter(
     (c) => frame >= c.startFrame && frame <= c.endFrame,
   );
   const activeSfx = sfxOverlays.filter(
@@ -47,6 +47,36 @@ export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
     fps,
     config: { damping: 16, stiffness: 130 },
   });
+
+  // Limit to maximum 2 pills at any frame and apply vertical collision avoidance (minDeltaY = 76px)
+  const activePills = rawActivePills.slice(0, 2).map((p) => ({
+    ...p,
+    anchor: { ...p.anchor },
+  }));
+
+  if (activePills.length === 2) {
+    const p1 = activePills[0];
+    const p2 = activePills[1];
+    const dy = p2.anchor.y - p1.anchor.y;
+    if (Math.abs(dy) < 76) {
+      const shift = (76 - Math.abs(dy)) / 2;
+      if (dy >= 0) {
+        p1.anchor.y = Math.max(300, p1.anchor.y - shift);
+        p2.anchor.y = Math.min(1450, p2.anchor.y + shift);
+      } else {
+        p1.anchor.y = Math.min(1450, p1.anchor.y + shift);
+        p2.anchor.y = Math.max(300, p2.anchor.y - shift);
+      }
+    }
+  }
+
+  // Strict checklist limit: max 3 items, max 3-4 words per item
+  const sanitizedChecklistItems = (practicalChecklist?.items ?? [])
+    .slice(0, 3)
+    .map((item) => {
+      const words = item.trim().split(/\s+/);
+      return words.length > 4 ? words.slice(0, 4).join(" ") : item;
+    });
 
   return (
     <div
@@ -101,9 +131,36 @@ export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
           );
         }
 
-        const isRedStamp = sfx.variant === "RED_STAMP";
-        const bgColor = isRedStamp ? "#EF4444" : "#FACC15";
-        const textColor = isRedStamp ? "#FFFFFF" : "#0F172A";
+        if (sfx.variant === "RED_STAMP") {
+          return (
+            <div
+              key={sfx.id}
+              style={{
+                position: "absolute",
+                left: sfx.x,
+                top: sfx.y,
+                transform: `translate(-50%, -50%) rotate(${sfx.rotateDeg}deg) scale(${interpolate(
+                  popSpring,
+                  [0, 1],
+                  [0.7, 1],
+                )})`,
+                opacity: popSpring * exitOpacity,
+                backgroundColor: "#EF4444",
+                color: "#FFFFFF",
+                fontSize: 34,
+                fontWeight: 900,
+                letterSpacing: "0.06em",
+                padding: "8px 24px",
+                borderRadius: 12,
+                border: "3.5px solid #1E293B",
+                boxShadow: "0 6px 0 #1E293B",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {sfx.text}
+            </div>
+          );
+        }
 
         return (
           <div
@@ -112,11 +169,15 @@ export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
               position: "absolute",
               left: sfx.x,
               top: sfx.y,
-              transform: `translate(-50%, -50%) rotate(${sfx.rotateDeg}deg) scale(${popSpring})`,
-              opacity: exitOpacity,
-              backgroundColor: bgColor,
-              color: textColor,
-              fontSize: 44,
+              transform: `translate(-50%, -50%) rotate(${sfx.rotateDeg}deg) scale(${interpolate(
+                popSpring,
+                [0, 1],
+                [0.75, 1],
+              )})`,
+              opacity: popSpring * exitOpacity,
+              backgroundColor: "#FACC15",
+              color: "#0F172A",
+              fontSize: 34,
               fontWeight: 900,
               letterSpacing: "0.03em",
               padding: "8px 24px",
@@ -157,7 +218,7 @@ export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
             key={pill.id}
             style={{
               position: "absolute",
-              left: pill.anchor.x,
+              left: Math.max(120, Math.min(960, pill.anchor.x)),
               top: pill.anchor.y,
               transform: `translate(-50%, -50%) translateX(${translateX}px) scale(${interpolate(
                 enterSpring,
@@ -165,15 +226,15 @@ export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
                 [0.85, 1],
               )})`,
               opacity: enterSpring * exitOpacity,
-              backgroundColor: "rgba(30, 41, 59, 0.94)",
+              backgroundColor: "rgba(30, 41, 59, 0.95)",
               color: "#FFFFFF",
-              fontSize: 23,
+              fontSize: 22,
               fontWeight: 800,
               letterSpacing: "0.02em",
-              padding: "10px 24px",
+              padding: "8px 20px",
               borderRadius: 9999,
-              border: "2.5px solid #0F172A",
-              boxShadow: "0 8px 20px rgba(15, 23, 42, 0.22)",
+              border: "2px solid #0F172A",
+              boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
               whiteSpace: "nowrap",
             }}
           >
@@ -213,10 +274,10 @@ export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
               marginBottom: 16,
             }}
           >
-            {practicalChecklist.title}
+            {practicalChecklist?.title || "CEK SEBELUM BELI / PAKAI:"}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {practicalChecklist.items.map((item, idx) => (
+            {sanitizedChecklistItems.map((item, idx) => (
               <div
                 key={idx}
                 style={{

@@ -67,7 +67,7 @@ export function startVisualWorker(): Worker {
           {
             agent: "AGENT_4_VISUAL",
             level: "SUCCESS",
-            message: `Freeform Isometric Anatomy Scene compiled: ${compositionProps.visualScene.parts.length} vector parts (${compositionProps.visualScene.parts.map((p) => p.name).join(", ")}), ${compositionProps.pillCallouts.length} projected callout sockets.`,
+            message: `Three.js Cutaway Scene compiled: ${compositionProps.visualScene.nodes.length} 3D nodes (${compositionProps.visualScene.nodes.map((n) => n.name).join(", ")}), ${compositionProps.pillCallouts.length} projected callout sockets.`,
           }
         );
 

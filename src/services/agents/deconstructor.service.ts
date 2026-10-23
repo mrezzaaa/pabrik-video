@@ -5,6 +5,7 @@ import {
   type DeconstructionBlueprint,
 } from "@/schemas/video-blueprint";
 import { LAYMAN_DECONSTRUCTOR_SYSTEM_PROMPT } from "./prompts";
+import { loadAgentSkill } from "@/lib/skill-loader";
 
 const BLUEPRINT_SCHEMA_TEMPLATE = `{
   "topic": "<user topic string>",
@@ -13,49 +14,53 @@ const BLUEPRINT_SCHEMA_TEMPLATE = `{
   "coreSimpleTruth": "<One sentence layman summary of the core physical mechanism>",
   "baselineMetricValue": 18,
   "peakMetricValue": 200,
-  "metricUnit": "W | V | % | °C | Bar | RPM | km/j | Gbps",
-  "practicalChecklistTitle": "CEK SEBELUM PAKAI / BELI:",
+  "metricUnit": "°C | Bar | W | V | RPM | km/j | Gbps | %",
+  "practicalChecklistTitle": "CEK SEBELUM BELI / PAKAI:",
   "practicalChecklistItems": [
-    "<Practical checklist item 1>",
-    "<Practical checklist item 2>",
-    "<Practical checklist item 3>"
+    "<3-4 words item 1, e.g., Karet perapat silikon>",
+    "<3-4 words item 2, e.g., Katup pengaman uap>",
+    "<3-4 words item 3, e.g., Kunci tuas penutup>"
   ],
   "components": [
     {
       "id": "comp_1",
       "name": "<Outer Shell / Casing Name>",
-      "everydayRole": "<Relatable role>",
+      "anatomicalLayer": "OUTER_CUTAWAY_SHELL",
+      "everydayRole": "<Relatable everyday role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#E2E8F0",
-      "center3D": { "x": 0, "y": 0, "z": 10 },
-      "zoomTarget": { "x": 45, "y": 80, "scale": 1.45 }
+      "position3D": [0, 0, 0],
+      "zoomTarget": { "focusPosition3D": [0, 0, 0], "zoomMultiplier": 1.2 }
     },
     {
       "id": "comp_2",
-      "name": "<Primary Internal Mechanism Name>",
+      "name": "<Internal Chamber / Fluid Reservoir>",
+      "anatomicalLayer": "INTERNAL_CHAMBER",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#93C5FD",
-      "center3D": { "x": -22, "y": 15, "z": 5 },
-      "zoomTarget": { "x": 0, "y": -20, "scale": 1.65 }
+      "position3D": [0, 0.2, 0],
+      "zoomTarget": { "focusPosition3D": [0, 0.2, 0], "zoomMultiplier": 1.4 }
     },
     {
       "id": "comp_3",
-      "name": "<Sub-Component 1 Name>",
+      "name": "<Core Active Mechanism>",
+      "anatomicalLayer": "CORE_MECHANISM",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#FACC15",
-      "center3D": { "x": 22, "y": -15, "z": -10 },
-      "zoomTarget": { "x": -55, "y": -60, "scale": 1.75 }
+      "position3D": [0, -0.4, 0],
+      "zoomTarget": { "focusPosition3D": [0, -0.4, 0], "zoomMultiplier": 1.6 }
     },
     {
       "id": "comp_4",
-      "name": "<Sub-Component 2 / Regulator Name>",
+      "name": "<Safety Valve or Zoom Sub-Part>",
+      "anatomicalLayer": "ZOOM_SUBPART",
       "everydayRole": "<Relatable role>",
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#F87171",
-      "center3D": { "x": 0, "y": 0, "z": -48 },
-      "zoomTarget": { "x": 0, "y": -140, "scale": 1.8 }
+      "position3D": [0, 1.2, 0],
+      "zoomTarget": { "focusPosition3D": [0, 1.2, 0], "zoomMultiplier": 1.8 }
     }
   ],
   "phases": [
@@ -102,19 +107,29 @@ export async function runDeconstructorAgent(topic: string): Promise<{
   blueprint: DeconstructionBlueprint;
   modelUsed: string;
 }> {
+  // Dynamically load the anatomy skill instructions
+  const anatomySkill = await loadAgentSkill(".agents/skill/anatomy");
+
+  const systemPrompt = `${LAYMAN_DECONSTRUCTOR_SYSTEM_PROMPT}
+
+--- AGENT SKILL PLAYBOOK (.agents/skill/anatomy) ---
+${anatomySkill}
+---------------------------------------------------`;
+
   const userPrompt = `Deconstruct this exact Indonesian topic into a 4-Act Warm Editorial 3D Cutaway Storyboard for a general audience ("orang awam"):
 
 TOPIC: "${topic}"
 
 REQUIREMENTS:
 1. All 4 phases, physical 3D components, metrics, and checklist items MUST be 100% specific to "${topic}".
-2. Choose the most appropriate metricUnit (e.g., "W", "V", "%", "°C", "Bar", "RPM", "km/j", "Gbps") and realistic baselineMetricValue & peakMetricValue for "${topic}".
-3. Define 4 distinct anatomical components with 3D coordinates ("center3D": {x, y, z} in [-65..65]) so they can be assembled in 3D space.
-4. Return ONLY valid JSON conforming to this schema structure:
+2. Choose the most appropriate metricUnit and realistic baselineMetricValue & peakMetricValue for "${topic}".
+3. Define at least 3-4 distinct physical anatomical components with coordinates in Three.js metric space [-2.5..2.5] following the 4 layers: OUTER_CUTAWAY_SHELL, INTERNAL_CHAMBER, CORE_MECHANISM, ZOOM_SUBPART.
+4. Exactly 3 checklist items with maximum 3 to 4 words per item!
+5. Return ONLY valid JSON conforming to this schema structure:
 ${BLUEPRINT_SCHEMA_TEMPLATE}`;
 
   const { data, modelUsed } = await generateStructuredOmniroute({
-    systemPrompt: LAYMAN_DECONSTRUCTOR_SYSTEM_PROMPT,
+    systemPrompt,
     userPrompt,
     schema: DeconstructionBlueprintSchema,
     preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
