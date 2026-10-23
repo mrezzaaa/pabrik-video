@@ -86,7 +86,14 @@ function broadcast(event: string, data: any) {
 }
 
 export function getCurrentJob(): PipelineJob | null {
-  return getStore().currentJob;
+  const store = getStore();
+  if (!store.currentJob || store.currentJob.status !== 'running') {
+    const persisted = loadPersistedJob();
+    if (persisted) {
+      store.currentJob = persisted;
+    }
+  }
+  return store.currentJob;
 }
 
 export function subscribeToJob(fn: JobSubscriber): () => void {

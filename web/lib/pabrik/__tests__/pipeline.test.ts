@@ -9,10 +9,21 @@ import {
   finalizePlan,
   validateResearch,
   validateScript,
-} from "../validators";
-import { runJudge } from "../judge";
-import { produce } from "../orchestrator";
-import type { Beat, JudgeRaw, Plan, Research, SearchHit } from "../types";
+} from "../validators.ts";
+import { runJudge } from "../judge.ts";
+import { produce } from "../orchestrator.ts";
+import {
+  parseHeadline,
+  wrapHeadline,
+  valueAt,
+  seriesPoints,
+  valueColor,
+  formatNumber,
+  buildSubtitles,
+  stateReadout,
+} from "../hud.ts";
+import { buildHudMetricFromResearch } from "../adapters.ts";
+import type { Beat, JudgeRaw, Plan, Research, SearchHit } from "../types.ts";
 
 function makeValidResearch(): Research {
   return {
@@ -49,7 +60,6 @@ function makeValidResearch(): Research {
       {
         claim: "Power bank murah tanpa IC proteksi berisiko mengalami overheat saat arus tinggi.",
         label: "MEDIA",
-        origin: undefined as unknown as string,
         evidence: "Pengujian teardown lab independen pada unit harga Rp25 ribu.",
         numbers: ["Rp25 ribu", "85 derajat C"],
         source_index: [2],
@@ -261,7 +271,6 @@ describe("Kitabedah Validators & Judge & Orchestrator", () => {
     const research = makeValidResearch();
     const plan = makeValidPlan();
 
-    // Gate gagal walau semua skor 9.5
     const mockJudgeGateFail = async () =>
       JSON.stringify({
         gates: {
@@ -290,7 +299,6 @@ describe("Kitabedah Validators & Judge & Orchestrator", () => {
     const resGateFail = await runJudge(mockJudgeGateFail, "{research_json}{plan_json}{metrics_json}", research, plan);
     assert.equal(resGateFail.status, "REJECT");
 
-    // Issue dengan node "research" -> fix_node wajib "research"
     const mockJudgeResearchIssue = async () =>
       JSON.stringify({
         gates: {
@@ -407,5 +415,45 @@ describe("Kitabedah Validators & Judge & Orchestrator", () => {
     assert.ok(fs.existsSync(path.join(tmpDir, "narration.txt")));
     assert.ok(fs.existsSync(path.join(tmpDir, "beat-01.tsx")));
     assert.ok(fs.existsSync(path.join(tmpDir, "beat-10.tsx")));
+  });
+
+  it("hud.ts: parseHeadline, wrapHeadline, valueAt, seriesPoints, dan buildSubtitles bekerja murni", () => {
+    const segs = parseHeadline("Kenapa kapasitas *bocor* terus?");
+    assert.deepEqual(segs, [
+      { text: "Kenapa kapasitas ", hl: false },
+      { text: "bocor", hl: true },
+      { text: " terus?", hl: false },
+    ]);
+
+    const lines = wrapHeadline("Kenapa kapasitas *bocor* terus menerus saat panas?", 20);
+    assert.ok(lines.length >= 2);
+    assert.ok(lines.flat().some((s) => s.text === "bocor" && s.hl === true));
+
+    const research = makeValidResearch();
+    const plan = makeValidPlan();
+    const metric = buildHudMetricFromResearch(research, plan);
+    const timings = plan.beats.map((b, i) => ({
+      beat: b.beat_number,
+      start: i * 3,
+      end: (i + 1) * 3,
+    }));
+
+    const vMid = valueAt(plan, metric, timings, 4.5);
+    assert.ok(Number.isFinite(vMid) && vMid > 0);
+    assert.equal(typeof valueColor(vMid, metric), "string");
+    assert.ok(formatNumber(3.7, 1).includes("3,7"));
+    assert.equal(stateReadout(metric, plan, 0), plan.beats[0].tulisan_layar);
+
+    const pts = seriesPoints(plan, metric, timings, 7.5);
+    assert.ok(pts.length >= 4);
+
+    const subs = buildSubtitles(
+      "Di balik casing plastik terdapat sel baterai litium tiga koma tujuh volt.",
+      0,
+      3.0,
+    );
+    assert.ok(subs.length >= 2);
+    assert.equal(subs[0].start, 0);
+    assert.equal(subs[subs.length - 1].end, 3.0);
   });
 });

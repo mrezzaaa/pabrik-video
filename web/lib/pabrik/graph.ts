@@ -392,9 +392,12 @@ export async function nodeVisual(state: PipelineState, emitLog: LogEmitter): Pro
   return { svgComponents, scriptData: state.scriptData };
 }
 
-// 4. NODE: TTS dengan Word Timing (Piper TTS offline + Edge TTS fallback)
+// 4. NODE: TTS dengan Word Timing (UnlimitedTTS Indonesian - Ethan @ 1.1x + Piper/System fallback)
 export async function nodeTts(state: PipelineState, emitLog: LogEmitter): Promise<Partial<PipelineState>> {
-  emitLog('tts', `Menjalankan TTS dengan word timing (Piper TTS offline + Edge TTS fallback)...`);
+  const voice = process.env.UNLIMITEDTTS_VOICE || 'Ethan';
+  const lang = process.env.UNLIMITEDTTS_LANG || 'Indonesian';
+  const speed = process.env.UNLIMITEDTTS_SPEED || '1.1';
+  emitLog('tts', `Menjalankan UnlimitedTTS (${lang} - Voice: ${voice}, Speed: ${speed}x) dengan word timing...`);
 
   const narration = state.scriptData?.narration_text || `Penjelasan teknis tentang ${state.topic}.`;
   const words = narration.split(/\s+/).filter(Boolean);

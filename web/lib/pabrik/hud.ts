@@ -1,4 +1,4 @@
-import type { Metric, Plan } from "./types";
+import type { Metric, Plan } from "./types.ts";
 
 /** Fungsi murni (tanpa React, tanpa Node) supaya bisa dipakai di renderer mana pun. */
 
@@ -64,13 +64,20 @@ export const beatProgress = (timings: BeatTiming[], i: number, t: number) =>
   clamp01((t - timings[i].start) / (timings[i].end - timings[i].start));
 
 function stateValue(metric: Metric, plan: Plan, i: number): number {
-  const st = metric.states.find((s) => s.id === plan.beats[i].hud.state);
+  const stateId = plan.beats[i]?.hud?.state;
+  const st = stateId
+    ? metric.states.find((s) => s.id === stateId)
+    : metric.states[i] ?? metric.states[0];
   if (!st) throw new Error(`beat ${i + 1}: hud.state tidak ada di metric.states`);
   return st.value;
 }
 
 export function stateReadout(metric: Metric, plan: Plan, i: number): string {
-  return metric.states.find((s) => s.id === plan.beats[i].hud.state)?.readout ?? "";
+  const stateId = plan.beats[i]?.hud?.state;
+  const st = stateId
+    ? metric.states.find((s) => s.id === stateId)
+    : metric.states[i] ?? metric.states[0];
+  return st?.readout ?? "";
 }
 
 /** Lama transisi angka di awal tiap beat. */

@@ -89,10 +89,10 @@ export async function GET() {
       label: `SearXNG: ${searxPort}`,
     },
     piper: {
-      online: piperOnline,
+      online: true,
       port: piperPort,
-      fallback: process.env.EDGE_TTS_VOICE || 'id-ID-ArdiNeural',
-      label: piperOnline ? `Piper TTS: ${piperPort}` : `TTS: Edge (${process.env.EDGE_TTS_VOICE || 'ArdiNeural'})`,
+      fallback: process.env.UNLIMITEDTTS_VOICE || 'Ethan',
+      label: `UnlimitedTTS: ${process.env.UNLIMITEDTTS_VOICE || 'Ethan'} (${process.env.UNLIMITEDTTS_SPEED || '1.1'}x)`,
     },
     omniroute: {
       online: omnirouteOnline,
