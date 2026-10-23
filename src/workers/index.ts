@@ -9,7 +9,7 @@ import { startRendererWorker } from "./renderer.worker";
  * Increment this version whenever worker logic, prompts, or renderer ports change
  * so Next.js dev mode automatically closes stale workers and boots the updated ones.
  */
-const WORKER_CODE_VERSION = "v3-dynamic-parametric-port3310";
+const WORKER_CODE_VERSION = "v4-universal-iso3d-compiler";
 
 declare global {
   // eslint-disable-next-line no-var

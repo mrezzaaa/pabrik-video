@@ -7,495 +7,318 @@ import {
   useVideoConfig,
 } from "remotion";
 import type {
-  CustomSvgElement,
-  ParametricSceneGraph,
-  ParticleFlowSpec,
+  IsoPart3D,
+  IsoSceneGraph,
+  ParticleStream3DSpec,
   PhaseTimelineBlock,
 } from "@/schemas/video-blueprint";
+import {
+  DEFAULT_ISO_CONFIG,
+  compileIsoFacesToSvgPolygons,
+  projectIso3D,
+  rotatePoint3D,
+  translatePoint3D,
+  type IsoFace3D,
+  type Point3D,
+} from "../iso-engine/iso-math";
+import {
+  buildBox3D,
+  buildExtrudePolygon3D,
+  buildRadialArray3D,
+  buildRevolveProfile3D,
+  buildTubePath3D,
+  sampleParticleStream3D,
+} from "../iso-engine/iso-builders";
 
 interface IsometricStageProps {
-  scene: ParametricSceneGraph;
+  visualScene: IsoSceneGraph;
   phases: PhaseTimelineBlock[];
 }
 
-function renderCustomSvgElement(el: CustomSvgElement, key: string) {
-  const stroke = el.stroke || "#1E293B";
-  const strokeWidth = el.strokeWidth ?? 2.5;
-  const fill = el.fill || "#E2E8F0";
+/**
+ * Builds the 3D faces of a single IsoPart3D and applies dynamic 3D part-level animation
+ * (`rotate`, `oscillate`, `pulse`, `explodeOffset`) before returning the transformed faces + 3D anchor.
+ */
+function buildAnimatedPartFaces(
+  part: IsoPart3D,
+  frame: number,
+  isFocused: boolean,
+): {
+  faces: IsoFace3D[];
+  anchor3D: Point3D;
+} {
+  const center = part.params.center ?? { x: 0, y: 0, z: 0 };
+  const axis = part.params.axis ?? "Z";
+  const anim = part.animation ?? {
+    type: "none",
+    axis: "Z",
+    speed: 1,
+    amplitude: 10,
+  };
 
-  switch (el.shape) {
-    case "rect": {
-      const rx = el.rx ?? 10;
-      const x = el.x ?? 300;
-      const y = el.y ?? 750;
-      const w = el.width ?? 160;
-      const h = el.height ?? 80;
-      return (
-        <g key={key} opacity={el.opacity ?? 1}>
-          <rect
-            x={x}
-            y={y}
-            width={w}
-            height={h}
-            rx={rx}
-            fill={fill}
-            stroke={stroke}
-            strokeWidth={strokeWidth}
-            strokeDasharray={el.strokeDasharray}
-          />
-          {el.label && (
-            <text
-              x={x + w / 2}
-              y={y + h / 2 + 6}
-              textAnchor="middle"
-              fill="#0F172A"
-              fontSize={18}
-              fontWeight={800}
-              fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
-            >
-              {el.label}
-            </text>
-          )}
-        </g>
-      );
-    }
-    case "circle": {
-      const cx = el.x ?? 540;
-      const cy = el.y ?? 980;
-      const r = el.r ?? 32;
-      return (
-        <g key={key} opacity={el.opacity ?? 1}>
-          <circle
-            cx={cx}
-            cy={cy}
-            r={r}
-            fill={fill}
-            stroke={stroke}
-            strokeWidth={strokeWidth}
-            strokeDasharray={el.strokeDasharray}
-          />
-          {el.label && (
-            <text
-              x={cx}
-              y={cy + 6}
-              textAnchor="middle"
-              fill="#0F172A"
-              fontSize={16}
-              fontWeight={800}
-              fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
-            >
-              {el.label}
-            </text>
-          )}
-        </g>
-      );
-    }
-    case "ellipse": {
-      const cx = el.x ?? 540;
-      const cy = el.y ?? 980;
-      const rx = el.rx ?? el.width ?? 80;
-      const ry = el.ry ?? el.height ?? 36;
-      return (
-        <ellipse
-          key={key}
-          cx={cx}
-          cy={cy}
-          rx={rx}
-          ry={ry}
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          strokeDasharray={el.strokeDasharray}
-          opacity={el.opacity ?? 1}
-        />
-      );
-    }
-    case "line": {
-      return (
-        <line
-          key={key}
-          x1={el.x ?? 340}
-          y1={el.y ?? 800}
-          x2={el.x2 ?? 740}
-          y2={el.y2 ?? 800}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          strokeDasharray={el.strokeDasharray}
-          strokeLinecap="round"
-          opacity={el.opacity ?? 1}
-        />
-      );
-    }
-    case "polygon": {
-      if (!el.points) return null;
-      return (
-        <polygon
-          key={key}
-          points={el.points}
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          opacity={el.opacity ?? 1}
-        />
-      );
-    }
-    case "path": {
-      if (!el.d) return null;
-      return (
-        <path
-          key={key}
-          d={el.d}
-          fill={fill === "none" ? "none" : fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          strokeDasharray={el.strokeDasharray}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity={el.opacity ?? 1}
-        />
-      );
-    }
-    default:
-      return null;
-  }
-}
+  let rawResult: { faces: IsoFace3D[]; anchor3D: Point3D };
 
-function renderParametricOuterContainer(scene: ParametricSceneGraph) {
-  const { containerType, outerBounds } = scene;
-  const x = outerBounds.x ?? 220;
-  const y = outerBounds.y ?? 620;
-  const w = outerBounds.width ?? 640;
-  const h = outerBounds.height ?? 760;
-  const wall = outerBounds.wallThickness ?? 24;
-  const outerFill = outerBounds.outerFill || "#E2E8F0";
-  const interiorFill = outerBounds.interiorFill || "#F8FAFC";
-  const cx = x + w / 2;
-
-  switch (containerType) {
-    case "cylinder-cutaway": {
-      const rx = w / 2;
-      const ry = 76;
-      return (
-        <g>
-          {/* Bottom Cylinder Base */}
-          <ellipse
-            cx={cx}
-            cy={y + h}
-            rx={rx}
-            ry={ry}
-            fill="#CBD5E1"
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          {/* Outer Shell */}
-          <path
-            d={`M ${x} ${y} L ${x} ${y + h} A ${rx} ${ry} 0 0 0 ${x + w} ${y + h} L ${x + w} ${y} Z`}
-            fill={outerFill}
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          {/* 90-Degree Cross-Section Cutaway Cavity */}
-          <rect
-            x={x + wall}
-            y={y + wall}
-            width={w - wall * 2}
-            height={h - wall * 1.4}
-            rx={18}
-            fill={interiorFill}
-            stroke="#1E293B"
-            strokeWidth={2.5}
-          />
-          {/* Top Rim */}
-          <ellipse
-            cx={cx}
-            cy={y}
-            rx={rx}
-            ry={ry}
-            fill="#E2E8F0"
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-        </g>
-      );
+  switch (part.builderType) {
+    case "revolveProfile": {
+      rawResult = buildRevolveProfile3D({
+        partId: part.partId,
+        baseColor: part.materialColor,
+        center,
+        axis,
+        points: part.params.profilePoints ?? [
+          { r: 46, z: -60 },
+          { r: 52, z: 0 },
+          { r: 46, z: 60 },
+        ],
+        wallThickness: part.params.wallThickness ?? 9,
+        startAngle: part.params.startAngle,
+        endAngle: part.params.endAngle,
+        cutaway: part.cutaway,
+        opacity: part.opacity,
+      });
+      break;
     }
 
-    case "dual-chamber": {
-      const gap = 22;
-      const chamberW = (w - wall * 2 - gap) / 2;
-      return (
-        <g>
-          {/* Isometric 3D Depth Shadow Block */}
-          <rect
-            x={x + 16}
-            y={y + 16}
-            width={w}
-            height={h}
-            rx={32}
-            fill="#94A3B8"
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          {/* Outer Casing */}
-          <rect
-            x={x}
-            y={y}
-            width={w}
-            height={h}
-            rx={30}
-            fill={outerFill}
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          {/* Left Chamber Cutaway */}
-          <rect
-            x={x + wall}
-            y={y + wall + 30}
-            width={chamberW}
-            height={h - wall * 2 - 45}
-            rx={18}
-            fill={interiorFill}
-            stroke="#1E293B"
-            strokeWidth={2.5}
-          />
-          {/* Right Chamber Cutaway */}
-          <rect
-            x={x + wall + chamberW + gap}
-            y={y + wall + 30}
-            width={chamberW}
-            height={h - wall * 2 - 45}
-            rx={18}
-            fill={interiorFill}
-            stroke="#1E293B"
-            strokeWidth={2.5}
-          />
-          {/* Top Bridge Terminal Header */}
-          <rect
-            x={cx - 110}
-            y={y - 26}
-            width={220}
-            height={38}
-            rx={10}
-            fill="#FACC15"
-            stroke="#1E293B"
-            strokeWidth={2.5}
-          />
-        </g>
-      );
+    case "extrudePolygon": {
+      rawResult = buildExtrudePolygon3D({
+        partId: part.partId,
+        baseColor: part.materialColor,
+        center,
+        axis,
+        polygon: part.params.polygon ?? [
+          { x: -32, y: -22 },
+          { x: 32, y: -22 },
+          { x: 26, y: 26 },
+          { x: -26, y: 26 },
+        ],
+        depth: part.params.depth ?? 28,
+        cutaway: part.cutaway,
+        opacity: part.opacity,
+      });
+      break;
     }
 
-    case "layered-stack": {
-      return (
-        <g>
-          {/* 3D Isometric Extrusion Backplate */}
-          <rect
-            x={x + 18}
-            y={y + 18}
-            width={w}
-            height={h}
-            rx={28}
-            fill="#94A3B8"
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          {/* Outer Frame */}
-          <rect
-            x={x}
-            y={y}
-            width={w}
-            height={h}
-            rx={26}
-            fill={outerFill}
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          {/* Cutaway Window */}
-          <rect
-            x={x + wall}
-            y={y + wall}
-            width={w - wall * 2}
-            height={h - wall * 2}
-            rx={16}
-            fill={interiorFill}
-            stroke="#1E293B"
-            strokeWidth={2.5}
-          />
-        </g>
-      );
+    case "tubePath3D": {
+      rawResult = buildTubePath3D({
+        partId: part.partId,
+        baseColor: part.materialColor,
+        path: part.params.path3D ?? [
+          { x: center.x - 32, y: center.y - 16, z: center.z - 32 },
+          { x: center.x, y: center.y, z: center.z },
+          { x: center.x + 32, y: center.y + 16, z: center.z + 32 },
+        ],
+        radius: part.params.tubeRadius ?? 8,
+        cutaway: part.cutaway,
+        opacity: part.opacity,
+      });
+      break;
     }
 
-    case "circuit-board": {
-      return (
-        <g>
-          <rect
-            x={x + 14}
-            y={y + 14}
-            width={w}
-            height={h}
-            rx={24}
-            fill="#1E293B"
-          />
-          <rect
-            x={x}
-            y={y}
-            width={w}
-            height={h}
-            rx={24}
-            fill="#DCFCE7"
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          <rect
-            x={x + wall}
-            y={y + wall}
-            width={w - wall * 2}
-            height={h - wall * 2}
-            rx={14}
-            fill={interiorFill}
-            stroke="#1E293B"
-            strokeWidth={2.5}
-          />
-        </g>
-      );
+    case "radialArray3D": {
+      const rotSpin =
+        anim.type === "rotate" ? (frame * 1.8 * (anim.speed || 1)) % 360 : 0;
+      rawResult = buildRadialArray3D({
+        partId: part.partId,
+        baseColor: part.materialColor,
+        center,
+        axis,
+        count: part.params.radialCount ?? 8,
+        radius: part.params.radialRadius ?? 30,
+        elementSize: part.params.elementSize ?? { w: 14, d: 9, h: 32 },
+        rotationAngleOffsetDeg: rotSpin,
+        cutaway: part.cutaway,
+        opacity: part.opacity,
+      });
+      break;
     }
 
-    case "mechanical-housing":
-    case "box-cutaway":
+    case "hollowBox3D": {
+      rawResult = buildBox3D({
+        partId: part.partId,
+        baseColor: part.materialColor,
+        center,
+        size: part.params.size ?? { w: 96, d: 88, h: 112 },
+        wallThickness: part.params.wallThickness ?? 10,
+        hollow: true,
+        cutaway: true,
+        opacity: part.opacity,
+      });
+      break;
+    }
+
+    case "box3D":
     default: {
-      return (
-        <g>
-          <rect
-            x={x + 16}
-            y={y + 16}
-            width={w}
-            height={h}
-            rx={28}
-            fill="#94A3B8"
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          <rect
-            x={x}
-            y={y}
-            width={w}
-            height={h}
-            rx={28}
-            fill={outerFill}
-            stroke="#1E293B"
-            strokeWidth={3}
-          />
-          <rect
-            x={x + wall}
-            y={y + wall}
-            width={w - wall * 2}
-            height={h - wall * 2}
-            rx={18}
-            fill={interiorFill}
-            stroke="#1E293B"
-            strokeWidth={2.5}
-          />
-        </g>
-      );
+      rawResult = buildBox3D({
+        partId: part.partId,
+        baseColor: part.materialColor,
+        center,
+        size: part.params.size ?? { w: 44, d: 44, h: 44 },
+        wallThickness: part.params.wallThickness ?? 8,
+        hollow: false,
+        cutaway: part.cutaway,
+        opacity: part.opacity,
+      });
+      break;
     }
   }
+
+  // Compute dynamic 3D offset / rotation per frame
+  const speed = anim.speed || 1;
+  const amp = anim.amplitude || 8;
+  let offset3D: Point3D = { x: 0, y: 0, z: 0 };
+  let angleDeg = 0;
+
+  if (anim.type === "oscillate") {
+    const wave = Math.sin(frame * 0.09 * speed) * Math.min(18, amp);
+    offset3D = {
+      x: anim.axis === "X" ? wave : 0,
+      y: anim.axis === "Y" ? wave : 0,
+      z: anim.axis === "Z" ? wave : 0,
+    };
+  } else if (anim.type === "explodeOffset") {
+    const wave = (Math.sin(frame * 0.06 * speed) + 1) * 0.5;
+    const ev = anim.explodeVector ?? { x: 12, y: 12, z: 14 };
+    offset3D = {
+      x: ev.x * wave,
+      y: ev.y * wave,
+      z: ev.z * wave,
+    };
+  } else if (anim.type === "rotate" && part.builderType !== "radialArray3D") {
+    angleDeg = (frame * 1.5 * speed) % 360;
+  }
+
+  const strokeWidth = isFocused ? 2.8 : 2.3;
+  const partOpacity = isFocused
+    ? part.opacity
+    : Math.max(0.68, part.opacity * 0.85);
+
+  const transformedFaces: IsoFace3D[] = rawResult.faces.map((face) => {
+    const verts = face.vertices.map((v) => {
+      const rotated =
+        angleDeg !== 0 ? rotatePoint3D(v, anim.axis, angleDeg, center) : v;
+      return translatePoint3D(rotated, offset3D);
+    });
+    return {
+      ...face,
+      vertices: verts,
+      strokeWidth,
+      opacity: partOpacity,
+    };
+  });
+
+  return {
+    faces: transformedFaces,
+    anchor3D: translatePoint3D(rawResult.anchor3D, offset3D),
+  };
 }
 
-function renderParticleFlow(
-  flow: ParticleFlowSpec,
+/**
+ * Renders 3D particle streams projected into 2D isometric SVG space (with ZERO raw `<text>` elements)
+ */
+function renderIsoParticleStream3D(
+  stream: ParticleStream3DSpec,
   frame: number,
   activeSegmentIndex: number,
 ) {
   if (
-    flow.activeInPhases &&
-    flow.activeInPhases.length > 0 &&
-    !flow.activeInPhases.includes(activeSegmentIndex)
+    stream.activeInPhases &&
+    stream.activeInPhases.length > 0 &&
+    !stream.activeInPhases.includes(activeSegmentIndex)
   ) {
     return null;
   }
 
-  const count = Math.min(20, Math.max(4, flow.count || 10));
-  const speed = flow.speed || 1.4;
-  const r = flow.size || 10;
-  const dx = flow.to.x - flow.from.x;
-  const dy = flow.to.y - flow.from.y;
+  const projectedPath = stream.path3D.map((pt) =>
+    projectIso3D(pt, DEFAULT_ISO_CONFIG),
+  );
+  const pathD = projectedPath
+    .map(
+      (p, idx) =>
+        `${idx === 0 ? "M" : "L"} ${p.sx.toFixed(1)} ${p.sy.toFixed(1)}`,
+    )
+    .join(" ");
+
+  const sampledParticles = sampleParticleStream3D({
+    streamId: stream.id,
+    path: stream.path3D,
+    count: stream.count,
+    speed: stream.speed,
+    size: stream.size,
+    color: stream.color,
+    particleType: stream.type,
+    frame,
+  });
 
   return (
-    <g key={flow.id}>
-      {/* Guide Flow Path */}
-      <line
-        x1={flow.from.x}
-        y1={flow.from.y}
-        x2={flow.to.x}
-        y2={flow.to.y}
-        stroke={flow.color}
+    <g key={stream.id}>
+      {/* Dashed 3D Flow Trajectory */}
+      <path
+        d={pathD}
+        fill="none"
+        stroke={stream.color}
         strokeWidth={3}
         strokeDasharray="8 10"
-        strokeDashoffset={-(frame * speed * 2.5)}
-        opacity={0.45}
+        strokeDashoffset={-(frame * stream.speed * 2.4)}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={0.48}
       />
 
-      {/* Animated Moving Particles */}
-      {Array.from({ length: count }).map((_, idx) => {
-        const phaseOffset = idx / count;
-        const t = (frame * 0.014 * speed + phaseOffset) % 1;
-        const wave = Math.sin(t * Math.PI * 2 + idx) * 10;
-        const px =
-          flow.from.x + dx * t + (Math.abs(dy) > Math.abs(dx) ? wave : 0);
-        const py =
-          flow.from.y + dy * t + (Math.abs(dx) >= Math.abs(dy) ? wave : 0);
+      {/* Animated 3D Particles Projected to Isometric Screen Space */}
+      {sampledParticles.map((item, idx) => {
+        const pt2D = projectIso3D(item.position3D, DEFAULT_ISO_CONFIG);
+        const r = Math.max(5, Math.min(16, item.size));
+        const wave = Math.sin(frame * 0.14 + idx) * 3.5;
+        const cx = pt2D.sx + wave;
+        const cy = pt2D.sy - wave * 0.6;
 
-        if (flow.type === "ions" || flow.type === "electrons") {
-          return (
-            <g
-              key={`${flow.id}_p_${idx}`}
-              transform={`translate(${px}, ${py})`}
-            >
-              <circle
-                cx={0}
-                cy={0}
-                r={r}
-                fill={flow.color}
-                stroke="#1E293B"
-                strokeWidth={2}
-              />
-              <text
-                x={0}
-                y={4}
-                textAnchor="middle"
-                fill="#0F172A"
-                fontSize={12}
-                fontWeight={900}
-                fontFamily="monospace"
-              >
-                {flow.type === "ions" ? "+" : "e⁻"}
-              </text>
-            </g>
-          );
-        }
-
-        if (flow.type === "heat-waves" || flow.type === "airflow") {
+        if (stream.type === "heat-waves" || stream.type === "airflow") {
           return (
             <path
-              key={`${flow.id}_p_${idx}`}
-              d={`M ${px - r} ${py} Q ${px} ${py - r}, ${px + r} ${py}`}
+              key={item.id}
+              d={`M ${(cx - r).toFixed(1)} ${cy.toFixed(1)} Q ${cx.toFixed(1)} ${(cy - r * 1.1).toFixed(1)}, ${(cx + r).toFixed(1)} ${cy.toFixed(1)}`}
               fill="none"
-              stroke={flow.color}
-              strokeWidth={3.5}
+              stroke={item.color}
+              strokeWidth={3.2}
               strokeLinecap="round"
             />
           );
         }
 
+        if (stream.type === "steam") {
+          return (
+            <circle
+              key={item.id}
+              cx={cx}
+              cy={cy}
+              r={r * 1.15}
+              fill="#FFFFFF"
+              fillOpacity={0.78}
+              stroke="#1E293B"
+              strokeWidth={2}
+            />
+          );
+        }
+
+        // Pure vector inner core + outer cel-shaded sphere for ions/electrons/fluid (ZERO <text>)
         return (
-          <circle
-            key={`${flow.id}_p_${idx}`}
-            cx={px}
-            cy={py}
-            r={r}
-            fill={flow.color}
-            fillOpacity={0.88}
-            stroke="#1E293B"
-            strokeWidth={2}
-          />
+          <g key={item.id}>
+            <circle
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill={item.color}
+              stroke="#1E293B"
+              strokeWidth={2.2}
+            />
+            <circle
+              cx={cx - r * 0.28}
+              cy={cy - r * 0.28}
+              r={Math.max(2, r * 0.32)}
+              fill="#FFFFFF"
+              opacity={0.85}
+            />
+          </g>
         );
       })}
     </g>
@@ -503,7 +326,7 @@ function renderParticleFlow(
 }
 
 export const IsometricStage: React.FC<IsometricStageProps> = ({
-  scene,
+  visualScene,
   phases,
 }) => {
   const frame = useCurrentFrame();
@@ -545,9 +368,50 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
     [prevPhase?.camera.scale ?? 1, activePhase?.camera.scale ?? 1],
   );
 
-  const sortedLayers = [...(scene.internalLayers || [])].sort(
-    (a, b) => a.zIndex - b.zIndex,
+  // Compile all 3D parts into depth-sorted (Painter's Algorithm) 2D SVG polygons
+  const allFaces: IsoFace3D[] = [];
+  const partAnchors2D: Array<{
+    partId: string;
+    sx: number;
+    sy: number;
+    isFocused: boolean;
+  }> = [];
+
+  for (const part of visualScene?.parts || []) {
+    const isFocused =
+      activePhase?.activeComponentIds?.includes(part.componentId) ?? true;
+    const { faces, anchor3D } = buildAnimatedPartFaces(part, frame, isFocused);
+    allFaces.push(...faces);
+
+    const pt2D = projectIso3D(anchor3D, DEFAULT_ISO_CONFIG);
+    partAnchors2D.push({
+      partId: part.partId,
+      sx: pt2D.sx,
+      sy: pt2D.sy,
+      isFocused,
+    });
+  }
+
+  const compiledPolygons = compileIsoFacesToSvgPolygons(
+    allFaces,
+    DEFAULT_ISO_CONFIG,
   );
+
+  // Isometric pedestal base ring projected in 3D at z = -76
+  const basePedestalRing = Array.from({ length: 24 }).map((_, i) => {
+    const ang = (i / 24) * Math.PI * 2;
+    return projectIso3D(
+      { x: Math.cos(ang) * 78, y: Math.sin(ang) * 78, z: -76 },
+      DEFAULT_ISO_CONFIG,
+    );
+  });
+  const pedestalPathD =
+    basePedestalRing
+      .map(
+        (p, idx) =>
+          `${idx === 0 ? "M" : "L"} ${p.sx.toFixed(1)} ${p.sy.toFixed(1)}`,
+      )
+      .join(" ") + " Z";
 
   return (
     <AbsoluteFill
@@ -563,9 +427,9 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
         style={{
           position: "absolute",
           left: "50%",
-          top: 1410,
+          top: 1350,
           width: 680,
-          height: 140,
+          height: 150,
           marginLeft: -340,
           borderRadius: "50%",
           background:
@@ -574,7 +438,7 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
         }}
       />
 
-      {/* Pure Data-Driven Parametric Cutaway SVG Composer */}
+      {/* Universal 3D-to-2D Isometric SVG Compiler Output (ZERO raw <text> inside geometry) */}
       <svg
         viewBox="0 0 1080 1920"
         style={{
@@ -583,116 +447,84 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
           position: "absolute",
           inset: 0,
           transform: `translate(${camX}px, ${camY}px) scale(${camScale})`,
-          transformOrigin: "540px 980px",
+          transformOrigin: "540px 1020px",
         }}
       >
-        {/* 1. Parametric Outer Cutaway Container */}
-        {renderParametricOuterContainer(scene)}
-
-        {/* 2. Container Top Header Label */}
-        {scene.containerTitle && (
-          <g>
-            <rect
-              x={310}
-              y={545}
-              width={460}
-              height={48}
-              rx={24}
-              fill="#FFFFFF"
+        <defs>
+          {/* Cross-Section Hatching Pattern for 90° Cutaway Walls */}
+          <pattern
+            id="iso-cutaway-hatch"
+            width="10"
+            height="10"
+            patternTransform="rotate(45 0 0)"
+            patternUnits="userSpaceOnUse"
+          >
+            <line
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="10"
               stroke="#1E293B"
-              strokeWidth={2.5}
+              strokeWidth="2"
+              opacity="0.28"
             />
-            <text
-              x={540}
-              y={576}
-              textAnchor="middle"
-              fill="#0F172A"
-              fontSize={20}
-              fontWeight={800}
-              fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
-            >
-              {scene.containerTitle.toUpperCase()}
-            </text>
-          </g>
-        )}
+          </pattern>
+        </defs>
 
-        {/* 3. Dynamic Internal Anatomy Layers */}
-        {sortedLayers.map((layer) => {
-          const isFocused =
-            activePhase?.activeComponentIds?.includes(layer.componentId) ??
-            true;
-          const pulseScale = isFocused ? 1 + Math.sin(frame * 0.12) * 0.012 : 1;
-          const b = layer.bounds;
-          const centerX = b.x + b.width / 2;
-          const centerY = b.y + b.height / 2;
+        {/* 1. Isometric Studio Pedestal Base Disc */}
+        <path
+          d={pedestalPathD}
+          fill="#E2E8F0"
+          fillOpacity={0.55}
+          stroke="#CBD5E1"
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
 
-          return (
-            <g
-              key={layer.id}
-              opacity={isFocused ? 1 : 0.72}
-              transform={`translate(${centerX}, ${centerY}) scale(${pulseScale}) translate(${-centerX}, ${-centerY})`}
-            >
-              {/* Layer Cutaway Block */}
-              <rect
-                x={b.x}
-                y={b.y}
-                width={b.width}
-                height={b.height}
-                rx={b.rx ?? 14}
-                fill={layer.fillColor}
-                stroke={layer.outlineColor || "#1E293B"}
-                strokeWidth={isFocused ? 3.2 : layer.strokeWidth || 2.5}
-              />
-
-              {/* Layer Name & Role Tag Inside Cutaway */}
-              <text
-                x={b.x + 18}
-                y={b.y + 32}
-                fill="#0F172A"
-                fontSize={21}
-                fontWeight={900}
-                fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
-              >
-                {layer.name}
-              </text>
-              <text
-                x={b.x + 18}
-                y={b.y + 56}
-                fill="#334155"
-                fontSize={16}
-                fontWeight={700}
-                fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
-              >
-                {layer.everydayRole}
-              </text>
-
-              {/* Layer-Specific Custom SVG Primitives */}
-              {(layer.customSvgElements || []).map((el, idx) =>
-                renderCustomSvgElement(el, `${layer.id}_custom_${idx}`),
-              )}
-
-              {/* Anchor Target Dot for Pill Pointers */}
-              <circle
-                cx={layer.anchorScreenCoord.x}
-                cy={layer.anchorScreenCoord.y}
-                r={7}
-                fill="#FFFFFF"
+        {/* 2. Depth-Sorted 3D Isometric Polygons (Painter's Algorithm) */}
+        {compiledPolygons.map((poly) => (
+          <g key={poly.id} opacity={poly.opacity}>
+            <path
+              d={poly.d}
+              fill={poly.fill}
+              stroke={poly.stroke}
+              strokeWidth={poly.strokeWidth}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+            {poly.isCutawayCap && (
+              <path
+                d={poly.d}
+                fill="url(#iso-cutaway-hatch)"
                 stroke="#1E293B"
-                strokeWidth={3}
+                strokeWidth={poly.strokeWidth}
+                strokeLinejoin="round"
               />
-            </g>
-          );
-        })}
+            )}
+          </g>
+        ))}
 
-        {/* 4. Scene-Level Custom SVG Elements */}
-        {(scene.customSvgElements || []).map((el, idx) =>
-          renderCustomSvgElement(el, `scene_custom_${idx}`),
+        {/* 3. 3D Particle & Physics Streams Projected Along 3D Paths */}
+        {(visualScene?.particleStreams || []).map((stream) =>
+          renderIsoParticleStream3D(
+            stream,
+            frame,
+            activePhase?.segmentIndex ?? 0,
+          ),
         )}
 
-        {/* 5. Dynamic Particle & Flow Systems (ions, electrons, heat-waves, fluid, airflow) */}
-        {(scene.particleFlows || []).map((flow) =>
-          renderParticleFlow(flow, frame, activePhase?.segmentIndex ?? 0),
-        )}
+        {/* 4. 3D Socket Anchor Dots for <PopUpCallout /> Pill Pointers */}
+        {partAnchors2D.map((anchor) => (
+          <circle
+            key={`socket_${anchor.partId}`}
+            cx={anchor.sx}
+            cy={anchor.sy}
+            r={anchor.isFocused ? 7.5 : 5.5}
+            fill="#FFFFFF"
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+        ))}
       </svg>
     </AbsoluteFill>
   );

@@ -16,18 +16,24 @@ export const PhaseTypeSchema = z.enum([
 
 export type PhaseType = z.infer<typeof PhaseTypeSchema>;
 
-export const CutawayContainerTypeSchema = z
-  .enum([
-    "cylinder-cutaway",
-    "box-cutaway",
-    "dual-chamber",
-    "layered-stack",
-    "circuit-board",
-    "mechanical-housing",
-  ])
-  .catch("layered-stack");
+export const Point3DSchema = z.object({
+  x: z.number().catch(0),
+  y: z.number().catch(0),
+  z: z.number().catch(0),
+});
 
-export type CutawayContainerType = z.infer<typeof CutawayContainerTypeSchema>;
+export const IsoBuilderTypeSchema = z
+  .enum([
+    "revolveProfile",
+    "extrudePolygon",
+    "hollowBox3D",
+    "box3D",
+    "tubePath3D",
+    "radialArray3D",
+  ])
+  .catch("hollowBox3D");
+
+export type IsoBuilderType = z.infer<typeof IsoBuilderTypeSchema>;
 
 export const ParticleFlowTypeSchema = z
   .enum([
@@ -50,15 +56,15 @@ export const DeconstructedComponentSchema = z.object({
   name: z.string().min(1),
   everydayRole: z.string().min(1),
   simpleCauseEffect: z.string().min(1),
-  fillColor: z.string().default("#E2E8F0"),
-  defaultAnchor: z.object({
-    x: z.number().min(100).max(980),
-    y: z.number().min(460).max(1520),
-  }),
+  fillColor: z.string().catch("#E2E8F0"),
+  /**
+   * 3D center coordinate in [-100..100] world space (projected automatically by iso-math.ts)
+   */
+  center3D: Point3DSchema.default({ x: 0, y: 0, z: 0 }),
   zoomTarget: z.object({
-    x: z.number().default(0),
-    y: z.number().default(0),
-    scale: z.number().min(1).max(2.4).default(1.6),
+    x: z.number().catch(0),
+    y: z.number().catch(0),
+    scale: z.number().min(1).max(2.4).catch(1.6),
   }),
 });
 
@@ -77,11 +83,10 @@ export const DeconstructionBlueprintSchema = z.object({
   laymanHookTitle: z.string().min(1),
   everydayCategory: z.string().min(1),
   coreSimpleTruth: z.string().min(1),
-  containerType: CutawayContainerTypeSchema,
   baselineMetricValue: z.number(),
   peakMetricValue: z.number(),
   metricUnit: z.string(),
-  practicalChecklistTitle: z.string().default("CEK SEBELUM BELI:"),
+  practicalChecklistTitle: z.string().catch("CEK SEBELUM PAKAI / BELI:"),
   practicalChecklistItems: z.array(z.string()).min(3),
   components: z.array(DeconstructedComponentSchema).min(3),
   phases: z.array(DeconstructedPhaseSchema).length(4),
@@ -95,18 +100,14 @@ export type DeconstructionBlueprint = z.infer<typeof DeconstructionBlueprintSche
 export const PillLabelItemSchema = z.object({
   id: z.string(),
   componentId: z.string(),
-  text: z.string(), // e.g., "ANODA GRAFIT →", "← ION LITHIUM", "DUAL-CELL →"
+  text: z.string(), // e.g., "← ROTOR MAGNET", "KUMPARAN STATOR →"
   direction: z.enum(["LEFT", "RIGHT"]).catch("RIGHT"),
-  anchor: z.object({
-    x: z.number().catch(540),
-    y: z.number().catch(960),
-  }),
   relativeTriggerRatio: z.number().min(0.05).max(0.85).catch(0.15),
-  durationSeconds: z.number().min(1.5).max(8).catch(4.0),
+  durationSeconds: z.number().min(1.5).max(8).catch(4.2),
 });
 
 export const SfxCueSchema = z.object({
-  text: z.string(), // e.g., "200 WATT!", "DUAL-CELL", "SUHU AMAN", "KEDAP!"
+  text: z.string(), // e.g., "PSSST!", "200 WATT!", "TERKUNCI"
   variant: z
     .enum(["STEAM_YELLOW_BLUE", "RED_STAMP", "FADED_BG", "GREEN_POP"])
     .catch("STEAM_YELLOW_BLUE"),
@@ -122,13 +123,7 @@ export const SfxCueSchema = z.object({
 export const ScriptSegmentSchema = z.object({
   segmentIndex: z.number().int().min(0).max(3),
   phaseType: PhaseTypeSchema,
-  /**
-   * Chapter Title with `<highlight>` tags for coral red (#EF4444) words
-   */
   chapterTitle: z.string().min(3),
-  /**
-   * Short, punchy spoken Indonesian sentences (4-7 words per sentence)
-   */
   narrationText: z.string().min(8),
   primaryMetric: z.object({
     startValue: z.number(),
@@ -147,15 +142,15 @@ export const ScriptSegmentSchema = z.object({
   secondaryMetric: z.string(),
   pillLabels: z.array(PillLabelItemSchema).min(1),
   sfxCue: SfxCueSchema.optional().nullable(),
-  showChecklistCard: z.boolean().default(false),
+  showChecklistCard: z.boolean().catch(false),
 });
 
 export const ScriptArchitectOutputSchema = z.object({
   topic: z.string(),
-  totalSegments: z.number().int().default(4),
+  totalSegments: z.number().int().catch(4),
   fullNarrationIndonesian: z.string(),
   practicalChecklist: z.object({
-    title: z.string().default("CEK SEBELUM BELI:"),
+    title: z.string().catch("CEK SEBELUM PAKAI / BELI:"),
     items: z.array(z.string()).min(3),
   }),
   segments: z.array(ScriptSegmentSchema).length(4),
@@ -193,7 +188,7 @@ export const AudioSegmentTimingSchema = z.object({
   startSec: z.number().nonnegative(),
   endSec: z.number().positive(),
   startFrame: z.number().int().nonnegative(),
-  endFrame: z.number().int().positive(),
+  endFrame: z.number().int().nonnegative(),
   durationInFrames: z.number().int().positive(),
   wordTimings: z.array(WordTimingSchema),
 });
@@ -216,101 +211,107 @@ export type WordTiming = z.infer<typeof WordTimingSchema>;
 export type AudioSfxTrigger = z.infer<typeof AudioSfxTriggerSchema>;
 
 /**
- * 4. AGENT 4 OUTPUT: Dynamic Parametric Cutaway & SVG Scene Composer (`visual.worker.ts`)
+ * 4. AGENT 4 OUTPUT: Universal Procedural 3D-to-SVG Isometric Scene Graph (`IsoSceneGraph`)
+ * Uses the 6 universal 3D constructive geometry builders in [-100..100, -100..100, -100..100] world space.
  */
-export const CustomSvgElementSchema = z.object({
-  id: z.string().catch("svg_el"),
-  componentId: z.string().optional(),
-  shape: z
-    .enum(["rect", "circle", "ellipse", "path", "polygon", "line"])
-    .catch("rect"),
-  /**
-   * Coordinates inside the 1080x1920 viewport (cutaway stage area is x: 180..900, y: 580..1460)
-   */
-  x: z.number().optional(),
-  y: z.number().optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-  rx: z.number().optional(),
-  ry: z.number().optional(),
-  r: z.number().optional(),
-  x2: z.number().optional(),
-  y2: z.number().optional(),
-  d: z.string().optional(),
-  points: z.string().optional(),
-  fill: z.string().catch("#E2E8F0"),
-  stroke: z.string().catch("#1E293B"),
-  strokeWidth: z.number().catch(2.5),
-  strokeDasharray: z.string().optional(),
-  opacity: z.number().min(0.1).max(1).optional().catch(1),
-  label: z.string().optional(),
+export const IsoPartAnimationSchema = z.object({
+  type: z
+    .enum(["none", "rotate", "oscillate", "pulse", "explodeOffset"])
+    .catch("none"),
+  axis: z.enum(["X", "Y", "Z"]).catch("Z"),
+  speed: z.number().catch(1.0),
+  amplitude: z.number().catch(10),
+  explodeVector: Point3DSchema.optional(),
 });
 
-export const InternalCutawayLayerSchema = z.object({
-  id: z.string().catch("layer_id"),
+export const IsoBuilderParamsSchema = z.object({
+  center: Point3DSchema.default({ x: 0, y: 0, z: 0 }),
+  axis: z.enum(["X", "Y", "Z"]).catch("Z"),
+  // For `revolveProfile`: 2D profile points `{ r, z }`
+  profilePoints: z
+    .array(z.object({ r: z.number().catch(35), z: z.number().catch(0) }))
+    .optional(),
+  startAngle: z.number().optional(),
+  endAngle: z.number().optional(),
+  // For `extrudePolygon`: 2D polygon `{ x, y }` + `depth`
+  polygon: z
+    .array(z.object({ x: z.number().catch(0), y: z.number().catch(0) }))
+    .optional(),
+  depth: z.number().optional(),
+  // For `hollowBox3D` & `box3D`:
+  size: z
+    .object({
+      w: z.number().catch(60),
+      d: z.number().catch(60),
+      h: z.number().catch(60),
+    })
+    .optional(),
+  wallThickness: z.number().catch(8),
+  // For `tubePath3D`:
+  path3D: z.array(Point3DSchema).optional(),
+  tubeRadius: z.number().optional(),
+  // For `radialArray3D`:
+  radialCount: z.number().int().min(3).max(20).optional(),
+  radialRadius: z.number().optional(),
+  elementSize: z
+    .object({
+      w: z.number().catch(14),
+      d: z.number().catch(8),
+      h: z.number().catch(28),
+    })
+    .optional(),
+});
+
+export const IsoPart3DSchema = z.object({
+  partId: z.string(),
   componentId: z.string(),
-  name: z.string(),
-  everydayRole: z.string().catch(""),
-  zIndex: z.number().int().catch(1),
-  fillColor: z.string().catch("#E2E8F0"),
-  outlineColor: z.string().catch("#1E293B"),
-  strokeWidth: z.number().catch(2.5),
-  bounds: z.object({
-    x: z.number().catch(260),
-    y: z.number().catch(700),
-    width: z.number().catch(240),
-    height: z.number().catch(320),
-    rx: z.number().catch(14),
+  name: z.string(), // Layman Indonesian name (used for anchor lookup, never drawn as raw SVG text)
+  builderType: IsoBuilderTypeSchema,
+  materialColor: z.string().catch("#E2E8F0"),
+  cutaway: z.boolean().catch(false),
+  opacity: z.number().min(0.15).max(1).catch(1),
+  params: IsoBuilderParamsSchema,
+  animation: IsoPartAnimationSchema.default({
+    type: "none",
+    axis: "Z",
+    speed: 1,
+    amplitude: 10,
   }),
-  anchorScreenCoord: z.object({
-    x: z.number().catch(420),
-    y: z.number().catch(900),
-  }),
-  customSvgElements: z.array(CustomSvgElementSchema).catch([]),
 });
 
-export const ParticleFlowSpecSchema = z.object({
-  id: z.string().catch("flow_id"),
+export const ParticleStream3DSpecSchema = z.object({
+  id: z.string().catch("stream_1"),
   type: ParticleFlowTypeSchema,
-  color: z.string().catch("#FACC15"),
-  from: z.object({
-    x: z.number().catch(360),
-    y: z.number().catch(860),
-  }),
-  to: z.object({
-    x: z.number().catch(720),
-    y: z.number().catch(860),
-  }),
-  count: z.number().int().min(3).max(24).catch(10),
-  speed: z.number().min(0.4).max(4).catch(1.4),
-  size: z.number().min(4).max(22).catch(10),
+  color: z.string().catch("#38BDF8"),
+  path3D: z.array(Point3DSchema).min(2),
+  count: z.number().int().min(3).max(24).catch(12),
+  speed: z.number().min(0.4).max(4).catch(1.5),
+  size: z.number().min(4).max(20).catch(10),
   activeInPhases: z.array(z.number().int()).catch([0, 1, 2, 3]),
 });
 
-export const ParametricSceneGraphSchema = z.object({
-  containerType: CutawayContainerTypeSchema,
-  containerTitle: z.string(),
-  containerSubtitle: z.string().optional(),
-  outerBounds: z.object({
-    x: z.number().default(220),
-    y: z.number().default(620),
-    width: z.number().default(640),
-    height: z.number().default(760),
-    wallThickness: z.number().default(26),
-    outerFill: z.string().default("#E2E8F0"),
-    interiorFill: z.string().default("#F8FAFC"),
+export const IsoSceneGraphSchema = z.object({
+  subjectTitle: z.string(),
+  anatomyDecomposition: z.object({
+    outerHousingShell: z.string(),
+    primaryInternalMechanism: z.string(),
+    zoomInSubComponents: z.string(),
+    physicalMediumFlow: z.string(),
   }),
-  internalLayers: z.array(InternalCutawayLayerSchema).min(3),
-  customSvgElements: z.array(CustomSvgElementSchema).default([]),
-  particleFlows: z.array(ParticleFlowSpecSchema).min(1),
+  parts: z.array(IsoPart3DSchema).min(3),
+  particleStreams: z.array(ParticleStream3DSpecSchema).min(1),
 });
+
+export type IsoSceneGraph = z.infer<typeof IsoSceneGraphSchema>;
+export type IsoPart3D = z.infer<typeof IsoPart3DSchema>;
+export type ParticleStream3DSpec = z.infer<typeof ParticleStream3DSpecSchema>;
 
 export const CameraZoomKeyframeSchema = z.object({
   startFrame: z.number().int().nonnegative(),
   endFrame: z.number().int().positive(),
-  x: z.number().min(-450).max(450).default(0),
-  y: z.number().min(-550).max(550).default(0),
-  scale: z.number().min(0.9).max(2.4).default(1.0),
+  x: z.number().min(-450).max(450).catch(0),
+  y: z.number().min(-550).max(550).catch(0),
+  scale: z.number().min(0.9).max(2.4).catch(1.0),
 });
 
 export const FramePillCalloutSchema = z.object({
@@ -320,6 +321,9 @@ export const FramePillCalloutSchema = z.object({
   endFrame: z.number().int().positive(),
   text: z.string(),
   direction: z.enum(["LEFT", "RIGHT"]),
+  /**
+   * 2D screen anchor automatically projected from the 3D part center via projectIso3D()
+   */
   anchor: z.object({
     x: z.number(),
     y: z.number(),
@@ -370,7 +374,7 @@ export const RemotionCompositionPropsSchema = z.object({
     title: z.string(),
     items: z.array(z.string()),
   }),
-  scene: ParametricSceneGraphSchema,
+  visualScene: IsoSceneGraphSchema,
   phases: z.array(PhaseTimelineBlockSchema).length(4),
   pillCallouts: z.array(FramePillCalloutSchema),
   sfxOverlays: z.array(FrameSfxOverlaySchema),
@@ -378,10 +382,6 @@ export const RemotionCompositionPropsSchema = z.object({
 });
 
 export type RemotionCompositionProps = z.infer<typeof RemotionCompositionPropsSchema>;
-export type ParametricSceneGraph = z.infer<typeof ParametricSceneGraphSchema>;
-export type InternalCutawayLayer = z.infer<typeof InternalCutawayLayerSchema>;
-export type CustomSvgElement = z.infer<typeof CustomSvgElementSchema>;
-export type ParticleFlowSpec = z.infer<typeof ParticleFlowSpecSchema>;
 export type FramePillCallout = z.infer<typeof FramePillCalloutSchema>;
 export type FrameSfxOverlay = z.infer<typeof FrameSfxOverlaySchema>;
 export type PhaseTimelineBlock = z.infer<typeof PhaseTimelineBlockSchema>;
