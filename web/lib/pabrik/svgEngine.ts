@@ -59,6 +59,8 @@ export function buildPrecisionIsometricSvg(input: BeatVisualInput): string {
   const isThermalVessel = /tumbler|termos|botol|magic com|rice cooker|panci|kopi|air panas|es\b|suhu|vakum|dinding ganda/.test(combined);
   const isCoolingLoop = /freon|ac\b|pendingin|kompresor|evaporator|kondensor|kulkas|pipa|bocoran/.test(combined);
   const isMechanicalDrive = /cvt|transmisi|mesin|motor|mobil|piston|gear|roda|rem|pesawat|turbin|oli/.test(combined);
+  const isHydroAtmosphere = /hujan|awan|uap|kondensasi|atmosfer|cuaca|petir|badai|embun|presipitasi|langit|mendung/.test(combined);
+  const isElectronic = /baterai|power bank|charger|listrik|kabel|pcb|kapasitor|sirkuit|arus|tegangan|volt|usb/.test(combined);
 
   const isMythOrFaultBeat = beat_number === 2 || beat_number === 6 || beat_number === 7;
   const isCheckOrSafeBeat = beat_number === 3 || beat_number === 8 || beat_number === 10;
@@ -141,6 +143,50 @@ export function buildPrecisionIsometricSvg(input: BeatVisualInput): string {
         <ellipse cx="0" cy="0" rx="54" ry="27" fill="${secondaryAccent}" stroke="#111111" stroke-width="3"/>
         <ellipse cx="0" cy="0" rx="18" ry="9" fill="#111111"/>
       </g>
+    `;
+  } else if (isHydroAtmosphere) {
+    const rainOffset = (beat_number % 3) * 14;
+    mainAssembly = `
+      <!-- Surface Water / Sea Layer on Isometric Base -->
+      <polygon points="0,-90 220,20 0,130 -220,20" fill="#0A84FF" fill-opacity="0.85" stroke="#111111" stroke-width="3"/>
+      <polygon points="-220,20 0,130 0,165 -220,55" fill="#0060DF" stroke="#111111" stroke-width="3"/>
+      <polygon points="0,130 220,20 220,55 0,165" fill="#0040A0" stroke="#111111" stroke-width="3"/>
+
+      <!-- Rising Evaporation Arrows (Uap Air Naik) -->
+      <g stroke="#FF3B30" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 8">
+        <line x1="-130" y1="0" x2="-130" y2="-150"/>
+        <line x1="-70" y1="25" x2="-70" y2="-135"/>
+      </g>
+      <polygon points="-130,-165 -142,-142 -118,-142" fill="#FF3B30" stroke="#111111" stroke-width="2"/>
+      <polygon points="-70,-150 -82,-127 -58,-127" fill="#FF3B30" stroke="#111111" stroke-width="2"/>
+
+      <!-- Isometric Cloud / Condensation Mass -->
+      <g transform="translate(15, -210)">
+        <ellipse cx="-75" cy="10" rx="75" ry="42" fill="#E5E5EA" stroke="#111111" stroke-width="3.5"/>
+        <ellipse cx="65" cy="12" rx="80" ry="44" fill="#D1D1D6" stroke="#111111" stroke-width="3.5"/>
+        <ellipse cx="0" cy="-22" rx="95" ry="54" fill="#FFFFFF" stroke="#111111" stroke-width="3.5"/>
+        <ellipse cx="-20" cy="-12" rx="48" ry="26" fill="${primaryAccent}" fill-opacity="0.85" stroke="#111111" stroke-width="2.5"/>
+      </g>
+
+      <!-- Falling Raindrops (Presipitasi) -->
+      <g stroke="#0A84FF" stroke-width="5" stroke-linecap="round" transform="translate(0, ${rainOffset})">
+        <line x1="25" y1="-135" x2="5" y2="-85"/>
+        <line x1="65" y1="-120" x2="45" y2="-70"/>
+        <line x1="105" y1="-135" x2="85" y2="-85"/>
+        <line x1="45" y1="-60" x2="25" y2="-10"/>
+        <line x1="85" y1="-50" x2="65" y2="0"/>
+      </g>
+    `;
+  } else if (isElectronic) {
+    mainAssembly = `
+      <!-- Isometric Battery / Power Bank Casing Cutaway -->
+      <polygon points="0,-210 210,-105 0,0 -210,-105" fill="#FFFFFF" stroke="#111111" stroke-width="3.5"/>
+      <polygon points="-210,-105 0,0 0,85 -210,-20" fill="#E5E5EA" stroke="#111111" stroke-width="3.5"/>
+      <polygon points="0,0 210,-105 210,-20 0,85" fill="#D1D1D6" stroke="#111111" stroke-width="3.5"/>
+      <!-- Internal Lithium Cells & PCB Module -->
+      <polygon points="-20,-175 140,-95 60,-55 -100,-135" fill="${secondaryAccent}" stroke="#111111" stroke-width="3"/>
+      <polygon points="-110,-125 50,-45 -10,-15 -170,-95" fill="${primaryAccent}" stroke="#111111" stroke-width="3"/>
+      <rect x="-35" y="-125" width="70" height="36" rx="6" fill="#30D158" stroke="#111111" stroke-width="3"/>
     `;
   } else {
     mainAssembly = `

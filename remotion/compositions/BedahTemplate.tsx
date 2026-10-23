@@ -184,11 +184,13 @@ const BeatScene: React.FC<{
   const scale = spring({
     frame,
     fps,
-    config: { damping: 14, stiffness: 90 },
+    from: 0.92,
+    to: 1,
+    config: { damping: 14, stiffness: 120 },
   });
 
   // Camera zoom effect constrained to max 1.2x
-  const cameraZoom = interpolate(frame, [0, 90], [1.0, 1.08], {
+  const cameraZoom = interpolate(frame, [0, 90], [1.0, 1.06], {
     extrapolateRight: "clamp",
   });
 
@@ -204,7 +206,8 @@ const BeatScene: React.FC<{
   const valColor = valueColor(currentVal, metric);
   const formattedVal = formatNumber(currentVal, metric.decimals ?? 0);
   const readoutText = stateReadout(metric, plan, beatIndex);
-  const headlineLines = wrapHeadline(beat.tulisan_layar, 22);
+  const roleBadge = beat.role || `TAHAP 0${beat.beat_number}`;
+  const headlineLines = wrapHeadline(roleBadge, 22);
   const sparkPts = seriesPoints(plan, metric, timings, globalTimeSec);
   const totalDur = Math.max(1, timings[timings.length - 1]?.end ?? 30);
   const maxMetricVal = Math.max(1, ...metric.states.map((s) => s.value));
@@ -216,10 +219,7 @@ const BeatScene: React.FC<{
     .join(" ");
 
   return (
-    <IsometricRoom
-      title={beat.tulisan_layar}
-      badge={`BEAT 0${beat.beat_number} // ${topic}`}
-    >
+    <IsometricRoom badge={`BEAT 0${beat.beat_number} // ${topic}`}>
       {/* HUD Telemetry Widget (from hud.ts) */}
       <div className="absolute top-24 right-8 z-30 bg-white/95 border-3 border-[#111111] rounded-xl px-4 py-3 shadow-[4px_4px_0px_#111111] flex items-center gap-4">
         <div>
