@@ -1,16 +1,16 @@
-import React from 'react';
+import React from "react";
 import {
   Sequence,
   useVideoConfig,
   Audio,
   interpolate,
   useCurrentFrame,
-  spring
-} from 'remotion';
-import { IsometricRoom } from '../components/IsometricRoom';
-import { FreonParticles } from '../components/FreonParticles';
-import { KaraokeText, WordTiming } from '../components/KaraokeText';
-import { renderDynamicSvgOrMarkup } from '../../lib/pabrik/svgRuntime';
+  spring,
+} from "remotion";
+import { IsometricRoom } from "../components/IsometricRoom";
+import { FreonParticles } from "../components/FreonParticles";
+import { KaraokeText, WordTiming } from "../components/KaraokeText";
+import { renderDynamicSvgOrMarkup } from "../../lib/pabrik/svgRuntime";
 import {
   buildSubtitles,
   wrapHeadline,
@@ -19,9 +19,9 @@ import {
   valueColor,
   formatNumber,
   stateReadout,
-  type BeatTiming
-} from '../../lib/pabrik/hud';
-import type { Metric, Plan } from '../../lib/pabrik/types';
+  type BeatTiming,
+} from "../../lib/pabrik/hud";
+import type { Metric, Plan } from "../../lib/pabrik/types";
 
 export interface BeatItem {
   beat_number: number;
@@ -56,14 +56,17 @@ export const BedahTemplate: React.FC<BedahTemplateProps> = ({
   const frame = useCurrentFrame();
 
   // Fallback defaults if beats are empty
-  const activeBeats = beats.length > 0 ? beats : [
-    {
-      beat_number: 1,
-      text: "Freon AC kamu gak akan pernah berkurang atau habis!",
-      visual: "Kompresor AC isometric bersirkulasi tertutup",
-      tulisan_layar: "SISTEM TERTUTUP"
-    }
-  ];
+  const activeBeats =
+    beats.length > 0
+      ? beats
+      : [
+          {
+            beat_number: 1,
+            text: "Freon AC kamu gak akan pernah berkurang atau habis!",
+            visual: "Kompresor AC isometric bersirkulasi tertutup",
+            tulisan_layar: "SISTEM TERTUTUP",
+          },
+        ];
 
   const totalFrames = durationInFrames || 900;
   const framesPerBeat = Math.floor(totalFrames / activeBeats.length);
@@ -77,20 +80,21 @@ export const BedahTemplate: React.FC<BedahTemplateProps> = ({
   }));
 
   // Build default Metric if not passed explicitly
-  const activeMetric: Metric = metric && Array.isArray(metric.states) && metric.states.length > 0
-    ? metric
-    : {
-        label: "TELEMETRI",
-        unit: "%",
-        decimals: 0,
-        warn_at: 70,
-        danger_at: 90,
-        states: activeBeats.map((b, i) => ({
-          id: b.hud?.state ?? `s${i + 1}`,
-          value: Math.min(100, (i + 1) * 10),
-          readout: b.tulisan_layar,
-        })),
-      };
+  const activeMetric: Metric =
+    metric && Array.isArray(metric.states) && metric.states.length > 0
+      ? metric
+      : {
+          label: "TELEMETRI",
+          unit: "%",
+          decimals: 0,
+          warn_at: 70,
+          danger_at: 90,
+          states: activeBeats.map((b, i) => ({
+            id: b.hud?.state ?? `s${i + 1}`,
+            value: Math.min(100, (i + 1) * 10),
+            readout: b.tulisan_layar,
+          })),
+        };
 
   const planForHud: Plan = {
     beats: activeBeats.map((b, i) => ({
@@ -101,7 +105,9 @@ export const BedahTemplate: React.FC<BedahTemplateProps> = ({
       sfx_keyword: b.sfx_keyword ?? "click",
       tulisan_layar: b.tulisan_layar,
       source_refs: [],
-      hud: b.hud ?? { state: activeMetric.states[i]?.id ?? activeMetric.states[0].id },
+      hud: b.hud ?? {
+        state: activeMetric.states[i]?.id ?? activeMetric.states[0].id,
+      },
     })),
   };
 
@@ -124,13 +130,13 @@ export const BedahTemplate: React.FC<BedahTemplateProps> = ({
         const beatDurationSec = beatDuration / fps;
 
         // Use buildSubtitles from hud.ts for phrase-weighted karaoke words
-        const subChunks = buildSubtitles(beat.text || '', 0, beatDurationSec);
+        const subChunks = buildSubtitles(beat.text || "", 0, beatDurationSec);
         const relativeWords: WordTiming[] = subChunks.flatMap((c) =>
           c.words.map((w) => ({
             word: w.text,
             start: w.start,
             end: w.end,
-          }))
+          })),
         );
 
         return (
@@ -165,23 +171,37 @@ const BeatScene: React.FC<{
   metric: Metric;
   timings: BeatTiming[];
   globalTimeSec: number;
-}> = ({ beat, beatIndex, topic, words, plan, metric, timings, globalTimeSec }) => {
+}> = ({
+  beat,
+  beatIndex,
+  topic,
+  words,
+  plan,
+  metric,
+  timings,
+  globalTimeSec,
+}) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
 
   const scale = spring({
     frame,
     fps,
-    config: { damping: 14, stiffness: 90 }
+    config: { damping: 14, stiffness: 90 },
   });
 
   // Camera zoom effect constrained to max 1.2x
   const cameraZoom = interpolate(frame, [0, 90], [1.0, 1.08], {
-    extrapolateRight: 'clamp'
+    extrapolateRight: "clamp",
   });
 
-  const progress = Math.min(1, Math.max(0, frame / Math.max(durationInFrames - 1, 1)));
-  const isFullSvgScene = Boolean(beat.svgCode && beat.svgCode.includes('SvgScene'));
+  const progress = Math.min(
+    1,
+    Math.max(0, frame / Math.max(durationInFrames - 1, 1)),
+  );
+  const isFullSvgScene = Boolean(
+    beat.svgCode && beat.svgCode.includes("SvgScene"),
+  );
 
   // HUD Telemetry calculations via hud.ts
   const currentVal = valueAt(plan, metric, timings, globalTimeSec);
@@ -193,19 +213,29 @@ const BeatScene: React.FC<{
   const totalDur = Math.max(1, timings[timings.length - 1]?.end ?? 30);
   const maxMetricVal = Math.max(1, ...metric.states.map((s) => s.value));
   const sparkPolyline = sparkPts
-    .map(([t, v]) => `${Math.round((t / totalDur) * 160)},${Math.round(36 - (v / maxMetricVal) * 30)}`)
-    .join(' ');
+    .map(
+      ([t, v]) =>
+        `${Math.round((t / totalDur) * 160)},${Math.round(36 - (v / maxMetricVal) * 30)}`,
+    )
+    .join(" ");
 
   return (
-    <IsometricRoom title={beat.tulisan_layar} badge={`BEAT 0${beat.beat_number} // ${topic}`}>
+    <IsometricRoom
+      title={beat.tulisan_layar}
+      badge={`BEAT 0${beat.beat_number} // ${topic}`}
+    >
       {/* HUD Telemetry Widget (from hud.ts) */}
       <div className="absolute top-24 right-8 z-30 bg-white/95 border-3 border-[#111111] rounded-xl px-4 py-3 shadow-[4px_4px_0px_#111111] flex items-center gap-4">
         <div>
           <div className="text-[11px] font-black uppercase tracking-wider text-[#8E8E93]">
-            {metric.label ?? 'TELEMETRI'} // {readoutText}
+            {metric.label ?? "TELEMETRI"} // {readoutText}
           </div>
-          <div className="text-2xl font-black leading-tight" style={{ color: valColor }}>
-            {formattedVal} <span className="text-sm font-bold">{metric.unit ?? ''}</span>
+          <div
+            className="text-2xl font-black leading-tight"
+            style={{ color: valColor }}
+          >
+            {formattedVal}{" "}
+            <span className="text-sm font-bold">{metric.unit ?? ""}</span>
           </div>
         </div>
         {sparkPts.length > 1 && (
@@ -231,7 +261,9 @@ const BeatScene: React.FC<{
                 <span
                   key={si}
                   className={`px-2 py-0.5 text-lg font-black uppercase border-2 border-[#111111] rounded ${
-                    seg.hl ? 'bg-[#FF3B30] text-white' : 'bg-[#FFD60A] text-[#111111]'
+                    seg.hl
+                      ? "bg-[#FF3B30] text-white"
+                      : "bg-[#FFD60A] text-[#111111]"
                   }`}
                 >
                   {seg.text}
@@ -244,19 +276,24 @@ const BeatScene: React.FC<{
 
       {/* Technical Freon Flow Particles */}
       {!isFullSvgScene && (
-        <FreonParticles count={14} color={beat.beat_number % 2 === 0 ? "#FF3B30" : "#0A84FF"} />
+        <FreonParticles
+          count={14}
+          color={beat.beat_number % 2 === 0 ? "#FF3B30" : "#0A84FF"}
+        />
       )}
 
       {/* Center Technical Isometric Rig */}
-      <div 
+      <div
         className={
           isFullSvgScene
             ? "absolute inset-0 flex items-center justify-center"
             : "w-[880px] h-[880px] flex items-center justify-center relative"
         }
         style={{
-          transform: isFullSvgScene ? undefined : `scale(${cameraZoom * scale})`,
-          transition: 'transform 0.1s ease-out'
+          transform: isFullSvgScene
+            ? undefined
+            : `scale(${cameraZoom * scale})`,
+          transition: "transform 0.1s ease-out",
         }}
       >
         {beat.svgCode ? (
@@ -288,7 +325,13 @@ const DefaultIsometricSchematic: React.FC<{ beat: BeatItem }> = ({ beat }) => {
     >
       <defs>
         <filter id="solidShadow" x="0" y="0" width="120%" height="120%">
-          <feDropShadow dx="8" dy="8" stdDeviation="0" floodColor="#111111" floodOpacity="0.2" />
+          <feDropShadow
+            dx="8"
+            dy="8"
+            stdDeviation="0"
+            floodColor="#111111"
+            floodOpacity="0.2"
+          />
         </filter>
       </defs>
 
@@ -357,15 +400,15 @@ const DefaultIsometricSchematic: React.FC<{ beat: BeatItem }> = ({ beat }) => {
 
         {/* Technical Callout Badge */}
         <g transform="translate(130, -260)">
-          <line x1="-30" y1="40" x2="30" y2="-10" stroke="#111111" strokeWidth="3" />
-          <rect
-            x="30"
-            y="-40"
-            width="180"
-            height="48"
-            rx="8"
-            fill="#111111"
+          <line
+            x1="-30"
+            y1="40"
+            x2="30"
+            y2="-10"
+            stroke="#111111"
+            strokeWidth="3"
           />
+          <rect x="30" y="-40" width="180" height="48" rx="8" fill="#111111" />
           <text
             x="120"
             y="-10"

@@ -35,20 +35,16 @@ export interface Research {
 export interface MetricState {
   id: string;
   value: number;
-  readout?: string;
+  readout: string;
 }
 
 export interface Metric {
-  label?: string;
-  unit?: string;
-  decimals?: number;
+  label: string;
+  unit: string;
+  decimals: number;
   warn_at?: number;
   danger_at?: number;
   states: MetricState[];
-}
-
-export interface BeatHud {
-  state: string;
 }
 
 export interface Beat {
@@ -59,7 +55,9 @@ export interface Beat {
   sfx_keyword: string;
   tulisan_layar: string;
   source_refs: string[];
-  hud?: BeatHud;
+  hud?: {
+    state: string;
+  };
 }
 
 export interface Plan {

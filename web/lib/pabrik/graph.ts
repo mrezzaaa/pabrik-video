@@ -3,14 +3,6 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { generateTtsAudioFile } from './ttsEngine';
 import { buildPrecisionIsometricSvg, sanitizeLlmSvg } from './svgEngine';
-import { produce } from './orchestrator';
-import {
-  createPipelineLLMs,
-  fetchPageText,
-  loadPrompts,
-  mapResultToPipelineState,
-  searxngSearch,
-} from './adapters';
 
 export interface PipelineState {
   topic: string;
@@ -18,16 +10,12 @@ export interface PipelineState {
   researchData?: any;
   scriptData?: {
     total_words: number;
-    metric?: any;
     beats: Array<{
       beat_number: number;
-      role?: string;
       text: string;
       visual: string;
       sfx_keyword?: string;
       tulisan_layar: string;
-      source_refs?: string[];
-      hud?: { state: string };
       svgCode?: string;
     }>;
     narration_text: string;
@@ -40,21 +28,10 @@ export interface PipelineState {
   };
   sfxTracks?: Array<{ url: string; startFrame: number }>;
   juryData?: {
-    scores: {
-      hook: number;
-      tempo: number;
-      sinkron: number;
-      overall: number;
-      logika?: number;
-      cerita?: number;
-      faktual?: number;
-    };
-    gates?: any;
-    issues?: any[];
+    scores: { hook: number; tempo: number; sinkron: number; overall: number };
     status: 'APPROVED' | 'REJECT';
     fix_node?: string | null;
     feedback?: string;
-    needsManualReview?: boolean;
   };
   renderData?: {
     videoUrl?: string;
@@ -413,91 +390,54 @@ export async function nodeRender(state: PipelineState, emitLog: LogEmitter): Pro
   };
 }
 
-// Full-auto Pipeline Runner powered by Kitabedah Orchestrator (produce) + TTS + SFX + Render
+// Full-auto Pipeline Runner with Auto Loop if Jury score < 7
 export async function runPabrikPipeline(topic: string, emitLog: LogEmitter): Promise<PipelineState> {
-  const slug = topic
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  const outRoot = path.resolve(process.cwd(), process.cwd().endsWith('/web') ? '../out' : 'out');
-  const topicOutDir = path.join(outRoot, slug || `topic-${Date.now()}`);
+  let state: PipelineState = {
+    topic,
+    loopCount: 0
+  };
 
-  try {
-    const prompts = await loadPrompts();
-    const { gen, judge } = createPipelineLLMs((stage, model) => {
-      emitLog(stage, `Memakai model dengan ${model}...`);
-    });
+  const MAX_LOOPS = 2;
 
-    emitLog('research', `Memulai riset multi-query SearXNG & validasi ketat untuk: "${topic}"`);
+  // Step 1: Research
+  const res1 = await nodeResearch(state, emitLog);
+  state = { ...state, ...res1 };
 
-    const result = await produce(
-      topic,
-      {
-        gen,
-        judge,
-        search: searxngSearch,
-        fetchText: fetchPageText,
-        prompts,
-        maxRounds: 2,
-        renderOnReject: true,
-        onEvent: (msg) => {
-          if (msg.startsWith('research:')) emitLog('research', msg);
-          else if (msg.startsWith('juri')) emitLog('jury', msg);
-          else if (msg.startsWith('svg')) emitLog('visual', msg);
-          else emitLog('pipeline', msg);
-        },
-      },
-      topicOutDir,
-    );
+  while (state.loopCount < MAX_LOOPS) {
+    state.loopCount++;
 
-    const svgByBeat: Record<number, string> = {};
-    for (const filePath of result.svgFiles) {
-      const m = /beat-(\d+)\.tsx$/.exec(filePath);
-      if (m && fs.existsSync(filePath)) {
-        svgByBeat[Number(m[1])] = fs.readFileSync(filePath, 'utf-8');
-      }
-    }
+    // Step 2: Script
+    const res2 = await nodeScript(state, emitLog);
+    state = { ...state, ...res2 };
 
-    let state = mapResultToPipelineState(result, svgByBeat);
+    // Step 3: Visual SVG
+    const res3 = await nodeVisual(state, emitLog);
+    state = { ...state, ...res3 };
 
-    if (result.needsManualReview) {
-      emitLog(
-        'jury',
-        `PERLU REVIEW MANUAL [status=${result.judge.status}, overall=${result.judge.overall}, fix_node=${result.judge.fix_node}] - ${result.judge.feedback}`,
-        result.judge,
-      );
+    // Step 4: TTS & Timings
+    const res4 = await nodeTts(state, emitLog);
+    state = { ...state, ...res4 };
+
+    // Step 5: SFX
+    const res5 = await nodeSfx(state, emitLog);
+    state = { ...state, ...res5 };
+
+    // Step 6: AI Jury
+    const res6 = await nodeJury(state, emitLog);
+    state = { ...state, ...res6 };
+
+    if (state.juryData?.status === 'APPROVED' || (state.juryData?.scores?.overall || 0) >= 7.0) {
+      emitLog('pipeline', `AI Juri menyetujui hasil (Skor: ${state.juryData?.scores?.overall}). Melanjutkan render.`);
+      break;
     } else {
-      emitLog(
-        'jury',
-        `APPROVED [overall=${result.judge.overall}, ${result.plan.total_words} kata, ${result.svgFiles.length} SVG] - ${result.judge.feedback}`,
-        result.judge,
-      );
+      emitLog('pipeline', `Skor Juri < 7 (${state.juryData?.scores?.overall}). Melakukan loop perbaikan pada ${state.juryData?.fix_node || 'script'}...`);
     }
-
-    const resTts = await nodeTts(state, emitLog);
-    state = { ...state, ...resTts };
-
-    const resSfx = await nodeSfx(state, emitLog);
-    state = { ...state, ...resSfx };
-
-    const resRender = await nodeRender(state, emitLog);
-    state = { ...state, ...resRender };
-
-    emitLog('pipeline', `Pipeline selesai! Output tersimpan di ${topicOutDir} & siap di Remotion Player.`);
-    return state;
-  } catch (err: any) {
-    emitLog('pipeline', `Orchestrator ketat gagal (${err?.message}). Menjalankan fallback pipeline...`);
-
-    let state: PipelineState = { topic, loopCount: 1 };
-    state = { ...state, ...(await nodeResearch(state, emitLog)) };
-    state = { ...state, ...(await nodeScript(state, emitLog)) };
-    state = { ...state, ...(await nodeVisual(state, emitLog)) };
-    state = { ...state, ...(await nodeTts(state, emitLog)) };
-    state = { ...state, ...(await nodeSfx(state, emitLog)) };
-    state = { ...state, ...(await nodeJury(state, emitLog)) };
-    state = { ...state, ...(await nodeRender(state, emitLog)) };
-
-    emitLog('pipeline', `Pipeline selesai! Siap ditonton di Remotion Player.`);
-    return state;
   }
+
+  // Step 7: Render (hanya sekali di luar loop setelah approved)
+  const res7 = await nodeRender(state, emitLog);
+  state = { ...state, ...res7 };
+
+  emitLog('pipeline', `Pipeline selesai! Siap ditonton di Remotion Player.`);
+  return state;
 }

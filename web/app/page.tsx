@@ -414,11 +414,8 @@ export default function PabrikBedahPage() {
                   inputProps={{
                     topic: topic.toUpperCase(),
                     beats: beats.length > 0 ? beats : undefined,
-                    metric: pipelineResult?.scriptData?.metric,
                     wordTimings:
                       wordTimings.length > 0 ? wordTimings : undefined,
-                    audioUrl: pipelineResult?.ttsData?.audioUrl,
-                    sfxTracks: pipelineResult?.sfxTracks,
                   }}
                   durationInFrames={
                     pipelineResult?.renderData?.durationInFrames || 900

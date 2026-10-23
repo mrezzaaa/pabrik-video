@@ -1,50 +1,50 @@
 {
-  "id": "job-1792722837124",
-  "topic": "Kenapa minuman di dalam tumbler bisa awet suhunya?",
-  "status": "completed",
+  "id": "job-1792727698605",
+  "topic": "gimana hujan terjadi?",
+  "status": "running",
   "logs": [
     {
       "node": "research",
-      "message": "Mencari data valid melalui SearXNG untuk topik: \"Kenapa minuman di dalam tumbler bisa awet suhunya?\"",
-      "timestamp": "2026-10-23T02:33:57.125Z"
+      "message": "Mencari data valid melalui SearXNG untuk topik: \"gimana hujan terjadi?\"",
+      "timestamp": "2026-10-23T03:54:58.605Z"
     },
     {
       "node": "research",
       "message": "Ditemukan 6 sumber literatur dari SearXNG",
-      "timestamp": "2026-10-23T02:33:57.903Z"
+      "timestamp": "2026-10-23T03:54:59.432Z"
     },
     {
       "node": "research",
       "message": "Menyusun fact check & labeling [RESMI]/[MEDIA]/[DIMODELKAN] dengan nvidia/moonshotai/kimi-k3...",
-      "timestamp": "2026-10-23T02:33:57.906Z"
+      "timestamp": "2026-10-23T03:54:59.434Z"
     },
     {
       "node": "research",
       "message": "Selesai riset: 3 fakta teknis tervalidasi",
-      "timestamp": "2026-10-23T02:33:58.001Z",
+      "timestamp": "2026-10-23T03:54:59.602Z",
       "data": {
-        "topic": "Kenapa minuman di dalam tumbler bisa awet suhunya?",
+        "topic": "gimana hujan terjadi?",
         "facts": [
           {
-            "claim": "Prinsip dasar Kenapa minuman di dalam tumbler bisa awet suhunya? berdasarkan standar teknik.",
+            "claim": "Prinsip dasar gimana hujan terjadi? berdasarkan standar teknik.",
             "label": "[RESMI]",
             "evidence": "Manual umum"
           },
           {
-            "claim": "Miskonsepsi umum tentang Kenapa minuman di dalam tumbler bisa awet suhunya?.",
+            "claim": "Miskonsepsi umum tentang gimana hujan terjadi?.",
             "label": "[MEDIA]",
             "evidence": "Observasi"
           },
           {
-            "claim": "Mekanisme kerja Kenapa minuman di dalam tumbler bisa awet suhunya? bisa divisualisasikan.",
+            "claim": "Mekanisme kerja gimana hujan terjadi? bisa divisualisasikan.",
             "label": "[DIMODELKAN]",
             "evidence": "Model"
           }
         ],
         "myths": [
           {
-            "myth": "Mitos tentang Kenapa minuman di dalam tumbler bisa awet suhunya?",
-            "fact": "Fakta Kenapa minuman di dalam tumbler bisa awet suhunya?"
+            "myth": "Mitos tentang gimana hujan terjadi?",
+            "fact": "Fakta gimana hujan terjadi?"
           }
         ]
       }
@@ -52,1119 +52,118 @@
     {
       "node": "script",
       "message": "Menyusun naskah 10 beat terstruktur (target 95-130 kata)...",
-      "timestamp": "2026-10-23T02:33:58.002Z"
+      "timestamp": "2026-10-23T03:54:59.603Z"
     },
     {
       "node": "script",
       "message": "Menyusun naskah 10 beat dengan nvidia/meta/muse-glimmer-30b...",
-      "timestamp": "2026-10-23T02:33:58.003Z"
+      "timestamp": "2026-10-23T03:54:59.604Z"
     },
     {
       "node": "script",
-      "message": "Naskah 10 beat selesai: 96 kata terverifikasi",
-      "timestamp": "2026-10-23T02:34:56.860Z",
+      "message": "Naskah 10 beat selesai: 105 kata terverifikasi",
+      "timestamp": "2026-10-23T03:55:55.078Z",
       "data": {
-        "total_words": 96,
+        "total_words": 105,
         "beats": [
           {
             "beat_number": 1,
-            "text": "Kenapa es tetap dingin dua belas jam di tumbler murah?",
-            "visual": "Isometric tumbler stainless terbuka, es batu di dalam, termometer digital di samping, latar bengkel minimal",
+            "text": "Kenapa gimana hujan terjadi? ini wajib kamu tau?",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 1",
             "sfx_keyword": "click",
-            "tulisan_layar": "HOOK: Awet Suhu?",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          HOOK: AWET SUHU?\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 01 // Isometric tumbler stainless terbuka, es ba...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "tulisan_layar": "GIMANA HUJAN TE",
+            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <polygon points=\"0,-220 200,-120 0,-20 -200,-120\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <polygon points=\"-200,-120 0,-20 0,90 -200,-10\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <polygon points=\"0,-20 200,-120 200,-10 0,90\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -95)\">\n        <polygon points=\"0,-85 110,-30 0,25 -110,-30\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <polygon points=\"-110,-30 0,25 0,95 -110,40\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <polygon points=\"0,25 110,-30 110,40 0,95\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      </g>\n      <line x1=\"-140\" y1=\"-150\" x2=\"-55\" y2=\"-110\" stroke=\"#111111\" stroke-width=\"4\"/>\n      <circle cx=\"-140\" cy=\"-150\" r=\"14\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <line x1=\"140\" y1=\"-150\" x2=\"55\" y2=\"-110\" stroke=\"#111111\" stroke-width=\"4\"/>\n      <circle cx=\"140\" cy=\"-150\" r=\"14\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          GIMANA HUJAN TE\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 01 // Isometric cutaway of gimana hujan terjadi?...\n        </text>\n      </g>\n    </g>\n  </svg>"
           },
           {
             "beat_number": 2,
-            "text": "Mitosnya lapisan tebal dan magic coating yang menahan panas.",
-            "visual": "Isometric close-up lapisan coating berkilau palsu dengan tanda silang merah",
-            "sfx_keyword": "whoosh_soft",
-            "tulisan_layar": "MITOS: Coating Ajaib",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <line x1=\"-14\" y1=\"-14\" x2=\"14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n         <line x1=\"14\" y1=\"-14\" x2=\"-14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          MITOS: COATING AJAIB\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 02 // Isometric close-up lapisan coating berkila...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "text": "Fakta 2 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 2",
+            "sfx_keyword": "click",
+            "tulisan_layar": "FAKTA 2",
+            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <polygon points=\"0,-220 200,-120 0,-20 -200,-120\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <polygon points=\"-200,-120 0,-20 0,90 -200,-10\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <polygon points=\"0,-20 200,-120 200,-10 0,90\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -95)\">\n        <polygon points=\"0,-85 110,-30 0,25 -110,-30\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <polygon points=\"-110,-30 0,25 0,95 -110,40\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <polygon points=\"0,25 110,-30 110,40 0,95\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      </g>\n      <line x1=\"-140\" y1=\"-150\" x2=\"-55\" y2=\"-110\" stroke=\"#111111\" stroke-width=\"4\"/>\n      <circle cx=\"-140\" cy=\"-150\" r=\"14\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <line x1=\"140\" y1=\"-150\" x2=\"55\" y2=\"-110\" stroke=\"#111111\" stroke-width=\"4\"/>\n      <circle cx=\"140\" cy=\"-150\" r=\"14\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <line x1=\"-14\" y1=\"-14\" x2=\"14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n         <line x1=\"14\" y1=\"-14\" x2=\"-14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          FAKTA 2\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 02 // Isometric cutaway of gimana hujan terjadi?...\n        </text>\n      </g>\n    </g>\n  </svg>"
           },
           {
             "beat_number": 3,
-            "text": "Faktanya bukan coating, tapi vakum dan dinding ganda baja.",
-            "visual": "Isometric potongan tumbler menampilkan inner cup dan outer cup terpisah",
-            "sfx_keyword": "metal_clank",
-            "tulisan_layar": "FAKTA: Vakum + Dinding Ganda",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#FFD60A\" fill-opacity=\"0.85\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          FAKTA: VAKUM + DINDING G\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 03 // Isometric potongan tumbler menampilkan inn...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "text": "Fakta 3 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 3",
+            "sfx_keyword": "click",
+            "tulisan_layar": "FAKTA 3"
           },
           {
             "beat_number": 4,
-            "text": "Komponen primer: inner cup, outer cup, ruang vakum, dan seal.",
-            "visual": "Isometric exploded view komponen tumbler berlabel inner cup outer cup seal",
+            "text": "Fakta 4 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 4",
             "sfx_keyword": "click",
-            "tulisan_layar": "KOMPONEN PRIMER",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -55)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          KOMPONEN PRIMER\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 04 // Isometric exploded view komponen tumbler b...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "tulisan_layar": "FAKTA 4"
           },
           {
             "beat_number": 5,
-            "text": "Vakum memutus konduksi dan konveksi, radiasi minim lewat baja.",
-            "visual": "Isometric diagram panah panas diblokir di ruang vakum antara dua dinding",
-            "sfx_keyword": "whoosh_soft",
-            "tulisan_layar": "HUKUM FISIKA",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#FFD60A\" fill-opacity=\"0.85\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          HUKUM FISIKA\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 05 // Isometric diagram panah panas diblokir di ...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "text": "Fakta 5 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 5",
+            "sfx_keyword": "click",
+            "tulisan_layar": "FAKTA 5"
           },
           {
             "beat_number": 6,
-            "text": "Titik kritis: seal tutup aus, vakum bocor, lapisan dalam berkarat.",
-            "visual": "Isometric zoom seal retak dan ruang vakum dengan ikon kebocoran",
-            "sfx_keyword": "gas_leak",
-            "tulisan_layar": "TITIK KRITIS",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -55)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <line x1=\"-14\" y1=\"-14\" x2=\"14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n         <line x1=\"14\" y1=\"-14\" x2=\"-14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          TITIK KRITIS\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 06 // Isometric zoom seal retak dan ruang vakum ...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "text": "Fakta 6 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 6",
+            "sfx_keyword": "click",
+            "tulisan_layar": "FAKTA 6"
           },
           {
             "beat_number": 7,
-            "text": "Tanda rusak: embun di dalam dinding, suara berdesir saat dikocok.",
-            "visual": "Isometric tumbler dengan embun internal dan gelombang suara visual",
-            "sfx_keyword": "metal_clank",
-            "tulisan_layar": "TANDA RUSAK",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <line x1=\"-14\" y1=\"-14\" x2=\"14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n         <line x1=\"14\" y1=\"-14\" x2=\"-14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          TANDA RUSAK\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 07 // Isometric tumbler dengan embun internal da...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "text": "Fakta 7 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 7",
+            "sfx_keyword": "click",
+            "tulisan_layar": "FAKTA 7"
           },
           {
             "beat_number": 8,
-            "text": "Cek mandiri: isi air panas, ukur suhu tiap jam dengan termometer.",
-            "visual": "Isometric tangan menuang air panas ke tumbler dan termometer digital",
-            "sfx_keyword": "beep",
-            "tulisan_layar": "CEK MANDIRI",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          CEK MANDIRI\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 08 // Isometric tangan menuang air panas ke tumb...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "text": "Fakta 8 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 8",
+            "sfx_keyword": "click",
+            "tulisan_layar": "FAKTA 8"
           },
           {
             "beat_number": 9,
-            "text": "Perbaikan seal lima puluh ribu, jangan tergiur ganti tumbler baru.",
-            "visual": "Isometric invoice perbaikan seal vs tumbler baru dengan tanda seru",
-            "sfx_keyword": "cash_register",
-            "tulisan_layar": "BIAYA RIIL",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          BIAYA RIIL\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 09 // Isometric invoice perbaikan seal vs tumble...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "text": "Fakta 9 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 9",
+            "sfx_keyword": "click",
+            "tulisan_layar": "FAKTA 9"
           },
           {
             "beat_number": 10,
-            "text": "Bedah part lain berikutnya, simpan tumbler, hemat energi.",
-            "visual": "Isometric tumbler tertutup rapi di rak dengan ikon hemat energi",
+            "text": "Fakta 10 tentang gimana hujan terjadi? yang jarang dibahas.",
+            "visual": "Isometric cutaway of gimana hujan terjadi?, part 10",
             "sfx_keyword": "click",
-            "tulisan_layar": "CTA: Simpan & Bedah Lagi",
-            "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          CTA: SIMPAN &amp; BEDAH LAGI\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 010 // Isometric tumbler tertutup rapi di rak den...\n        </text>\n      </g>\n    </g>\n  </svg>"
+            "tulisan_layar": "FAKTA 10"
           }
         ],
-        "narration_text": "Kenapa es tetap dingin dua belas jam di tumbler murah? Mitosnya lapisan tebal dan magic coating yang menahan panas. Faktanya bukan coating, tapi vakum dan dinding ganda baja. Komponen primer: inner cup, outer cup, ruang vakum, dan seal. Vakum memutus konduksi dan konveksi, radiasi minim lewat baja. Titik kritis: seal tutup aus, vakum bocor, lapisan dalam berkarat. Tanda rusak: embun di dalam dinding, suara berdesir saat dikocok. Cek mandiri: isi air panas, ukur suhu tiap jam dengan termometer. Perbaikan seal lima puluh ribu, jangan tergiur ganti tumbler baru. Bedah part lain berikutnya, simpan tumbler, hemat energi."
+        "narration_text": "Kenapa gimana hujan terjadi? ini wajib kamu tau? Fakta 2 tentang gimana hujan terjadi? yang jarang dibahas. Fakta 3 tentang gimana hujan terjadi? yang jarang dibahas. Fakta 4 tentang gimana hujan terjadi? yang jarang dibahas. Fakta 5 tentang gimana hujan terjadi? yang jarang dibahas. Fakta 6 tentang gimana hujan terjadi? yang jarang dibahas. Fakta 7 tentang gimana hujan terjadi? yang jarang dibahas. Fakta 8 tentang gimana hujan terjadi? yang jarang dibahas. Fakta 9 tentang gimana hujan terjadi? yang jarang dibahas. Fakta 10 tentang gimana hujan terjadi? yang jarang dibahas."
       }
     },
     {
       "node": "visual",
       "message": "Menghasilkan kode React SVG Isometric 30° (stroke 2px) dengan nvidia/nvidia/nemotron-3.5-lightning-30b-a3b...",
-      "timestamp": "2026-10-23T02:34:56.862Z"
+      "timestamp": "2026-10-23T03:55:55.080Z"
     },
     {
       "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 1: [HOOK: Awet Suhu?]",
-      "timestamp": "2026-10-23T02:34:56.862Z"
+      "message": "Rendering SVG vector untuk Beat 1: [GIMANA HUJAN TE]",
+      "timestamp": "2026-10-23T03:55:55.080Z"
     },
     {
       "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 2: [MITOS: Coating Ajaib]",
-      "timestamp": "2026-10-23T02:35:14.086Z"
+      "message": "Rendering SVG vector untuk Beat 2: [FAKTA 2]",
+      "timestamp": "2026-10-23T03:56:50.576Z"
     },
     {
       "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 3: [FAKTA: Vakum + Dinding Ganda]",
-      "timestamp": "2026-10-23T02:35:32.072Z"
-    },
-    {
-      "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 4: [KOMPONEN PRIMER]",
-      "timestamp": "2026-10-23T02:35:42.958Z"
-    },
-    {
-      "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 5: [HUKUM FISIKA]",
-      "timestamp": "2026-10-23T02:36:02.239Z"
-    },
-    {
-      "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 6: [TITIK KRITIS]",
-      "timestamp": "2026-10-23T02:36:36.380Z"
-    },
-    {
-      "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 7: [TANDA RUSAK]",
-      "timestamp": "2026-10-23T02:37:13.426Z"
-    },
-    {
-      "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 8: [CEK MANDIRI]",
-      "timestamp": "2026-10-23T02:37:26.132Z"
-    },
-    {
-      "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 9: [BIAYA RIIL]",
-      "timestamp": "2026-10-23T02:37:36.518Z"
-    },
-    {
-      "node": "visual",
-      "message": "Rendering SVG vector untuk Beat 10: [CTA: Simpan & Bedah Lagi]",
-      "timestamp": "2026-10-23T02:37:47.218Z"
-    },
-    {
-      "node": "visual",
-      "message": "Semua 10 SVG isometric berhasil digenerate",
-      "timestamp": "2026-10-23T02:38:08.191Z"
-    },
-    {
-      "node": "tts",
-      "message": "Menjalankan TTS dengan word timing (Piper TTS offline + Edge TTS fallback)...",
-      "timestamp": "2026-10-23T02:38:08.193Z"
-    },
-    {
-      "node": "tts",
-      "message": "Audio narration tersinkron: 96 kata, estimasi durasi 26.9s",
-      "timestamp": "2026-10-23T02:38:08.197Z",
-      "data": {
-        "totalWords": 96,
-        "durationSeconds": 26.880000000000003
-      }
-    },
-    {
-      "node": "sfx",
-      "message": "Memetakan sound effects (SFX) untuk 10 beat...",
-      "timestamp": "2026-10-23T02:38:08.198Z"
-    },
-    {
-      "node": "sfx",
-      "message": "Terpetakan 10 efek suara teknis",
-      "timestamp": "2026-10-23T02:38:08.199Z"
-    },
-    {
-      "node": "jury",
-      "message": "AI Juri Kitabedah menilai Hook, Tempo, dan Sinkronisasi...",
-      "timestamp": "2026-10-23T02:38:08.199Z"
-    },
-    {
-      "node": "jury",
-      "message": "Mengevaluasi kualitas dengan nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning...",
-      "timestamp": "2026-10-23T02:38:08.200Z"
-    },
-    {
-      "node": "jury",
-      "message": "Hasil AI Juri: Skor 8.2/10 [APPROVED] - Hook tajam dan alur sistem pendingin logis.",
-      "timestamp": "2026-10-23T02:38:21.085Z"
-    },
-    {
-      "node": "pipeline",
-      "message": "AI Juri menyetujui hasil (Skor: 8.2). Melanjutkan render.",
-      "timestamp": "2026-10-23T02:38:21.086Z"
-    },
-    {
-      "node": "render",
-      "message": "Mengompilasi video Remotion 1080x1920 (Local Remotion Engine)...",
-      "timestamp": "2026-10-23T02:38:21.087Z"
-    },
-    {
-      "node": "render",
-      "message": "Proses assemble: 10 Beat sequences, SVG Isometric components, Karaoke subtitles.",
-      "timestamp": "2026-10-23T02:38:21.088Z"
-    },
-    {
-      "node": "render",
-      "message": "Video siap dirender via Remotion Player / Local MP4 exporter.",
-      "timestamp": "2026-10-23T02:38:21.089Z"
-    },
-    {
-      "node": "pipeline",
-      "message": "Pipeline selesai! Siap ditonton di Remotion Player.",
-      "timestamp": "2026-10-23T02:38:21.089Z"
+      "message": "Rendering SVG vector untuk Beat 3: [FAKTA 3]",
+      "timestamp": "2026-10-23T03:58:17.574Z"
     }
   ],
-  "result": {
-    "topic": "Kenapa minuman di dalam tumbler bisa awet suhunya?",
-    "loopCount": 1,
-    "searchResults": [
-      {
-        "template": "default.html",
-        "title": "Kenapa Tumbler Bisa Tahan Panas dan Dingin? Ini Penjelasannya",
-        "content": "3. Tutup rapat yang membantu menjaga suhu ... Tak hanya bodi tumbler, desain tutup juga memegang peran penting dalam menjaga suhu minuman. Tutup yang rapat ...",
-        "img_src": "",
-        "iframe_src": "",
-        "audio_src": "",
-        "thumbnail": "",
-        "publishedDate": null,
-        "pubdate": "",
-        "length": null,
-        "views": "",
-        "author": "",
-        "metadata": "",
-        "priority": "",
-        "engines": [
-          "google cse"
-        ],
-        "open_group": false,
-        "close_group": false,
-        "positions": [
-          1
-        ],
-        "score": 1,
-        "category": "general",
-        "url": "https://www.idntimes.com/science/discovery/kenapa-tumbler-bisa-tahan-panas-dan-dingin-q9t01-00-s66xw-22cvcx",
-        "engine": "google cse",
-        "parsed_url": [
-          "https",
-          "www.idntimes.com",
-          "/science/discovery/kenapa-tumbler-bisa-tahan-panas-dan-dingin-q9t01-00-s66xw-22cvcx",
-          "",
-          "",
-          ""
-        ]
-      },
-      {
-        "template": "default.html",
-        "title": "Berapa Lama Air Dingin dan Panas Bertahan di Tumbler Stainless",
-        "content": "30 Sep 2026 ... Meskipun menggunakan tumbler dengan insulasi berkualitas, kebiasaan membuka tutup terlalu sering tetap dapat mempercepat perubahan suhu minuman.",
-        "img_src": "",
-        "iframe_src": "",
-        "audio_src": "",
-        "thumbnail": "",
-        "publishedDate": null,
-        "pubdate": "",
-        "length": null,
-        "views": "",
-        "author": "",
-        "metadata": "",
-        "priority": "",
-        "engines": [
-          "google cse"
-        ],
-        "open_group": false,
-        "close_group": false,
-        "positions": [
-          7
-        ],
-        "score": 0.14285714285714285,
-        "category": "general",
-        "url": "https://www.souvenirtumbler.net/tips/berapa-lama-air-dingin-dan-panas-bertahan-di-tumbler-stainless/",
-        "engine": "google cse",
-        "parsed_url": [
-          "https",
-          "www.souvenirtumbler.net",
-          "/tips/berapa-lama-air-dingin-dan-panas-bertahan-di-tumbler-stainless/",
-          "",
-          "",
-          ""
-        ]
-      },
-      {
-        "template": "default.html",
-        "title": "Suhu minuman cepat berubah padahal sudah pakai tumbler khusus ...",
-        "content": "13 Apr 2026 ... Coba cek cara kamu menyimpan minumannya... Ternyata, bagaimana air disimpan di dalam tumbler dapat menjadi faktor perubahan suhunya loh!",
-        "img_src": "",
-        "iframe_src": "",
-        "audio_src": "",
-        "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQ1q_DHKa5aH75s708HartUdFKW6uvuZ9Z-TInx8PrjOdqH8DpU8_gqCbUQ",
-        "publishedDate": null,
-        "pubdate": "",
-        "length": null,
-        "views": "",
-        "author": "",
-        "metadata": "",
-        "priority": "",
-        "engines": [
-          "google cse"
-        ],
-        "open_group": false,
-        "close_group": false,
-        "positions": [
-          2
-        ],
-        "score": 0.5,
-        "category": "general",
-        "url": "https://www.instagram.com/reel/DXGVeIDE7pK/",
-        "engine": "google cse",
-        "parsed_url": [
-          "https",
-          "www.instagram.com",
-          "/reel/DXGVeIDE7pK/",
-          "",
-          "",
-          ""
-        ]
-      },
-      {
-        "template": "default.html",
-        "title": "Benarkah Tumbler Stanley Tahan Dingin 24 Jam? - Urban Icon",
-        "content": "29 Jul 2026 ... Tumbler dipre-condition atau dibilas air dingin/panas terlebih dulu sebelum digunakan kembali. Hal ini dapat mempengaruhi suhu awal di dalam ...",
-        "img_src": "",
-        "iframe_src": "",
-        "audio_src": "",
-        "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQXHxBPEjVoNLEKK-8RKWndIll2TTXrO2B9JyQQohMpp2rE8z8b2Uzibg",
-        "publishedDate": null,
-        "pubdate": "",
-        "length": null,
-        "views": "",
-        "author": "",
-        "metadata": "",
-        "priority": "",
-        "engines": [
-          "google cse"
-        ],
-        "open_group": false,
-        "close_group": false,
-        "positions": [
-          3
-        ],
-        "score": 0.3333333333333333,
-        "category": "general",
-        "url": "https://www.urbanicon.co.id/blog/tumbler-stanley-tahan-dingin-24-jam",
-        "engine": "google cse",
-        "parsed_url": [
-          "https",
-          "www.urbanicon.co.id",
-          "/blog/tumbler-stanley-tahan-dingin-24-jam",
-          "",
-          "",
-          ""
-        ]
-      },
-      {
-        "template": "default.html",
-        "title": "How Do Tumblers Keep Drinks Hot for Hours? - YouTube",
-        "content": "27 Apr 2022 ... ... tumbler bisa tahan panas berjam-jam. Apa yang terjadi pada molekul-molekul di dalam tumbler? Untuk tau jawaban selengkapnya, tonton video ...",
-        "img_src": "",
-        "iframe_src": "",
-        "audio_src": "",
-        "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTgDnKgqOFwNHNAI3OTO9ajLTWdMb3R6t9t-jN2vboOjeCEEoVmnS-AjSEb",
-        "publishedDate": null,
-        "pubdate": "",
-        "length": null,
-        "views": "",
-        "author": "",
-        "metadata": "",
-        "priority": "",
-        "engines": [
-          "google cse"
-        ],
-        "open_group": false,
-        "close_group": false,
-        "positions": [
-          4
-        ],
-        "score": 0.25,
-        "category": "general",
-        "url": "https://www.youtube.com/watch?v=GNahuq0iRSE",
-        "engine": "google cse",
-        "parsed_url": [
-          "https",
-          "www.youtube.com",
-          "/watch",
-          "",
-          "v=GNahuq0iRSE",
-          ""
-        ]
-      },
-      {
-        "template": "default.html",
-        "title": "5 Penyebab Tumbler Tidak Tahan Dingin & Solusinya",
-        "content": "13 Nov 2025 ... Tumbler jenis ini biasanya hanya bisa menjaga suhu dingin selama 1–2 jam saja. Solusi: Pilih tumbler dengan material stainless steel 304 atau ...",
-        "img_src": "",
-        "iframe_src": "",
-        "audio_src": "",
-        "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcRa3juJ1lvmVGGvriH3bG8ugdV9GuGPcLfhqaSOEsDGgXK_mWqppMOZJWk",
-        "publishedDate": null,
-        "pubdate": "",
-        "length": null,
-        "views": "",
-        "author": "",
-        "metadata": "",
-        "priority": "",
-        "engines": [
-          "google cse"
-        ],
-        "open_group": false,
-        "close_group": false,
-        "positions": [
-          5
-        ],
-        "score": 0.2,
-        "category": "general",
-        "url": "https://www.samarainti.com/penyebab-tumbler-tidak-tahan-dingin/",
-        "engine": "google cse",
-        "parsed_url": [
-          "https",
-          "www.samarainti.com",
-          "/penyebab-tumbler-tidak-tahan-dingin/",
-          "",
-          "",
-          ""
-        ]
-      }
-    ],
-    "researchData": {
-      "topic": "Kenapa minuman di dalam tumbler bisa awet suhunya?",
-      "facts": [
-        {
-          "claim": "Prinsip dasar Kenapa minuman di dalam tumbler bisa awet suhunya? berdasarkan standar teknik.",
-          "label": "[RESMI]",
-          "evidence": "Manual umum"
-        },
-        {
-          "claim": "Miskonsepsi umum tentang Kenapa minuman di dalam tumbler bisa awet suhunya?.",
-          "label": "[MEDIA]",
-          "evidence": "Observasi"
-        },
-        {
-          "claim": "Mekanisme kerja Kenapa minuman di dalam tumbler bisa awet suhunya? bisa divisualisasikan.",
-          "label": "[DIMODELKAN]",
-          "evidence": "Model"
-        }
-      ],
-      "myths": [
-        {
-          "myth": "Mitos tentang Kenapa minuman di dalam tumbler bisa awet suhunya?",
-          "fact": "Fakta Kenapa minuman di dalam tumbler bisa awet suhunya?"
-        }
-      ]
-    },
-    "scriptData": {
-      "total_words": 96,
-      "beats": [
-        {
-          "beat_number": 1,
-          "text": "Kenapa es tetap dingin dua belas jam di tumbler murah?",
-          "visual": "Isometric tumbler stainless terbuka, es batu di dalam, termometer digital di samping, latar bengkel minimal",
-          "sfx_keyword": "click",
-          "tulisan_layar": "HOOK: Awet Suhu?",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          HOOK: AWET SUHU?\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 01 // Isometric tumbler stainless terbuka, es ba...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 2,
-          "text": "Mitosnya lapisan tebal dan magic coating yang menahan panas.",
-          "visual": "Isometric close-up lapisan coating berkilau palsu dengan tanda silang merah",
-          "sfx_keyword": "whoosh_soft",
-          "tulisan_layar": "MITOS: Coating Ajaib",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <line x1=\"-14\" y1=\"-14\" x2=\"14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n         <line x1=\"14\" y1=\"-14\" x2=\"-14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          MITOS: COATING AJAIB\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 02 // Isometric close-up lapisan coating berkila...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 3,
-          "text": "Faktanya bukan coating, tapi vakum dan dinding ganda baja.",
-          "visual": "Isometric potongan tumbler menampilkan inner cup dan outer cup terpisah",
-          "sfx_keyword": "metal_clank",
-          "tulisan_layar": "FAKTA: Vakum + Dinding Ganda",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#FFD60A\" fill-opacity=\"0.85\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          FAKTA: VAKUM + DINDING G\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 03 // Isometric potongan tumbler menampilkan inn...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 4,
-          "text": "Komponen primer: inner cup, outer cup, ruang vakum, dan seal.",
-          "visual": "Isometric exploded view komponen tumbler berlabel inner cup outer cup seal",
-          "sfx_keyword": "click",
-          "tulisan_layar": "KOMPONEN PRIMER",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -55)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          KOMPONEN PRIMER\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 04 // Isometric exploded view komponen tumbler b...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 5,
-          "text": "Vakum memutus konduksi dan konveksi, radiasi minim lewat baja.",
-          "visual": "Isometric diagram panah panas diblokir di ruang vakum antara dua dinding",
-          "sfx_keyword": "whoosh_soft",
-          "tulisan_layar": "HUKUM FISIKA",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#FFD60A\" fill-opacity=\"0.85\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          HUKUM FISIKA\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 05 // Isometric diagram panah panas diblokir di ...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 6,
-          "text": "Titik kritis: seal tutup aus, vakum bocor, lapisan dalam berkarat.",
-          "visual": "Isometric zoom seal retak dan ruang vakum dengan ikon kebocoran",
-          "sfx_keyword": "gas_leak",
-          "tulisan_layar": "TITIK KRITIS",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -55)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <line x1=\"-14\" y1=\"-14\" x2=\"14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n         <line x1=\"14\" y1=\"-14\" x2=\"-14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          TITIK KRITIS\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 06 // Isometric zoom seal retak dan ruang vakum ...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 7,
-          "text": "Tanda rusak: embun di dalam dinding, suara berdesir saat dikocok.",
-          "visual": "Isometric tumbler dengan embun internal dan gelombang suara visual",
-          "sfx_keyword": "metal_clank",
-          "tulisan_layar": "TANDA RUSAK",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <line x1=\"-14\" y1=\"-14\" x2=\"14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n         <line x1=\"14\" y1=\"-14\" x2=\"-14\" y2=\"14\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          TANDA RUSAK\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 07 // Isometric tumbler dengan embun internal da...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 8,
-          "text": "Cek mandiri: isi air panas, ukur suhu tiap jam dengan termometer.",
-          "visual": "Isometric tangan menuang air panas ke tumbler dan termometer digital",
-          "sfx_keyword": "beep",
-          "tulisan_layar": "CEK MANDIRI",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          CEK MANDIRI\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 08 // Isometric tangan menuang air panas ke tumb...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 9,
-          "text": "Perbaikan seal lima puluh ribu, jangan tergiur ganti tumbler baru.",
-          "visual": "Isometric invoice perbaikan seal vs tumbler baru dengan tanda seru",
-          "sfx_keyword": "cash_register",
-          "tulisan_layar": "BIAYA RIIL",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#0A84FF\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#0A84FF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          BIAYA RIIL\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 09 // Isometric invoice perbaikan seal vs tumble...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        },
-        {
-          "beat_number": 10,
-          "text": "Bedah part lain berikutnya, simpan tumbler, hemat energi.",
-          "visual": "Isometric tumbler tertutup rapi di rak dengan ikon hemat energi",
-          "sfx_keyword": "click",
-          "tulisan_layar": "CTA: Simpan & Bedah Lagi",
-          "svgCode": "<svg viewBox=\"0 0 800 800\" width=\"100%\" height=\"100%\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n    <defs>\n      <filter id=\"isoShadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"130%\">\n        <feDropShadow dx=\"10\" dy=\"10\" stdDeviation=\"0\" flood-color=\"#111111\" flood-opacity=\"0.2\"/>\n      </filter>\n    </defs>\n    <g transform=\"translate(400, 470)\">\n      <polygon points=\"0,-165 310,-10 0,145 -310,-10\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3.5\" filter=\"url(#isoShadow)\"/>\n      <polygon points=\"-310,-10 0,145 0,190 -310,35\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <polygon points=\"0,145 310,-10 310,35 0,190\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3.5\"/>\n      <line x1=\"-155\" y1=\"-87\" x2=\"155\" y2=\"67\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      <line x1=\"-155\" y1=\"67\" x2=\"155\" y2=\"-87\" stroke=\"#111111\" stroke-opacity=\"0.12\" stroke-width=\"2\"/>\n      \n      <path d=\"M -130,-220 L -130,60 A 130,65 0 0,0 130,60 L 130,-220 Z\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <ellipse cx=\"0\" cy=\"-220\" rx=\"130\" ry=\"65\" fill=\"#D1D1D6\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -112,-205 L -112,42 A 112,56 0 0,0 112,42 L 112,-205 Z\" fill=\"#111111\" fill-opacity=\"0.12\" stroke=\"#111111\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <path d=\"M -92,-200 L -92,25 A 92,46 0 0,0 92,25 L 92,-200 Z\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <path d=\"M -86,-110 L -86,20 A 86,43 0 0,0 86,20 L 86,-110 Z\" fill=\"#FF3B30\" fill-opacity=\"0.88\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <ellipse cx=\"0\" cy=\"-110\" rx=\"86\" ry=\"43\" fill=\"#FF3B30\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      <g transform=\"translate(-35, -95)\">\n        <polygon points=\"0,-18 22,-7 22,16 0,27 -22,16 -22,-7\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-22,-7 0,4 22,-7\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"27\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <g transform=\"translate(32, -80)\">\n        <polygon points=\"0,-16 20,-6 20,14 0,24 -20,14 -20,-6\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <polyline points=\"-20,-6 0,4 20,-6\" fill=\"none\" stroke=\"#111111\" stroke-width=\"2\"/>\n        <line x1=\"0\" y1=\"4\" x2=\"0\" y2=\"24\" stroke=\"#111111\" stroke-width=\"2\"/>\n      </g>\n      <rect x=\"-130\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <rect x=\"92\" y=\"-220\" width=\"38\" height=\"265\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"3\"/>\n      <g transform=\"translate(0, -15)\">\n        <ellipse cx=\"0\" cy=\"-235\" rx=\"126\" ry=\"60\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-250\" rx=\"130\" ry=\"62\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <ellipse cx=\"0\" cy=\"-255\" rx=\"75\" ry=\"34\" fill=\"#E5E5EA\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n      </g>\n      <g stroke=\"#FF3B30\" stroke-width=\"3\">\n        <line x1=\"-220\" y1=\"-80\" x2=\"-145\" y2=\"-80\" />\n        <polygon points=\"-145,-80 -160,-88 -160,-72\" fill=\"#FF3B30\" />\n        <line x1=\"220\" y1=\"-80\" x2=\"145\" y2=\"-80\" />\n        <polygon points=\"145,-80 160,-88 160,-72\" fill=\"#FF3B30\" />\n      </g>\n    \n      <g transform=\"translate(-210, -250)\">\n         <circle cx=\"0\" cy=\"0\" r=\"36\" fill=\"#30D158\" stroke=\"#111111\" stroke-width=\"3\"/>\n         <polyline points=\"-15,2 -4,13 16,-11\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n       </g>\n      <g transform=\"translate(95, -275)\">\n        <polyline points=\"-45,55 -10,0 20,0\" fill=\"none\" stroke=\"#111111\" stroke-width=\"3\"/>\n        <circle cx=\"-45\" cy=\"55\" r=\"6\" fill=\"#FFD60A\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <rect x=\"20\" y=\"-28\" width=\"240\" height=\"52\" rx=\"8\" fill=\"#111111\"/>\n        <text x=\"140\" y=\"4\" fill=\"#FFD60A\" font-size=\"17\" font-weight=\"900\" text-anchor=\"middle\" font-family=\"Inter, system-ui, sans-serif\">\n          CTA: SIMPAN &amp; BEDAH LAGI\n        </text>\n      </g>\n      <g transform=\"translate(0, 235)\">\n        <rect x=\"-260\" y=\"-22\" width=\"520\" height=\"40\" rx=\"8\" fill=\"#FFFFFF\" stroke=\"#111111\" stroke-width=\"2.5\"/>\n        <text x=\"0\" y=\"4\" fill=\"#111111\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" font-family=\"Inter, monospace\">\n          BEAT 010 // Isometric tumbler tertutup rapi di rak den...\n        </text>\n      </g>\n    </g>\n  </svg>"
-        }
-      ],
-      "narration_text": "Kenapa es tetap dingin dua belas jam di tumbler murah? Mitosnya lapisan tebal dan magic coating yang menahan panas. Faktanya bukan coating, tapi vakum dan dinding ganda baja. Komponen primer: inner cup, outer cup, ruang vakum, dan seal. Vakum memutus konduksi dan konveksi, radiasi minim lewat baja. Titik kritis: seal tutup aus, vakum bocor, lapisan dalam berkarat. Tanda rusak: embun di dalam dinding, suara berdesir saat dikocok. Cek mandiri: isi air panas, ukur suhu tiap jam dengan termometer. Perbaikan seal lima puluh ribu, jangan tergiur ganti tumbler baru. Bedah part lain berikutnya, simpan tumbler, hemat energi."
-    },
-    "svgComponents": {
-      "1": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n      className=\"w-full h-full\"\n    >\n      {/* Neutral background */}\n      <rect width=\"1080\" height=\"1920\" fill=\"#F5F5F7\" />\n\n      {/* Isometric transformation */}\n      <g transform=\"translate(540,960) rotate(-30) skewX(30) translate(-540,-960)\">\n        {/* Workshop floor */}\n        <rect x=\"0\" y=\"1600\" width=\"1080\" height=\"320\" fill=\"#E5E5EA\" />\n\n        {/* Open stainless steel tumbler (isometric prism) */}\n        <g\n          transform=\"translate(200, 1200)\"\n          fill=\"#30D158\"\n        >\n          {/* Front face */}\n          <rect x=\"0\" y=\"0\" width=\"180\" height=\"100\" rx=\"8\" ry=\"8\" />\n          {/* Side face */}\n          <rect\n            x=\"180\"\n            y=\"0\"\n            width=\"180\"\n            height=\"100\"\n            rx=\"8\"\n            ry=\"8\"\n            fill=\"#30D158\"\n          />\n          {/* Top face (opened) – just a thin rectangle to suggest opening */}\n          <rect\n            x=\"0\"\n            y=\"-30\"\n            width=\"180\"\n            height=\"30\"\n            rx=\"8\"\n            ry=\"8\"\n            fill=\"#30D158\"\n            opacity={0.6}\n          />\n        </g>\n\n        {/* Ice cubes inside tumbler */}\n        <g\n          transform=\"translate(260, 1260) scale(0.9)\"\n          fill=\"#0A84FF\"\n        >\n          <rect x=\"0\" y=\"0\" width=\"30\" height=\"30\" rx=\"3\" />\n          <rect x=\"35\" y=\"0\" width=\"30\" height=\"30\" rx=\"3\" />\n          <rect x=\"0\" y=\"35\" width=\"30\" height=\"30\" rx=\"3\" />\n          <rect x=\"35\" y=\"35\" width=\"30\" height=\"30\" rx=\"3\" />\n        </g>\n\n        {/* Digital thermometer on the side */}\n        <g\n          transform=\"translate(720, 1300) rotate(-30) skewX(30) translate(-720,-1300)\"\n          fill=\"#0A84FF\"\n        >\n          <rect x=\"0\" y=\"0\" width=\"30\" height=\"120\" rx=\"3\" />\n          {/* Mercury level based on progress (0‑1) */}\n          <rect\n            x=\"2\"\n            y=\"120 - progress * 100\"\n            width=\"26\"\n            height progress * 100\n            fill=\"#FFD60A\"\n            rx=\"2\"\n          />\n        </g>\n\n        {/* Highlight active area (e.g., thermometer bulb) */}\n        <g\n          transform=\"translate(750, 1380) rotate(-30) skewX(30) translate(-750,-1380)\"\n        >\n          <circle cx=\"0\" cy=\"0\" r=\"20\" fill=\"#FFD60A\" opacity={0.4} />\n        </g>\n\n        {/* Label with leader line */}\n        <text\n          x=\"800\"\n          y=\"1450\"\n          fill=\"#111111\"\n          font-family=\"Inter, system-ui, sans-serif\"\n          font-weight=\"bold\"\n          font-size=\"24\"\n        >\n          AWET SUHU?\n        </text>\n        <line\n          x1=\"800\"\n          y1=\"1455\"\n          x2=\"770\"\n          y2=\"1430\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n      </g>\n    </svg>",
-      "2": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      stroke=\"#111111\"\n      strokeWidth={2}\n      xmlns=\"http://www.w3.org/2000/svg\"\n    >\n      {/* background neutral */}\n      <rect width=\"1080\" height=\"1920\" fill=\"#F5F5F7\" />\n\n      {/* isometric coating plane */}\n      <g transform=\"rotate(-30) skewX(30)\">\n        <polygon\n          points=\"0,0 1080,0 1080,400 0,400\"\n          fill=\"#FF3B30\"\n        />\n      </g>\n\n      {/* red cross */}\n      <g transform=\"rotate(-30) skewX(30)\" fill=\"#FF3B30\">\n        <line x1=\"400\" y1=\"250\" x2=\"680\" y2=\"250\" strokeWidth={3} />\n        <line x1=\"540\" y1=\"150\" x2=\"540\" y2=\"350\" strokeWidth={3} />\n      </g>\n\n      {/* label */}\n      <text\n        x=\"540\"\n        y=\"150\"\n        textAnchor=\"middle\"\n        fontFamily=\"Inter, system-ui, sans-serif\"\n        fontWeight=\"bold\"\n        fill=\"#111111\"\n      >\n        MITOS: Coating Ajaib\n      </text>\n    </svg>",
-      "3": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n    >\n      <!-- Background neutral -->\n      <rect width=\"1080\" height=\"1920\" fill=\"#F5F5F7\" />\n\n      <!-- Isometric projection group -->\n      <g\n        transform=\"translate(540, 1200) rotate(-30) skewX(30) translate(-540, -1200)\"\n      >\n        <!-- Outer cup (larger isometric polygon) -->\n        <polygon\n          points=\"0,0 200,0 300,150 200,300 0,300 -100,150\"\n          fill=\"#FF3B30\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        <!-- Inner cup (smaller, offset) -->\n        <polygon\n          points=\"50,30 250,30 300,120 250,240 50,240 -50,120\"\n          fill=\"#0A84FF\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        <!-- Rim detail -->\n        <polygon\n          points=\"0,0 200,0 300,150 200,300 0,300 -100,150\"\n          fill=\"none\"\n          stroke=\"#111111\"\n          strokeWidth={3}\n        />\n      </g>\n\n      <!-- Safe-area label below 1630px -->\n      <text\n        x=\"540\"\n        y=\"1580\"\n        textAnchor=\"middle\"\n        fontFamily=\"Inter, system-ui\"\n        fontWeight=\"bold\"\n        fill=\"#111111\"\n      >\n        FAKTA: Vakum + Dinding Ganda\n      </text>\n\n      <!-- Optional progress highlight (active segment) -->\n      <g\n        transform=\"translate(540, 1500) rotate(-30) skewX(30) translate(-540, -1500)\"\n        fill=\"#FFD60A\"\n      >\n        <rect x=\"-100\" y=\"-20\" width={progress * 2} height={40} />\n      </g>\n    </svg>",
-      "4": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n    >\n      {/* neutral background */}\n      <rect width=\"1080\" height=\"1920\" fill=\"#F5F5F7\" />\n\n      {/* isometric group for the tumbler parts */}\n      <g\n        transform=\"rotate(-30) skewX(30)\"\n        stroke=\"#111111\"\n        strokeWidth={2}\n      >\n        {/* outer cup – hot color */}\n        <polygon\n          points=\"200,200 800,200 900,700 200,700\"\n          fill={isActive ? \"#FFD60A\" : \"#FF3B30\"}\n        />\n        {/* inner cup – cold color */}\n        <polygon\n          points=\"350,250 650,250 700,550 300,550\"\n          fill={isActive ? \"#FFD60A\" : \"#0A84FF\"}\n        />\n        {/* seal – safe color */}\n        <polygon\n          points=\"400,560 600,560 580,620 420,620\"\n          fill={isActive ? \"#FFD60A\" : \"#30D158\"}\n        />\n      </g>\n\n      {/* labels – outside the isometric transform so they stay upright */}\n      <text\n        x={500}\n        y={30}\n        textAnchor=\"middle\"\n        fontFamily=\"Inter, system-ui, sans-serif\"\n        fontWeight=\"bold\"\n        fill=\"#111111\"\n      >\n        KOMPONEN PRIMER\n      </text>\n\n      {/* inner cup label with leader line */}\n      <line\n        x1={525}\n        y1={560}\n        x2={525}\n        y2={460}\n        stroke=\"#111111\"\n        strokeWidth={2}\n      />\n      <text\n        x={525}\n        y={440}\n        textAnchor=\"middle\"\n        fontFamily=\"Inter, system-ui, sans-serif\"\n        fontWeight=\"bold\"\n        fill=\"#111111\"\n      >\n        Inner Cup\n      </text>\n\n      {/* outer cup label with leader line */}\n      <line\n        x1={500}\n        y1={710}\n        x2={500}\n        y2={610}\n        stroke=\"#111111\"\n        strokeWidth={2}\n      />\n      <text\n        x={500}\n        y={590}\n        textAnchor=\"middle\"\n        fontFamily=\"Inter, system-ui, sans-serif\"\n        fontWeight=\"bold\"\n        fill=\"#111111\"\n      >\n        Outer Cup\n      </text>\n\n      {/* seal label with leader line */}\n      <line\n        x1={500}\n        y1={630}\n        x2={500}\n        y2={540}\n        stroke=\"#111111\"\n        strokeWidth={2}\n      />\n      <text\n        x={500}\n        y={520}\n        textAnchor=\"middle\"\n        fontFamily=\"Inter, system-ui, sans-serif\"\n        fontWeight=\"bold\"\n        fill=\"#111111\"\n      >\n        Seal\n      </text>\n    </svg>",
-      "5": "<svg viewBox=\"0 0 1080 1920\" fill=\"none\" stroke=\"#111111\" strokeWidth={2}>\n      <rect width=\"1080\" height=\"1920\" fill=\"#000000\" opacity=\"0.2\" />\n      <polygon points=\"200,200 350,200 350,1500 200,1500\"\n        transform=\"rotate(-30) skewX(30)\"\n        fill=\"#FF3B30\" />\n      <polygon points=\"730,200 880,200 880,1500 730,1500\"\n        transform=\"rotate(-30) skewX(30)\"\n        fill=\"#FF3B30\" />\n      <path d=\"M 400 900 Q 500 900 600 900\"\n        stroke=\"#FF3B30\" strokeWidth={3} fill=\"none\" />\n      <line x1=\"460\" y1=\"890\" x2=\"540\" y2=\"890\"\n        stroke=\"#FF3B30\" strokeWidth={3} />\n      <text x=\"540\" y=\"200\" textAnchor=\"middle\"\n        fontFamily=\"Inter, system-ui, sans-serif\"\n        fontWeight=\"bold\" fill=\"#111111\">\n        HUKUM FISIKA\n      </text>\n      <line x1=\"540\" y1=\"210\" x2=\"540\" y2=\"860\"\n        stroke=\"#111111\" strokeWidth={2} />\n    </svg>",
-      "6": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n      style={{ backgroundColor: \"#F5F5F7\" }}\n    >\n      <defs>\n        <filter id=\"shadow20\">\n          <feDropShadow dx=\"0\" dy=\"4\" stdDeviation=\"0\" flood-color=\"#000\" flood-opacity=\"0.2\" />\n        </filter>\n      </defs>\n\n      <g transform=\"rotate(-30) skewX(30)\">\n        <path\n          d=\"M200 800 Q300 600 400 800 Q500 1000 400 1200 Q300 1400 200 1200 Q100 1000 200 800\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n          fill=\"#FF3B30\"\n          filter=\"url(#shadow20)\"\n        />\n        <line\n          x1=\"300\"\n          y1=\"800\"\n          x2=\"300\"\n          y2=\"1200\"\n          stroke=\"#FFD60A\"\n          strokeWidth={2}\n          strokeDasharray=\"5,5\"\n        />\n        <path\n          d=\"M400 600 Q500 400 600 600 Q700 800 600 1000 Q500 1200 400 1000 Q300 800 400 600\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n          fill=\"#0A84FF\"\n          opacity={0.3}\n        />\n        <circle cx=\"700\" cy=\"950\" r=\"30\" stroke=\"#111111\" strokeWidth={2} fill=\"#FF3B30\" />\n        <path d=\"M700 1010 L700 1050\" stroke=\"#111111\" strokeWidth={2} />\n        <text\n          x=\"540\"\n          y=\"150\"\n          fontFamily=\"Inter, system-ui, sans-serif\"\n          fontWeight=\"bold\"\n          fontSize={24}\n          fill=\"#111111\"\n        >\n          TITIK KRITIS\n        </text>\n        <line x1=\"540\" y1=\"170\" x2=\"540\" y2=\"190\" stroke=\"#111111\" strokeWidth={1.5} />\n      </g>\n    </svg>",
-      "7": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n    >\n      <rect width=\"1080\" height=\"1920\" fill=\"#F5F5F7\" />\n      <g\n        transform=\"translate(540,1920) rotate(-30) skewX(30) translate(-540,-1920)\"\n      >\n        {/* Tumbler body – isometric polygon */}\n        <path\n          d=\"M200 1200 L880 1200 L950 600 L50 600 Z\"\n          fill=\"#FF3B30\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* Rim highlight */}\n        <path\n          d=\"M220 1190 L860 1190 L850 1150 L230 1150 Z\"\n          fill=\"#FFD60A\"\n          opacity={0.4}\n        />\n        {/* Internal condensation droplets */}\n        <circle cx=\"300\" cy=\"720\" r=\"30\" fill=\"#0A84FF\" opacity={0.6} />\n        <circle cx=\"780\" cy=\"680\" r=\"25\" fill=\"#0A84FF\" opacity={0.6} />\n        <circle cx=\"540\" cy=\"650\" r=\"20\" fill=\"#0A84FF\" opacity={0.6} />\n        {/* Sound wave visual (simple squiggle) */}\n        <path\n          d=\"M200 900 C400 850 680 950 880 900\"\n          stroke=\"#0A84FF\"\n          strokeWidth={3}\n          fill=\"none\"\n        />\n        {/* Pointer leader line to label */}\n        <path\n          d=\"M540 560 L540 580\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* Label inside safe area */}\n        <text\n          x=\"540\"\n          y=\"600\"\n          textAnchor=\"middle\"\n          fontFamily=\"Inter, system-ui, sans-serif\"\n          fontWeight=\"bold\"\n          fill=\"#111111\"\n        >\n          TANDA RUSAK\n        </text>\n      </g>\n    </svg>",
-      "8": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n    >\n      <g transform=\"translate(540, 960) rotate(-30) skewX(30) translate(-540, -960)\">\n        {/* Tumbler base */}\n        <polygon\n          points=\"0,0  120,0  130,150  10,150\"\n          fill=\"#E5E5EA\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* Tumbler body */}\n        <polygon\n          points=\"10,150  110,150  120,300  10,300\"\n          fill=\"#E5E5EA\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* Water level (hot color) */}\n        <rect\n          x=\"20\"\n          y={300 - progress * 200}\n          width={100}\n          height={progress * 200}\n          fill=\"#FF3B30\"\n        />\n        {/* Digital thermometer stem */}\n        <line\n          x1={130}\n          y1={150}\n          x2={130}\n          y2={400}\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* Mercury column */}\n        <line\n          x1={128}\n          y1={150 + (1 - progress) * 250}\n          x2={132}\n          y2={150 + (1 - progress) * 250}\n          stroke=\"#FF3B30\"\n          strokeWidth={4}\n          strokeLinecap=\"round\"\n        />\n        {/* Hand pouring (simple shape) */}\n        <path\n          d=\"M 200 250 L 250 150 L 300 250 L 250 350 Z\"\n          fill=\"#FF3B30\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* Label */}\n        <text\n          x={540}\n          y={30}\n          textAnchor=\"middle\"\n          fontFamily=\"Inter, system-ui, sans-serif\"\n          fontWeight=\"bold\"\n          fill=\"#111111\"\n        >\n          CEK MANDIRI\n        </text>\n      </g>\n    </svg>",
-      "9": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n    >\n      <g transform=\"translate(0 120) rotate(-30) skewX(30)\">\n        {/* Tumbler body – isometric parallelogram */}\n        <path\n          d=\"M0 0 L360 0 L480 240 L120 240 Z\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n          fill=\"#FF3B30\"\n        />\n        {/* Seal – small circle in isometric view */}\n        <circle\n          cx={90}\n          cy={90}\n          r={30}\n          stroke=\"#111111\"\n          strokeWidth={2}\n          fill=\"#0A84FF\"\n        />\n        {/* Highlight active part */}\n        <path\n          d=\"M60 60 L180 60 L210 150 L0 150 Z\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n          fill=\"#FFD60A\"\n          opacity={progress}\n        />\n        {/* Label – technical text above safe area */}\n        <text\n          x={180}\n          y={30}\n          fontFamily=\"Inter, system-ui, sans-serif\"\n          fontWeight={700}\n          fontSize={20}\n          fill=\"#111111\"\n        >\n          Biaya Rill\n        </text>\n        {/* Pointer leader line */}\n        <line\n          x1={180}\n          y1={38}\n          x2={180}\n          y2={55}\n          stroke=\"#111111\"\n          strokeWidth={1.5}\n        />\n      </g>\n    </svg>",
-      "10": "<svg\n      viewBox=\"0 0 1080 1920\"\n      fill=\"none\"\n      stroke=\"#111111\"\n      strokeWidth={2}\n      xmlns=\"http://www.w3.org/2000/svg\"\n    >\n      {/* Neutral background */}\n      <rect width=\"1080\" height=\"1920\" fill=\"#F5F5F7\" />\n\n      {/* Isometric group (30°) */}\n      <g transform=\"rotate(-30) skewX(30)\">\n        {/* Tumbler front face */}\n        <polygon\n          points=\"150,200 350,200 350,350 150,350\"\n          fill=\"#FF3B30\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* Tumbler side face */}\n        <polygon\n          points=\"350,200 550,200 550,350 350,350\"\n          fill=\"#0A84FF\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* Active highlight (progress‑driven opacity) */}\n        <polygon\n          points=\"150,200 550,200 550,350 150,350\"\n          fill=\"#FFD60A\"\n          opacity={highlightOpacity}\n        />\n        {/* Simple energy icon */}\n        <path\n          d=\"M300 260 L310 240 L320 260 L330 240 L340 260 L350 240\"\n          fill=\"#30D158\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n        {/* CTA label */}\n        <text\n          x=\"600\"\n          y=\"150\"\n          fill=\"#111111\"\n          fontFamily=\"Inter, system-ui, sans-serif\"\n          fontWeight=\"bold\"\n          fontSize=\"24\"\n        >\n          Simpan & Bedah Lagi\n        </text>\n        {/* Pointer line from label to tumbler */}\n        <line\n          x1=\"600\"\n          y1=\"160\"\n          x2=\"400\"\n          y2=\"340\"\n          stroke=\"#111111\"\n          strokeWidth={2}\n        />\n      </g>\n    </svg>"
-    },
-    "ttsData": {
-      "audioUrl": "/tts/narration-1792724577391.mp3",
-      "wordTimings": [
-        {
-          "word": "Kenapa",
-          "start": 0,
-          "end": 0.28
-        },
-        {
-          "word": "es",
-          "start": 0.28,
-          "end": 0.56
-        },
-        {
-          "word": "tetap",
-          "start": 0.56,
-          "end": 0.84
-        },
-        {
-          "word": "dingin",
-          "start": 0.84,
-          "end": 1.12
-        },
-        {
-          "word": "dua",
-          "start": 1.12,
-          "end": 1.4
-        },
-        {
-          "word": "belas",
-          "start": 1.4,
-          "end": 1.68
-        },
-        {
-          "word": "jam",
-          "start": 1.68,
-          "end": 1.96
-        },
-        {
-          "word": "di",
-          "start": 1.96,
-          "end": 2.24
-        },
-        {
-          "word": "tumbler",
-          "start": 2.24,
-          "end": 2.52
-        },
-        {
-          "word": "murah?",
-          "start": 2.52,
-          "end": 2.8
-        },
-        {
-          "word": "Mitosnya",
-          "start": 2.8,
-          "end": 3.08
-        },
-        {
-          "word": "lapisan",
-          "start": 3.08,
-          "end": 3.36
-        },
-        {
-          "word": "tebal",
-          "start": 3.36,
-          "end": 3.64
-        },
-        {
-          "word": "dan",
-          "start": 3.64,
-          "end": 3.92
-        },
-        {
-          "word": "magic",
-          "start": 3.92,
-          "end": 4.2
-        },
-        {
-          "word": "coating",
-          "start": 4.2,
-          "end": 4.48
-        },
-        {
-          "word": "yang",
-          "start": 4.48,
-          "end": 4.76
-        },
-        {
-          "word": "menahan",
-          "start": 4.76,
-          "end": 5.04
-        },
-        {
-          "word": "panas.",
-          "start": 5.04,
-          "end": 5.32
-        },
-        {
-          "word": "Faktanya",
-          "start": 5.32,
-          "end": 5.6
-        },
-        {
-          "word": "bukan",
-          "start": 5.6,
-          "end": 5.88
-        },
-        {
-          "word": "coating,",
-          "start": 5.88,
-          "end": 6.16
-        },
-        {
-          "word": "tapi",
-          "start": 6.16,
-          "end": 6.44
-        },
-        {
-          "word": "vakum",
-          "start": 6.44,
-          "end": 6.72
-        },
-        {
-          "word": "dan",
-          "start": 6.72,
-          "end": 7
-        },
-        {
-          "word": "dinding",
-          "start": 7,
-          "end": 7.28
-        },
-        {
-          "word": "ganda",
-          "start": 7.28,
-          "end": 7.56
-        },
-        {
-          "word": "baja.",
-          "start": 7.56,
-          "end": 7.84
-        },
-        {
-          "word": "Komponen",
-          "start": 7.84,
-          "end": 8.12
-        },
-        {
-          "word": "primer:",
-          "start": 8.12,
-          "end": 8.4
-        },
-        {
-          "word": "inner",
-          "start": 8.4,
-          "end": 8.68
-        },
-        {
-          "word": "cup,",
-          "start": 8.68,
-          "end": 8.96
-        },
-        {
-          "word": "outer",
-          "start": 8.96,
-          "end": 9.24
-        },
-        {
-          "word": "cup,",
-          "start": 9.24,
-          "end": 9.52
-        },
-        {
-          "word": "ruang",
-          "start": 9.52,
-          "end": 9.8
-        },
-        {
-          "word": "vakum,",
-          "start": 9.8,
-          "end": 10.08
-        },
-        {
-          "word": "dan",
-          "start": 10.08,
-          "end": 10.36
-        },
-        {
-          "word": "seal.",
-          "start": 10.36,
-          "end": 10.64
-        },
-        {
-          "word": "Vakum",
-          "start": 10.64,
-          "end": 10.92
-        },
-        {
-          "word": "memutus",
-          "start": 10.92,
-          "end": 11.2
-        },
-        {
-          "word": "konduksi",
-          "start": 11.2,
-          "end": 11.48
-        },
-        {
-          "word": "dan",
-          "start": 11.48,
-          "end": 11.76
-        },
-        {
-          "word": "konveksi,",
-          "start": 11.76,
-          "end": 12.04
-        },
-        {
-          "word": "radiasi",
-          "start": 12.04,
-          "end": 12.32
-        },
-        {
-          "word": "minim",
-          "start": 12.32,
-          "end": 12.6
-        },
-        {
-          "word": "lewat",
-          "start": 12.6,
-          "end": 12.88
-        },
-        {
-          "word": "baja.",
-          "start": 12.88,
-          "end": 13.16
-        },
-        {
-          "word": "Titik",
-          "start": 13.16,
-          "end": 13.44
-        },
-        {
-          "word": "kritis:",
-          "start": 13.44,
-          "end": 13.72
-        },
-        {
-          "word": "seal",
-          "start": 13.72,
-          "end": 14
-        },
-        {
-          "word": "tutup",
-          "start": 14,
-          "end": 14.28
-        },
-        {
-          "word": "aus,",
-          "start": 14.28,
-          "end": 14.56
-        },
-        {
-          "word": "vakum",
-          "start": 14.56,
-          "end": 14.84
-        },
-        {
-          "word": "bocor,",
-          "start": 14.84,
-          "end": 15.12
-        },
-        {
-          "word": "lapisan",
-          "start": 15.12,
-          "end": 15.4
-        },
-        {
-          "word": "dalam",
-          "start": 15.4,
-          "end": 15.68
-        },
-        {
-          "word": "berkarat.",
-          "start": 15.68,
-          "end": 15.96
-        },
-        {
-          "word": "Tanda",
-          "start": 15.96,
-          "end": 16.24
-        },
-        {
-          "word": "rusak:",
-          "start": 16.24,
-          "end": 16.52
-        },
-        {
-          "word": "embun",
-          "start": 16.52,
-          "end": 16.8
-        },
-        {
-          "word": "di",
-          "start": 16.8,
-          "end": 17.08
-        },
-        {
-          "word": "dalam",
-          "start": 17.08,
-          "end": 17.36
-        },
-        {
-          "word": "dinding,",
-          "start": 17.36,
-          "end": 17.64
-        },
-        {
-          "word": "suara",
-          "start": 17.64,
-          "end": 17.92
-        },
-        {
-          "word": "berdesir",
-          "start": 17.92,
-          "end": 18.2
-        },
-        {
-          "word": "saat",
-          "start": 18.2,
-          "end": 18.48
-        },
-        {
-          "word": "dikocok.",
-          "start": 18.48,
-          "end": 18.76
-        },
-        {
-          "word": "Cek",
-          "start": 18.76,
-          "end": 19.04
-        },
-        {
-          "word": "mandiri:",
-          "start": 19.04,
-          "end": 19.32
-        },
-        {
-          "word": "isi",
-          "start": 19.32,
-          "end": 19.6
-        },
-        {
-          "word": "air",
-          "start": 19.6,
-          "end": 19.88
-        },
-        {
-          "word": "panas,",
-          "start": 19.88,
-          "end": 20.16
-        },
-        {
-          "word": "ukur",
-          "start": 20.16,
-          "end": 20.44
-        },
-        {
-          "word": "suhu",
-          "start": 20.44,
-          "end": 20.72
-        },
-        {
-          "word": "tiap",
-          "start": 20.72,
-          "end": 21
-        },
-        {
-          "word": "jam",
-          "start": 21,
-          "end": 21.28
-        },
-        {
-          "word": "dengan",
-          "start": 21.28,
-          "end": 21.56
-        },
-        {
-          "word": "termometer.",
-          "start": 21.56,
-          "end": 21.84
-        },
-        {
-          "word": "Perbaikan",
-          "start": 21.84,
-          "end": 22.12
-        },
-        {
-          "word": "seal",
-          "start": 22.12,
-          "end": 22.4
-        },
-        {
-          "word": "lima",
-          "start": 22.4,
-          "end": 22.68
-        },
-        {
-          "word": "puluh",
-          "start": 22.68,
-          "end": 22.96
-        },
-        {
-          "word": "ribu,",
-          "start": 22.96,
-          "end": 23.24
-        },
-        {
-          "word": "jangan",
-          "start": 23.24,
-          "end": 23.52
-        },
-        {
-          "word": "tergiur",
-          "start": 23.52,
-          "end": 23.8
-        },
-        {
-          "word": "ganti",
-          "start": 23.8,
-          "end": 24.08
-        },
-        {
-          "word": "tumbler",
-          "start": 24.08,
-          "end": 24.36
-        },
-        {
-          "word": "baru.",
-          "start": 24.36,
-          "end": 24.64
-        },
-        {
-          "word": "Bedah",
-          "start": 24.64,
-          "end": 24.92
-        },
-        {
-          "word": "part",
-          "start": 24.92,
-          "end": 25.2
-        },
-        {
-          "word": "lain",
-          "start": 25.2,
-          "end": 25.48
-        },
-        {
-          "word": "berikutnya,",
-          "start": 25.48,
-          "end": 25.76
-        },
-        {
-          "word": "simpan",
-          "start": 25.76,
-          "end": 26.04
-        },
-        {
-          "word": "tumbler,",
-          "start": 26.04,
-          "end": 26.32
-        },
-        {
-          "word": "hemat",
-          "start": 26.32,
-          "end": 26.6
-        },
-        {
-          "word": "energi.",
-          "start": 26.6,
-          "end": 26.88
-        }
-      ],
-      "durationSeconds": 43.15
-    },
-    "sfxTracks": [
-      {
-        "url": "/sfx/click.mp3",
-        "startFrame": 0
-      },
-      {
-        "url": "/sfx/whoosh_soft.mp3",
-        "startFrame": 90
-      },
-      {
-        "url": "/sfx/metal_clank.mp3",
-        "startFrame": 180
-      },
-      {
-        "url": "/sfx/click.mp3",
-        "startFrame": 270
-      },
-      {
-        "url": "/sfx/whoosh_soft.mp3",
-        "startFrame": 360
-      },
-      {
-        "url": "/sfx/gas_leak.mp3",
-        "startFrame": 450
-      },
-      {
-        "url": "/sfx/metal_clank.mp3",
-        "startFrame": 540
-      },
-      {
-        "url": "/sfx/beep.mp3",
-        "startFrame": 630
-      },
-      {
-        "url": "/sfx/cash_register.mp3",
-        "startFrame": 720
-      },
-      {
-        "url": "/sfx/click.mp3",
-        "startFrame": 810
-      }
-    ],
-    "juryData": {
-      "scores": {
-        "hook": 9,
-        "tempo": 8,
-        "sinkron": 7.5,
-        "overall": 8.2
-      },
-      "status": "APPROVED",
-      "fix_node": null,
-      "feedback": "Hook tajam dan alur sistem pendingin logis."
-    },
-    "renderData": {
-      "videoUrl": "/api/render/output-1792723101089.mp4",
-      "durationInFrames": 900,
-      "status": "READY"
-    }
-  },
-  "startedAt": "2026-10-23T02:33:57.124Z",
-  "updatedAt": "2026-10-23T02:38:21.089Z"
+  "result": null,
+  "startedAt": "2026-10-23T03:54:58.605Z",
+  "updatedAt": "2026-10-23T03:58:17.574Z"
 }

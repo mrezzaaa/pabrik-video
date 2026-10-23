@@ -1,10 +1,10 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { callChecked, callJSON, fill, type LLM } from "./llm.ts";
-import { runJudge } from "./judge.ts";
+import { callChecked, callJSON, fill, type LLM } from "./llm";
+import { runJudge } from "./judge";
 import {
   cleanSvgCode, finalizePlan, validateResearch, validateScript, validateSvg,
-} from "./validators.ts";
-import type { Issue, JudgeResult, Plan, Research, SearchHit } from "./types.ts";
+} from "./validators";
+import type { Issue, JudgeResult, Plan, Research, SearchHit } from "./types";
 
 export interface Deps {
   /** model penulis (research, script, svg) */

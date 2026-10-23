@@ -43,7 +43,13 @@ export function compileSvgScene(tsxCode: string): SvgSceneComponent | null {
       throw new Error(`Module '${mod}' tidak diizinkan di dalam SvgScene`);
     };
 
-    const factory = new Function("React", "exports", "module", "require", transpiled.outputText);
+    const factory = new Function(
+      "React",
+      "exports",
+      "module",
+      "require",
+      transpiled.outputText,
+    );
     factory(React, exportsObj, moduleObj, requireFn);
 
     const Comp = moduleObj.exports.default ?? exportsObj.default ?? null;
@@ -74,7 +80,13 @@ export function renderDynamicSvgOrMarkup(opts: {
   if (svgCode.trim().startsWith("<svg")) {
     return (
       <div
-        style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
         dangerouslySetInnerHTML={{ __html: svgCode }}
       />
     );

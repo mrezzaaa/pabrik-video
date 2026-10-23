@@ -1,6 +1,6 @@
-import { callJSON, fill, type LLM } from "./llm.ts";
-import { computeMetrics } from "./validators.ts";
-import type { Gates, Issue, JudgeRaw, JudgeResult, Plan, Research, Scores } from "./types.ts";
+import { callJSON, fill, type LLM } from "./llm";
+import { computeMetrics } from "./validators";
+import type { Gates, Issue, JudgeRaw, JudgeResult, Plan, Research, Scores } from "./types";
 
 /**
  * INI tempat "kode yang menyertai prompt juri".
