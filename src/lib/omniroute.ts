@@ -23,9 +23,7 @@ export function getOmnirouteClient(): OpenAI {
 const MODEL_FALLBACK_CASCADE = [
   env.OMNIROUTE_PRIMARY_MODEL,
   env.OMNIROUTE_FAST_MODEL,
-  "antigravity/claude-sonnet-4-6",
-  "antigravity/gemini-3.8-flash-high",
-  "antigravity/gemini-3-flash",
+  "auto",
   "cloudflare-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 ];
 

@@ -528,6 +528,14 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
               opacity="0.35"
             />
           </pattern>
+          {/* Legacy Gradients and Defs from previous version pipeline jobs */}
+          {(visualScene as unknown as { svgDefsMarkup?: string })?.svgDefsMarkup && (
+            <g
+              dangerouslySetInnerHTML={{
+                __html: (visualScene as unknown as { svgDefsMarkup?: string }).svgDefsMarkup || "",
+              }}
+            />
+          )}
         </defs>
 
         {/* Studio Pedestal Base Ring beneath stage */}
@@ -550,56 +558,127 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
           fillOpacity={0.65}
         />
 
-        {/* Render Deterministic 3D Projected Isometric Faces */}
-        <g id="iso-stage-faces">
-          {sortedFaces.map((face) => {
-            const screenPoints = face.points3D.map((pt) =>
-              projectIso(pt, fitConfig.unitScale, fitConfig.originX, fitConfig.originY)
-            );
-            const pointsStr = screenPoints
-              .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-              .join(" ");
+        {/* Render Deterministic 3D Projected Isometric Faces OR Legacy SVG Parts */}
+        {sortedFaces.length > 0 ? (
+          <g id="iso-stage-faces">
+            {sortedFaces.map((face) => {
+              const screenPoints = face.points3D.map((pt) =>
+                projectIso(pt, fitConfig.unitScale, fitConfig.originX, fitConfig.originY)
+              );
+              const pointsStr = screenPoints
+                .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+                .join(" ");
 
-            const shading = getFaceShading(
-              face.colorToken ?? "metal",
-              face.role,
-              face.material
-            );
+              const shading = getFaceShading(
+                face.colorToken ?? "metal",
+                face.role,
+                face.material
+              );
 
-            // Emphasis styling: Dimmed background parts in Phase 2
-            let opacity = shading.fillOpacity;
-            if (face.emphasis === "dim") {
-              opacity = 0.25;
-            } else if (face.emphasis === "focus") {
-              opacity = Math.max(opacity, 0.95);
-            }
+              // Emphasis styling: Dimmed background parts in Phase 2
+              let opacity = shading.fillOpacity;
+              if (face.emphasis === "dim") {
+                opacity = 0.25;
+              } else if (face.emphasis === "focus") {
+                opacity = Math.max(opacity, 0.95);
+              }
 
-            return (
-              <g key={face.id}>
-                {/* Base Cel-Shaded Polygon */}
-                <polygon
-                  points={pointsStr}
-                  fill={shading.fill}
-                  fillOpacity={opacity}
-                  stroke={shading.stroke}
-                  strokeWidth={shading.strokeWidth}
-                  strokeLinejoin={shading.strokeLinejoin}
-                  strokeLinecap="round"
-                />
-
-                {/* Diagonal Cutaway Hatching Overlay for Cross-Sections */}
-                {(face.isCutaway || shading.hatchPatternId) && (
+              return (
+                <g key={face.id}>
+                  {/* Base Cel-Shaded Polygon */}
                   <polygon
                     points={pointsStr}
-                    fill="url(#iso-cut-hatch)"
-                    fillOpacity={opacity * 0.9}
-                    stroke="none"
+                    fill={shading.fill}
+                    fillOpacity={opacity}
+                    stroke={shading.stroke}
+                    strokeWidth={shading.strokeWidth}
+                    strokeLinejoin={shading.strokeLinejoin}
+                    strokeLinecap="round"
                   />
-                )}
-              </g>
-            );
-          })}
-        </g>
+
+                  {/* Diagonal Cutaway Hatching Overlay for Cross-Sections */}
+                  {(face.isCutaway || shading.hatchPatternId) && (
+                    <polygon
+                      points={pointsStr}
+                      fill="url(#iso-cut-hatch)"
+                      fillOpacity={opacity * 0.9}
+                      stroke="none"
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        ) : (
+          /* Legacy SVG Markup Fallback (for older jobs or jobs without 3D shape definitions) */
+          <svg
+            x="40"
+            y="520"
+            width="1000"
+            height="1000"
+            viewBox="0 0 1000 1000"
+            style={{ overflow: "visible" }}
+          >
+            {([...(visualScene?.parts || [])])
+              .sort(
+                (a: unknown, b: unknown) =>
+                  ((a as { layerOrder?: number }).layerOrder ?? 50) -
+                  ((b as { layerOrder?: number }).layerOrder ?? 50)
+              )
+              .map((partRaw: unknown) => {
+                const part = partRaw as {
+                  partId: string;
+                  componentId: string;
+                  svgMarkup?: string;
+                  isCutawayWall?: boolean;
+                  anchorPoint?: { x: number; y: number };
+                  animation?: {
+                    type?: string;
+                    speed?: number;
+                    dx?: number;
+                    dy?: number;
+                    rotateDeg?: number;
+                  };
+                };
+                if (!part.svgMarkup) return null;
+                const isFocused =
+                  activePhase?.activeComponentIds?.includes(part.componentId) ?? true;
+                const partOpacity = isFocused ? (part.isCutawayWall ? 0.4 : 1) : 0.45;
+                const anchorX = part.anchorPoint?.x ?? 500;
+                const anchorY = part.anchorPoint?.y ?? 500;
+
+                let animTransform = "";
+                const anim = part.animation;
+                if (anim && anim.type !== "none") {
+                  const spd = anim.speed || 1;
+                  if (anim.type === "translate") {
+                    const wave = Math.sin(frame * 0.08 * spd);
+                    animTransform = `translate(${((anim.dx || 0) * wave).toFixed(2)}px, ${((anim.dy || 0) * wave).toFixed(2)}px)`;
+                  } else if (anim.type === "rotate") {
+                    const deg = ((frame * (anim.rotateDeg ? anim.rotateDeg / 60 : 2.5) * spd) % 360).toFixed(2);
+                    animTransform = `rotate(${deg}deg)`;
+                  } else if (anim.type === "pulse" || anim.type === "scale") {
+                    const sc = (1 + 0.05 * Math.sin(frame * 0.12 * spd)).toFixed(3);
+                    animTransform = `scale(${sc})`;
+                  }
+                }
+
+                return (
+                  <g
+                    key={part.partId}
+                    id={part.partId}
+                    opacity={partOpacity}
+                    style={{
+                      transform: animTransform,
+                      transformOrigin: `${anchorX}px ${anchorY}px`,
+                      transition: "opacity 0.25s ease-in-out",
+                    }}
+                    dangerouslySetInnerHTML={{ __html: part.svgMarkup }}
+                  />
+                );
+              })}
+          </svg>
+        )}
 
         {/* 3D Pipe Flow Paths (Dashed Animated Lines) */}
         <g id="iso-pipe-flows">
@@ -625,29 +704,67 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
 
         {/* Part Callout Socket Dots */}
         <g id="iso-socket-dots">
-          {socketAnchors.map((socket) => (
-            <g key={`socket_${socket.partId}`}>
-              {socket.isFocused && (
+          {sortedFaces.length > 0 ? (
+            socketAnchors.map((socket) => (
+              <g key={`socket_${socket.partId}`}>
+                {socket.isFocused && (
+                  <circle
+                    cx={socket.anchor2D.x}
+                    cy={socket.anchor2D.y}
+                    r={12}
+                    fill="none"
+                    stroke="#38BDF8"
+                    strokeWidth={2}
+                    opacity={0.6 + 0.35 * Math.sin(frame * 0.15)}
+                  />
+                )}
                 <circle
                   cx={socket.anchor2D.x}
                   cy={socket.anchor2D.y}
-                  r={12}
-                  fill="none"
-                  stroke="#38BDF8"
-                  strokeWidth={2}
-                  opacity={0.6 + 0.35 * Math.sin(frame * 0.15)}
+                  r={socket.isFocused ? 6.5 : 4.5}
+                  fill="#FFFFFF"
+                  stroke="#1E293B"
+                  strokeWidth={2.5}
                 />
-              )}
-              <circle
-                cx={socket.anchor2D.x}
-                cy={socket.anchor2D.y}
-                r={socket.isFocused ? 6.5 : 4.5}
-                fill="#FFFFFF"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-            </g>
-          ))}
+              </g>
+            ))
+          ) : (
+            (visualScene?.parts || []).map((partRaw: unknown) => {
+              const part = partRaw as {
+                partId: string;
+                componentId: string;
+                anchorPoint?: { x: number; y: number };
+              };
+              if (!part.anchorPoint) return null;
+              const isFocused =
+                activePhase?.activeComponentIds?.includes(part.componentId) ?? true;
+              const sx = 40 + (part.anchorPoint.x ?? 500);
+              const sy = 520 + (part.anchorPoint.y ?? 500);
+              return (
+                <g key={`legacy_socket_${part.partId}`}>
+                  {isFocused && (
+                    <circle
+                      cx={sx}
+                      cy={sy}
+                      r={11}
+                      fill="none"
+                      stroke="#38BDF8"
+                      strokeWidth={2}
+                      opacity={0.6 + 0.35 * Math.sin(frame * 0.15)}
+                    />
+                  )}
+                  <circle
+                    cx={sx}
+                    cy={sy}
+                    r={isFocused ? 6.5 : 4.5}
+                    fill="#FFFFFF"
+                    stroke="#1E293B"
+                    strokeWidth={2.5}
+                  />
+                </g>
+              );
+            })
+          )}
         </g>
       </svg>
     </AbsoluteFill>
