@@ -119,6 +119,19 @@ export const ScriptSegmentSchema = z.object({
   showChecklistCard: z.boolean().catch(false),
 });
 
+export const ScriptJuryEvaluationSchema = z.object({
+  score: z.number().min(0).max(100),
+  passed: z.boolean(),
+  spokenFlowScore: z.number().min(0).max(100), // Natural conversational cadence and sentence length variation
+  beatTransitionScore: z.number().min(0).max(100), // Cohesive transitions between beats (nah, di sinilah, dll.)
+  pacingScore: z.number().min(0).max(100), // Conversational tempo: 2.3-2.8 words/sec, no dense clutter
+  singleIdeaPerBeatScore: z.number().min(0).max(100), // Exactly 1 main idea per beat
+  critique: z.string(),
+  improvementSuggestions: z.array(z.string()).default([]),
+});
+
+export type ScriptJuryEvaluation = z.infer<typeof ScriptJuryEvaluationSchema>;
+
 export const ScriptArchitectOutputSchema = z.object({
   topic: z.string(),
   totalSegments: z.number().int().catch(4),
@@ -128,6 +141,7 @@ export const ScriptArchitectOutputSchema = z.object({
     items: z.array(z.string()).min(3),
   }),
   segments: z.array(ScriptSegmentSchema).length(4),
+  juryEvaluation: ScriptJuryEvaluationSchema.optional(),
 });
 
 export type ScriptArchitectOutput = z.infer<typeof ScriptArchitectOutputSchema>;
