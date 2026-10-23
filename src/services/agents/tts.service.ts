@@ -25,7 +25,7 @@ export async function runTtsSynchronizerAgent(params: {
   const fps = env.REMOTION_FPS || 60;
   const voice = env.UNLIMITEDTTS_VOICE || "Ethan";
   const language = env.UNLIMITEDTTS_LANGUAGE || "id-ID";
-  const speed = env.UNLIMITEDTTS_SPEED || 1.1;
+  const speed = env.UNLIMITEDTTS_SPEED || 1.0;
 
   const timedSegments: AudioSegmentTiming[] = [];
   const sfxTriggers: AudioSfxTrigger[] = [];
@@ -46,10 +46,10 @@ export async function runTtsSynchronizerAgent(params: {
 
     primaryEngineUsed = synthResult.engineUsed;
 
-    // Exact frame calculation: durationInFrames = Math.ceil(audioDurationInSeconds * 60)
+    // Exact frame calculation directly from silence-trimmed & tail-padded audio:
     const durationInFrames = Math.max(
-      Math.ceil(synthResult.durationInSeconds * fps),
-      180
+      Math.round(synthResult.durationInSeconds * fps),
+      120
     );
     const exactDurationSec = Number((durationInFrames / fps).toFixed(3));
 
@@ -58,11 +58,13 @@ export async function runTtsSynchronizerAgent(params: {
     const startFrame = cumulativeFrames;
     const endFrame = cumulativeFrames + durationInFrames;
 
+    // Word timings are distributed strictly across speech duration (excluding 0.35s breathing tail)
     const wordTimings = computeWordTimings(
       seg.narrationText,
       startSec,
       synthResult.durationInSeconds,
-      fps
+      fps,
+      0.35
     );
 
     timedSegments.push({

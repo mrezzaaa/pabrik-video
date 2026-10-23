@@ -23,14 +23,15 @@ function computeClientWordTimings(
   });
 
   const totalWeight = weights.reduce((acc, v) => acc + v, 0) || 1;
+  const speechDuration = Math.max(0.8, segmentDurationSec - 0.35);
   let cursorSec = segmentStartSec;
 
   return words.map((word, idx) => {
-    const sliceDuration = (weights[idx] / totalWeight) * segmentDurationSec;
+    const sliceDuration = (weights[idx] / totalWeight) * speechDuration;
     const startSec = Number(cursorSec.toFixed(3));
     const endSec = Number(
       (idx === words.length - 1
-        ? segmentStartSec + segmentDurationSec
+        ? segmentStartSec + speechDuration
         : cursorSec + sliceDuration
       ).toFixed(3)
     );
