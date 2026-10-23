@@ -52,7 +52,10 @@ function computeCentroid(pts: Point3D[]): Point3D {
 }
 
 function generatePartBaseFaces(part: SemanticIsoPart): Face3D[] {
-  const { shape, position: pos, partId } = part;
+  if (!part || !part.shape) {
+    return [];
+  }
+  const { shape, position: pos = { x: 0, y: 0, z: 0 }, partId } = part;
   switch (shape.type) {
     case "box":
       return createBox({
@@ -310,7 +313,8 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
 
   // 1. Collect all static 3D points for auto-fit calculation
   const allFitPoints: Point3D[] = [];
-  for (const part of visualScene.parts) {
+  for (const part of visualScene?.parts || []) {
+    if (!part || !part.shape) continue;
     const baseFaces = generatePartBaseFaces(part);
     for (const f of baseFaces) {
       allFitPoints.push(...f.points3D);
@@ -325,7 +329,8 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
   });
 
   // 2. Process each part with 3D animation & continuous phase states
-  for (const part of visualScene.parts) {
+  for (const part of visualScene?.parts || []) {
+    if (!part || !part.shape) continue;
     const state = getInterpolatedPartState(part, frame, phases);
     if (!state.visible) continue;
 

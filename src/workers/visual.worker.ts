@@ -44,7 +44,11 @@ export function startVisualWorker(): Worker {
           );
         }
 
-        const compositionProps = await runVisualChoreographerAgent({
+        const { runVisualChoreographerAgent: executeVisual } = await import(
+          "@/services/agents/visual.service"
+        );
+
+        const compositionProps = await executeVisual({
           jobId,
           aspectRatioMode: aspectRatioMode ?? state.aspectRatioMode ?? "SHORTS_9_16",
           blueprint,
