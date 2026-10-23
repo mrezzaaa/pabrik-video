@@ -59,13 +59,13 @@ export async function generateStructuredOmniroute<T>(params: {
 
   for (const model of modelsToTry) {
     try {
+      const combinedPrompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
       const response = await omnirouteClient.chat.completions.create({
         model,
         temperature,
         max_tokens: maxTokens,
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: combinedPrompt },
         ],
       });
 
