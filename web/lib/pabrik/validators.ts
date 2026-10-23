@@ -1,4 +1,4 @@
-import type { Plan, Research } from "./types";
+import type { Plan, Research } from "./types.ts";
 
 export const ROLES = [
   "HOOK", "MITOS", "TERBONGKAR", "ANATOMI1", "ANATOMI2",

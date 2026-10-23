@@ -32,6 +32,25 @@ export interface Research {
   gaps: string[];
 }
 
+export interface MetricState {
+  id: string;
+  value: number;
+  readout?: string;
+}
+
+export interface Metric {
+  label?: string;
+  unit?: string;
+  decimals?: number;
+  warn_at?: number;
+  danger_at?: number;
+  states: MetricState[];
+}
+
+export interface BeatHud {
+  state: string;
+}
+
 export interface Beat {
   beat_number: number;
   role: string;
@@ -40,10 +59,12 @@ export interface Beat {
   sfx_keyword: string;
   tulisan_layar: string;
   source_refs: string[];
+  hud?: BeatHud;
 }
 
 export interface Plan {
   beats: Beat[];
+  metric?: Metric;
   // diisi oleh kode (finalizePlan), bukan LLM
   total_words?: number;
   narration_text?: string;
