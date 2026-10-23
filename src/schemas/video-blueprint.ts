@@ -10,7 +10,7 @@ export const PhaseTypeSchema = z.enum([
 export type PhaseType = z.infer<typeof PhaseTypeSchema>;
 
 export const Vec3TupleSchema = z
-  .tuple([z.number().catch(0), z.number().catch(0), z.number().catch(0)])
+  .tuple([z.coerce.number().catch(0), z.coerce.number().catch(0), z.coerce.number().catch(0)])
   .catch([0, 0, 0]);
 
 export const ThreeGeometryTypeSchema = z
@@ -39,9 +39,9 @@ export const ThreeAnimationSchema = z.object({
     .enum(["none", "rotate", "oscillate-position", "pulse-scale", "explode", "fluid-level"])
     .catch("none"),
   axis: z.enum(["x", "y", "z"]).catch("y"),
-  speed: z.number().catch(1.0),
-  amplitude: z.number().catch(0.25),
-  activeInPhases: z.array(z.number().int()).default([0, 1, 2, 3]),
+  speed: z.coerce.number().catch(1.0),
+  amplitude: z.coerce.number().catch(0.25),
+  activeInPhases: z.array(z.coerce.number().int()).default([0, 1, 2, 3]),
 });
 
 /**
@@ -59,7 +59,7 @@ export const DeconstructedComponentSchema = z.object({
   position3D: Vec3TupleSchema,
   zoomTarget: z.object({
     focusPosition3D: Vec3TupleSchema,
-    zoomMultiplier: z.number().min(1).max(2.4).catch(1.6),
+    zoomMultiplier: z.coerce.number().min(1).max(2.4).catch(1.6),
   }),
 });
 
@@ -69,7 +69,7 @@ export const DeconstructedPhaseSchema = z.object({
   title: z.string().min(1),
   everydayContrastOrHook: z.string().min(1),
   simpleExplanation: z.string().min(1),
-  targetDurationSeconds: z.number().min(5).max(16),
+  targetDurationSeconds: z.coerce.number().min(5).max(16).catch(8),
   focusComponentIds: z.array(z.string()),
 });
 
@@ -78,8 +78,8 @@ export const DeconstructionBlueprintSchema = z.object({
   laymanHookTitle: z.string().min(1),
   everydayCategory: z.string().min(1),
   coreSimpleTruth: z.string().min(1),
-  baselineMetricValue: z.number(),
-  peakMetricValue: z.number(),
+  baselineMetricValue: z.coerce.number().catch(0),
+  peakMetricValue: z.coerce.number().catch(100),
   metricUnit: z.string(),
   practicalChecklistTitle: z.string().catch("CEK SEBELUM BELI / PAKAI:"),
   practicalChecklistItems: z.array(z.string()).min(3).max(3),
@@ -97,8 +97,8 @@ export const PillLabelItemSchema = z.object({
   componentId: z.string(),
   text: z.string(), // Max 2-3 words, e.g., "DURI LUNAK →", "← UAP TERKURUNG"
   direction: z.enum(["LEFT", "RIGHT"]).catch("RIGHT"),
-  relativeTriggerRatio: z.number().min(0.05).max(0.85).catch(0.15),
-  durationSeconds: z.number().min(1.5).max(8).catch(4.0),
+  relativeTriggerRatio: z.coerce.number().min(0.05).max(0.85).catch(0.15),
+  durationSeconds: z.coerce.number().min(1.5).max(8).catch(4.0),
 });
 
 export const SfxCueSchema = z.object({
@@ -109,10 +109,10 @@ export const SfxCueSchema = z.object({
   soundEffectFile: z
     .enum(["steam-hiss.mp3", "pop-lock.mp3", "bubble.mp3"])
     .catch("pop-lock.mp3"),
-  x: z.number().catch(680),
-  y: z.number().catch(640),
-  rotateDeg: z.number().catch(-8),
-  relativeTriggerRatio: z.number().min(0.05).max(0.9).catch(0.3),
+  x: z.coerce.number().catch(680),
+  y: z.coerce.number().catch(640),
+  rotateDeg: z.coerce.number().catch(-8),
+  relativeTriggerRatio: z.coerce.number().min(0.05).max(0.9).catch(0.3),
 });
 
 export const ScriptSegmentSchema = z.object({
@@ -121,14 +121,14 @@ export const ScriptSegmentSchema = z.object({
   chapterTitle: z.string().min(3), // Supports <highlight>word</highlight> for coral red text
   narrationText: z.string().min(90, "narrationText must be at least 18 spoken words (~90 chars) to hit 8+ seconds of TTS audio"),
   primaryMetric: z.object({
-    startValue: z.number(),
-    endValue: z.number(),
+    startValue: z.coerce.number().catch(0),
+    endValue: z.coerce.number().catch(100),
     unit: z.string(),
-    decimals: z.number().int().min(0).max(2).catch(1),
+    decimals: z.coerce.number().int().min(0).max(2).catch(1),
     isHighActive: z.boolean().catch(false),
-    baselineValue: z.number().catch(0),
-    peakValue: z.number().catch(100),
-    sparklinePoints: z.array(z.number()).min(2).catch([0, 20, 60, 100]),
+    baselineValue: z.coerce.number().catch(0),
+    peakValue: z.coerce.number().catch(100),
+    sparklinePoints: z.array(z.coerce.number()).min(2).catch([0, 20, 60, 100]),
   }),
   statusBadge: z.object({
     text: z.string(),
@@ -207,16 +207,16 @@ export type AudioSfxTrigger = z.infer<typeof AudioSfxTriggerSchema>;
  * 4. AGENT 4 OUTPUT: Three.js 3D Cutaway Scene Graph (`visual.worker.ts`)
  */
 export const ThreeGeometryArgsSchema = z.object({
-  radiusTop: z.number().optional(),
-  radiusBottom: z.number().optional(),
-  height: z.number().optional(),
-  wallThickness: z.number().optional(),
-  width: z.number().optional(),
-  depth: z.number().optional(),
-  tubeRadius: z.number().optional(),
-  arcAngleDeg: z.number().min(90).max(360).optional(), // 270 = 90-degree front cutaway
-  radialCount: z.number().int().min(3).max(24).optional(),
-  lathePoints: z.array(z.tuple([z.number(), z.number()])).optional(), // [radius, y]
+  radiusTop: z.coerce.number().optional(),
+  radiusBottom: z.coerce.number().optional(),
+  height: z.coerce.number().optional(),
+  wallThickness: z.coerce.number().optional(),
+  width: z.coerce.number().optional(),
+  depth: z.coerce.number().optional(),
+  tubeRadius: z.coerce.number().optional(),
+  arcAngleDeg: z.coerce.number().min(90).max(360).optional(), // 270 = 90-degree front cutaway
+  radialCount: z.coerce.number().int().min(3).max(24).optional(),
+  lathePoints: z.array(z.tuple([z.coerce.number(), z.coerce.number()])).optional(), // [radius, y]
   tubePath: z.array(Vec3TupleSchema).optional(),
 });
 
@@ -228,10 +228,10 @@ export const ThreeNodeSchema = z.object({
   assetUrl: z.string().optional(), // Optional .glb/.gltf path from /assets/models/
   position: Vec3TupleSchema,
   rotation: Vec3TupleSchema,
-  scale: z.tuple([z.number().catch(1), z.number().catch(1), z.number().catch(1)]).catch([1, 1, 1]),
+  scale: z.tuple([z.coerce.number().catch(1), z.coerce.number().catch(1), z.coerce.number().catch(1)]).catch([1, 1, 1]),
   color: z.string().catch("#E2E8F0"),
   materialType: ThreeMaterialTypeSchema,
-  opacity: z.number().min(0.15).max(1).catch(1),
+  opacity: z.coerce.number().min(0).max(1).catch(1),
   enableCutawayClip: z.boolean().catch(false),
   showEdgesOutline: z.boolean().catch(true),
   geometryArgs: ThreeGeometryArgsSchema.default({}),

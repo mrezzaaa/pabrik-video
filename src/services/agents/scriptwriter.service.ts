@@ -76,7 +76,7 @@ export async function runScriptwriterAgent(
 ${anatomySkill}
 ---------------------------------------------------`;
 
-  const userPrompt = `Write the conversational spoken-word Indonesian script and telemetry metadata for this topic:
+  const baseUserPrompt = `Write the conversational spoken-word Indonesian script and telemetry metadata for this topic:
 
 TOPIC: "${blueprint.topic}"
 CATEGORY: "${blueprint.everydayCategory}"
@@ -97,13 +97,49 @@ STRICT REQUIREMENTS:
 5. Return ONLY valid JSON conforming to this schema structure:
 ${SCRIPT_SCHEMA_TEMPLATE}`;
 
-  const { data, modelUsed } = await generateStructuredOmniroute({
-    systemPrompt,
-    userPrompt,
-    schema: ScriptArchitectOutputSchema,
-    preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
-    temperature: 0.3,
-  });
+  // Retry loop: enforce minimum 20 words per segment post-generation
+  const MAX_WORD_COUNT_RETRIES = 3;
+  let lastResult: { data: ScriptArchitectOutput; modelUsed: string } | null = null;
+  let shortSegmentFeedback = "";
 
-  return { script: data, modelUsed };
+  for (let attempt = 0; attempt < MAX_WORD_COUNT_RETRIES; attempt++) {
+    const userPrompt = attempt === 0
+      ? baseUserPrompt
+      : `${baseUserPrompt}\n\n⚠️ REJECTED: ${shortSegmentFeedback}\nRewrite narrationText for ALL 4 segments so each has at least 20 words.`;
+
+    const result = await generateStructuredOmniroute({
+      systemPrompt,
+      userPrompt,
+      schema: ScriptArchitectOutputSchema,
+      preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
+      temperature: 0.3,
+    });
+
+    // Validate word counts per segment
+    const shortSegments = result.data.segments
+      .map((seg, idx) => ({
+        idx,
+        wordCount: seg.narrationText.trim().split(/\s+/).filter(Boolean).length,
+        preview: seg.narrationText.slice(0, 80),
+      }))
+      .filter((s) => s.wordCount < 20);
+
+    if (shortSegments.length === 0) {
+      // All segments pass word count check
+      console.log(`[Scriptwriter] ✅ All 4 segments passed word count (attempt ${attempt + 1})`);
+      return { script: result.data, modelUsed: result.modelUsed };
+    }
+
+    shortSegmentFeedback = shortSegments
+      .map((s) => `Act ${s.idx}: only ${s.wordCount} words ("${s.preview}...")`)
+      .join("; ");
+    console.warn(`[Scriptwriter] ⚠️ Short segments detected (attempt ${attempt + 1}): ${shortSegmentFeedback}`);
+    lastResult = result;
+  }
+
+  // All retries exhausted — throw with details so BullMQ marks job FAILED
+  throw new Error(
+    `Scriptwriter failed to produce ≥20 words per segment after ${MAX_WORD_COUNT_RETRIES} attempts.\nShort segments: ${shortSegmentFeedback}`
+  );
 }
+
