@@ -57,9 +57,9 @@ export const BedahTemplate: React.FC<BedahTemplateProps> = ({
       {/* Background Narration Audio */}
       {audioUrl && <Audio src={audioUrl} />}
 
-      {/* SFX Audio Tracks */}
+      {/* SFX Audio Tracks (each constrained to 15 frames so only 1 SFX mounts at a time) */}
       {sfxTracks.map((sfx, idx) => (
-        <Sequence key={idx} from={sfx.startFrame}>
+        <Sequence key={idx} from={sfx.startFrame} durationInFrames={15}>
           <Audio src={sfx.url} volume={0.6} />
         </Sequence>
       ))}
@@ -68,13 +68,14 @@ export const BedahTemplate: React.FC<BedahTemplateProps> = ({
       {activeBeats.map((beat, index) => {
         const beatStartFrame = index * framesPerBeat;
         const beatDuration = framesPerBeat;
+        const beatDurationSec = beatDuration / fps;
 
-        // Filter words that belong to this beat's time window
-        const beatStartTimeSec = beatStartFrame / fps;
-        const beatEndTimeSec = (beatStartFrame + beatDuration) / fps;
-        const currentBeatWords = wordTimings.filter(
-          (w) => w.start >= beatStartTimeSec - 0.2 && w.start <= beatEndTimeSec
-        );
+        const rawWords = (beat.text || '').split(/\s+/).filter(Boolean);
+        const relativeWords: WordTiming[] = rawWords.map((w, i, arr) => ({
+          word: w,
+          start: (i / Math.max(arr.length, 1)) * beatDurationSec,
+          end: ((i + 1) / Math.max(arr.length, 1)) * beatDurationSec,
+        }));
 
         return (
           <Sequence
@@ -85,11 +86,7 @@ export const BedahTemplate: React.FC<BedahTemplateProps> = ({
             <BeatScene
               beat={beat}
               topic={topic}
-              words={currentBeatWords.length > 0 ? currentBeatWords : beat.text.split(' ').map((w, i, arr) => ({
-                word: w,
-                start: beatStartTimeSec + (i / arr.length) * (beatDuration / fps),
-                end: beatStartTimeSec + ((i + 1) / arr.length) * (beatDuration / fps)
-              }))}
+              words={relativeWords}
             />
           </Sequence>
         );

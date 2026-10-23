@@ -1,5 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
+import { generateTtsAudioFile } from './ttsEngine';
+import { buildPrecisionIsometricSvg, sanitizeLlmSvg } from './svgEngine';
 
 export interface PipelineState {
   topic: string;
@@ -184,6 +187,7 @@ export async function nodeScript(state: PipelineState, emitLog: LogEmitter): Pro
 
   const fullPrompt = promptTemplate.replace('{research_json}', JSON.stringify(state.researchData, null, 2));
   const model = process.env.SCRIPT_MODEL || 'nvidia/meta/muse-glimmer-30b';
+  emitLog('script', `Menyusun naskah 10 beat dengan ${model}...`);
   const rawLlm = await callOmniroute(fullPrompt, model);
 
   let scriptData: any = null;
@@ -215,52 +219,26 @@ export async function nodeVisual(state: PipelineState, emitLog: LogEmitter): Pro
   for (const beat of beats) {
     emitLog('visual', `Rendering SVG vector untuk Beat ${beat.beat_number}: [${beat.tulisan_layar}]`);
     
-    let generatedSvg = '';
+    let cleanSvg: string | null = null;
     if (promptTemplate) {
       const fullPrompt = promptTemplate
         .replace('{visual_description}', beat.visual)
         .replace('{beat_number}', String(beat.beat_number))
         .replace('{tulisan_layar}', beat.tulisan_layar);
       const rawSvg = await callOmniroute(fullPrompt, model);
-      const svgMatch = rawSvg.match(/<svg[\s\S]*?<\/svg>/i);
-      if (svgMatch && !/gradient|image|<img/i.test(svgMatch[0])) {
-        generatedSvg = svgMatch[0];
-      }
+      cleanSvg = sanitizeLlmSvg(rawSvg);
     }
 
-    // Clean vector isometric SVG code following Design Token (stroke 2px #111111, panas #FF3B30, highlight #FFD60A)
-    const highlightColor = beat.beat_number % 2 === 0 ? "#FF3B30" : "#FFD60A";
-    const flowColor = beat.beat_number === 5 ? "#0A84FF" : "#30D158";
+    svgComponents[beat.beat_number] =
+      cleanSvg ||
+      buildPrecisionIsometricSvg({
+        beat_number: beat.beat_number,
+        text: beat.text,
+        visual: beat.visual,
+        tulisan_layar: beat.tulisan_layar,
+        topic: state.topic,
+      });
 
-    svgComponents[beat.beat_number] = generatedSvg || `
-      <svg viewBox="0 0 800 800" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g transform="translate(400, 480)">
-          <!-- Isometric 30deg Platform -->
-          <polygon points="0,-160 280,0 0,160 -280,0" fill="#FFFFFF" stroke="#111111" stroke-width="2"/>
-          <polygon points="-280,0 0,160 0,200 -280,40" fill="#E5E5EA" stroke="#111111" stroke-width="2"/>
-          <polygon points="0,160 280,0 280,40 0,200" fill="#D1D1D6" stroke="#111111" stroke-width="2"/>
-
-          <!-- Isometric Component Body -->
-          <g transform="translate(0, -70)">
-            <rect x="-90" y="-120" width="180" height="150" rx="20" fill="#F4F5F7" stroke="#111111" stroke-width="2"/>
-            <!-- Active Focus Area with Design Token -->
-            <circle cx="0" cy="-45" r="45" fill="${highlightColor}" stroke="#111111" stroke-width="2"/>
-            <!-- Piping Closed Circuit -->
-            <path d="M -120,-20 C -200,-50 -200,60 -60,90 C 80,120 180,30 120,-80" fill="none" stroke="#111111" stroke-width="6"/>
-            <path d="M -120,-20 C -200,-50 -200,60 -60,90 C 80,120 180,30 120,-80" fill="none" stroke="${flowColor}" stroke-width="3" stroke-dasharray="14 8"/>
-          </g>
-
-          <!-- Dynamic Label Indicator -->
-          <g transform="translate(110, -220)">
-            <line x1="-30" y1="30" x2="20" y2="-10" stroke="#111111" stroke-width="2"/>
-            <rect x="20" y="-35" width="160" height="42" rx="6" fill="#111111"/>
-            <text x="100" y="-9" fill="${highlightColor}" font-size="16" font-weight="900" text-anchor="middle" font-family="Inter, sans-serif">
-              BEAT 0${beat.beat_number}
-            </text>
-          </g>
-        </g>
-      </svg>
-    `;
     beat.svgCode = svgComponents[beat.beat_number];
   }
 
@@ -275,24 +253,25 @@ export async function nodeTts(state: PipelineState, emitLog: LogEmitter): Promis
   const narration = state.scriptData?.narration_text || `Penjelasan teknis tentang ${state.topic}.`;
   const words = narration.split(/\s+/).filter(Boolean);
 
-  // Estimasi durasi per kata (~0.28 detik per kata untuk bahasa Indonesia)
-  const wordDuration = 0.28;
+  const ttsResult = await generateTtsAudioFile(narration);
+  const durationSeconds = ttsResult.durationSeconds;
+  const wordDuration = durationSeconds / Math.max(words.length, 1);
+
   const wordTimings = words.map((word, idx) => {
     const start = parseFloat((idx * wordDuration).toFixed(2));
     const end = parseFloat(((idx + 1) * wordDuration).toFixed(2));
     return { word, start, end };
   });
 
-  const durationSeconds = words.length * wordDuration;
-
-  emitLog('tts', `Audio narration tersinkron: ${words.length} kata, estimasi durasi ${durationSeconds.toFixed(1)}s`, {
+  emitLog('tts', `Audio narration (${ttsResult.engine}) tersinkron: ${words.length} kata, durasi ${durationSeconds.toFixed(1)}s`, {
     totalWords: words.length,
-    durationSeconds
+    durationSeconds,
+    audioUrl: ttsResult.audioUrl,
   });
 
   return {
     ttsData: {
-      audioUrl: '/placeholder-audio.mp3', // Web Next.js public
+      audioUrl: ttsResult.audioUrl,
       wordTimings,
       durationSeconds,
     }
@@ -338,6 +317,7 @@ export async function nodeJury(state: PipelineState, emitLog: LogEmitter): Promi
 
   const fullPrompt = promptTemplate.replace('{plan_json}', JSON.stringify(planPayload, null, 2));
   const model = process.env.JURY_MODEL || 'nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning';
+  emitLog('jury', `Mengevaluasi kualitas dengan ${model}...`);
   const rawLlm = await callOmniroute(fullPrompt, model);
 
   let juryData: any = null;
@@ -374,14 +354,36 @@ export async function nodeJury(state: PipelineState, emitLog: LogEmitter): Promi
 export async function nodeRender(state: PipelineState, emitLog: LogEmitter): Promise<Partial<PipelineState>> {
   emitLog('render', `Mengompilasi video Remotion 1080x1920 (Local Remotion Engine)...`);
 
-  const totalFrames = Math.max(900, Math.round((state.ttsData?.durationSeconds || 30) * 30));
-  
+  const durationSec = Math.max(15, Math.round(state.ttsData?.durationSeconds || 28));
+  const totalFrames = durationSec * 30;
+  const stamp = Date.now();
+  const filename = `output-${stamp}.mp4`;
+  const outDir = path.join(process.cwd(), '../out');
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir, { recursive: true });
+  }
+  const targetMp4 = path.join(outDir, filename);
+
   emitLog('render', `Proses assemble: 10 Beat sequences, SVG Isometric components, Karaoke subtitles.`);
+
+  try {
+    const audioRel = state.ttsData?.audioUrl || '';
+    const audioFull = audioRel ? path.join(process.cwd(), 'public', audioRel.replace(/^\//, '')) : '';
+    if (audioFull && fs.existsSync(audioFull)) {
+      execSync(
+        `ffmpeg -y -f lavfi -i "color=c=#F4F5F7:s=1080x1920:r=30:d=${durationSec}" -i "${audioFull}" -c:v libx264 -pix_fmt yuv420p -preset ultrafast -c:a aac -b:a 128k -shortest "${targetMp4}"`,
+        { stdio: 'ignore' }
+      );
+    }
+  } catch (e: any) {
+    console.warn('[MP4 Pre-build warning]:', e.message);
+  }
+
   emitLog('render', `Video siap dirender via Remotion Player / Local MP4 exporter.`);
 
   return {
     renderData: {
-      videoUrl: `/api/render/output-${Date.now()}.mp4`,
+      videoUrl: `/api/render/${filename}`,
       durationInFrames: totalFrames,
       status: 'READY'
     }

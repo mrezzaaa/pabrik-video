@@ -6,7 +6,9 @@
     "dev": "next dev --port 4000",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "produce": "tsx src/run.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@remotion/player": "^4.0.538",
@@ -22,6 +24,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "tsx": "^4.19.0",
     "autoprefixer": "^10.6.1",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
