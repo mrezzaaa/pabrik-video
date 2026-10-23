@@ -19,12 +19,8 @@ export const BedahVideoComposition: React.FC<RemotionCompositionProps> = (
           "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Layer 1: Warm Light-Mode 90° Cutaway Stage (<IsometricStage />) */}
-      <IsometricStage
-        layers={props.cutawayLayers}
-        phases={props.phases}
-        primaryArchetype={props.primaryArchetype}
-      />
+      {/* Layer 1: Pure Data-Driven Parametric Cutaway Stage (<IsometricStage />) */}
+      <IsometricStage scene={props.scene} phases={props.phases} />
 
       {/* Layer 2: Simplified Clean Editorial Header (<TelemetryHUD />) */}
       <TelemetryHUD phases={props.phases} />

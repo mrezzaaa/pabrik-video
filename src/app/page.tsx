@@ -36,10 +36,10 @@ import { Progress } from "@/components/ui/progress";
 import type { VideoJobState } from "@/schemas/video-blueprint";
 
 const PRESET_TOPICS = [
-  "Kenapa duri bandeng presto bisa lunak?",
+  "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W",
   "Kenapa air di dalam tumbler suhunya bisa awet",
   "Bagaimana kompresor AC mengubah gas freon menjadi udara dingin",
-  "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W",
+  "Kenapa mesin turbofan pesawat jet bisa menghasilkan daya dorong ekstrem",
 ];
 
 const AGENT_PIPELINE_META = [
@@ -87,7 +87,9 @@ const AGENT_PIPELINE_META = [
 
 export default function FactoryDashboardPage() {
   const router = useRouter();
-  const [topic, setTopic] = useState("Kenapa duri bandeng presto bisa lunak?");
+  const [topic, setTopic] = useState(
+    "Mekanisme kerja baterai Lithium-Ion saat fast charging 200W",
+  );
   const [aspectRatioMode, setAspectRatioMode] = useState<
     "LANDSCAPE_16_9" | "SHORTS_9_16"
   >("SHORTS_9_16");
@@ -221,10 +223,10 @@ export default function FactoryDashboardPage() {
               <Mic className="h-3.5 w-3.5 text-sky-400" />
               <span>TTS: ETHAN (id-ID @ 1.1x)</span>
             </div>
-            <Link href="/studio/demo-presto-job">
+            <Link href="/studio/demo-battery-200w">
               <Button variant="outline" size="sm" className="gap-1.5">
                 <Play className="h-3.5 w-3.5 text-sky-400" />
-                Instant Demo Studio (Bandeng Presto)
+                Instant Demo Studio (200W Fast Charge)
               </Button>
             </Link>
           </div>
@@ -564,9 +566,9 @@ export default function FactoryDashboardPage() {
                       Belum ada job di antrean Redis, atau buka Demo Studio
                       langsung.
                     </p>
-                    <Link href="/studio/demo-presto-job">
+                    <Link href="/studio/demo-battery-200w">
                       <Button variant="outline" size="sm" className="font-mono">
-                        Buka Demo Studio (Bandeng Presto 9:16)
+                        Buka Demo Studio (200W Fast Charge 9:16)
                       </Button>
                     </Link>
                   </div>

@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function StudioJobPage() {
   const params = useParams<{ jobId: string }>();
-  const jobId = params?.jobId || "demo-presto-job";
+  const jobId = params?.jobId || "demo-battery-200w";
 
   const [jobState, setJobState] = useState<VideoJobState | null>(null);
   const [compositionProps, setCompositionProps] =
@@ -45,7 +45,7 @@ export default function StudioJobPage() {
   const [isTriggeringRender, setIsTriggeringRender] = useState(false);
   const [isSavingJson, setIsSavingJson] = useState(false);
 
-  const isDemoJob = jobId === "demo-presto-job" || jobId === "demo-tumbler-job";
+  const isDemoJob = jobId === "demo-battery-200w";
 
   useEffect(() => {
     setJsonEditorText(JSON.stringify(compositionProps, null, 2));
@@ -59,10 +59,7 @@ export default function StudioJobPage() {
       try {
         const data = JSON.parse(ev.data) as VideoJobState;
         setJobState(data);
-        if (
-          data.compositionProps &&
-          Array.isArray(data.compositionProps.cutawayLayers)
-        ) {
+        if (data.compositionProps && data.compositionProps.scene) {
           setCompositionProps(data.compositionProps);
         }
       } catch {

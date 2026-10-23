@@ -16,15 +16,31 @@ export const PhaseTypeSchema = z.enum([
 
 export type PhaseType = z.infer<typeof PhaseTypeSchema>;
 
-export const VisualArchetypeSchema = z.enum([
-  "PRESTO_PRESSURE_COOKER",
-  "THERMAL_TUMBLER",
-  "COOLING_AC_SYSTEM",
-  "BATTERY_FAST_CHARGE",
-  "EVERYDAY_MECHANICAL",
-]);
+export const CutawayContainerTypeSchema = z
+  .enum([
+    "cylinder-cutaway",
+    "box-cutaway",
+    "dual-chamber",
+    "layered-stack",
+    "circuit-board",
+    "mechanical-housing",
+  ])
+  .catch("layered-stack");
 
-export type VisualArchetype = z.infer<typeof VisualArchetypeSchema>;
+export type CutawayContainerType = z.infer<typeof CutawayContainerTypeSchema>;
+
+export const ParticleFlowTypeSchema = z
+  .enum([
+    "ions",
+    "electrons",
+    "heat-waves",
+    "fluid",
+    "steam",
+    "airflow",
+  ])
+  .catch("ions");
+
+export type ParticleFlowType = z.infer<typeof ParticleFlowTypeSchema>;
 
 /**
  * 1. AGENT 1 OUTPUT: Layman Storyboarder (`deconstructor.worker.ts`)
@@ -36,13 +52,13 @@ export const DeconstructedComponentSchema = z.object({
   simpleCauseEffect: z.string().min(1),
   fillColor: z.string().default("#E2E8F0"),
   defaultAnchor: z.object({
-    x: z.number().min(120).max(960),
-    y: z.number().min(480).max(1520),
+    x: z.number().min(100).max(980),
+    y: z.number().min(460).max(1520),
   }),
   zoomTarget: z.object({
     x: z.number().default(0),
     y: z.number().default(0),
-    scale: z.number().min(1).max(2.4).default(1.65),
+    scale: z.number().min(1).max(2.4).default(1.6),
   }),
 });
 
@@ -52,7 +68,6 @@ export const DeconstructedPhaseSchema = z.object({
   title: z.string().min(1),
   everydayContrastOrHook: z.string().min(1),
   simpleExplanation: z.string().min(1),
-  visualArchetype: VisualArchetypeSchema,
   targetDurationSeconds: z.number().min(5).max(20),
   focusComponentIds: z.array(z.string()),
 });
@@ -62,10 +77,10 @@ export const DeconstructionBlueprintSchema = z.object({
   laymanHookTitle: z.string().min(1),
   everydayCategory: z.string().min(1),
   coreSimpleTruth: z.string().min(1),
-  primaryArchetype: VisualArchetypeSchema,
-  baselineMetricValue: z.number().default(100),
-  peakMetricValue: z.number().default(120.5),
-  metricUnit: z.string().default("°C"),
+  containerType: CutawayContainerTypeSchema,
+  baselineMetricValue: z.number(),
+  peakMetricValue: z.number(),
+  metricUnit: z.string(),
   practicalChecklistTitle: z.string().default("CEK SEBELUM BELI:"),
   practicalChecklistItems: z.array(z.string()).min(3),
   components: z.array(DeconstructedComponentSchema).min(3),
@@ -80,24 +95,28 @@ export type DeconstructionBlueprint = z.infer<typeof DeconstructionBlueprintSche
 export const PillLabelItemSchema = z.object({
   id: z.string(),
   componentId: z.string(),
-  text: z.string(), // e.g., "DURI KERAS →", "← UAP TERKURUNG", "PEMBERAT →"
-  direction: z.enum(["LEFT", "RIGHT"]).default("RIGHT"),
+  text: z.string(), // e.g., "ANODA GRAFIT →", "← ION LITHIUM", "DUAL-CELL →"
+  direction: z.enum(["LEFT", "RIGHT"]).catch("RIGHT"),
   anchor: z.object({
-    x: z.number(),
-    y: z.number(),
+    x: z.number().catch(540),
+    y: z.number().catch(960),
   }),
-  relativeTriggerRatio: z.number().min(0.05).max(0.85).default(0.15),
-  durationSeconds: z.number().min(1.5).max(8).default(4.0),
+  relativeTriggerRatio: z.number().min(0.05).max(0.85).catch(0.15),
+  durationSeconds: z.number().min(1.5).max(8).catch(4.0),
 });
 
 export const SfxCueSchema = z.object({
-  text: z.string(), // e.g., "PSSST!", "TERKUNCI", "BERJAM-JAM", "MAMPET!"
-  variant: z.enum(["STEAM_YELLOW_BLUE", "RED_STAMP", "FADED_BG", "GREEN_POP"]).default("STEAM_YELLOW_BLUE"),
-  soundEffectFile: z.enum(["steam-hiss.mp3", "pop-lock.mp3", "bubble.mp3"]).default("steam-hiss.mp3"),
-  x: z.number().default(740),
-  y: z.number().default(680),
-  rotateDeg: z.number().default(-8),
-  relativeTriggerRatio: z.number().min(0.05).max(0.9).default(0.35),
+  text: z.string(), // e.g., "200 WATT!", "DUAL-CELL", "SUHU AMAN", "KEDAP!"
+  variant: z
+    .enum(["STEAM_YELLOW_BLUE", "RED_STAMP", "FADED_BG", "GREEN_POP"])
+    .catch("STEAM_YELLOW_BLUE"),
+  soundEffectFile: z
+    .enum(["steam-hiss.mp3", "pop-lock.mp3", "bubble.mp3"])
+    .catch("pop-lock.mp3"),
+  x: z.number().catch(700),
+  y: z.number().catch(640),
+  rotateDeg: z.number().catch(-8),
+  relativeTriggerRatio: z.number().min(0.05).max(0.9).catch(0.32),
 });
 
 export const ScriptSegmentSchema = z.object({
@@ -105,8 +124,6 @@ export const ScriptSegmentSchema = z.object({
   phaseType: PhaseTypeSchema,
   /**
    * Chapter Title with `<highlight>` tags for coral red (#EF4444) words
-   * e.g., "Kenapa duri bandeng presto <highlight>bisa lunak?</highlight>"
-   * or "Uap dikurung, <highlight>titik didih naik</highlight>"
    */
   chapterTitle: z.string().min(3),
   /**
@@ -116,20 +133,20 @@ export const ScriptSegmentSchema = z.object({
   primaryMetric: z.object({
     startValue: z.number(),
     endValue: z.number(),
-    unit: z.string().default("°C"),
-    decimals: z.number().int().min(0).max(2).default(1),
-    isHighActive: z.boolean().default(false),
-    baselineValue: z.number().default(100),
-    peakValue: z.number().default(120),
-    sparklinePoints: z.array(z.number()).min(4),
+    unit: z.string(),
+    decimals: z.number().int().min(0).max(2).catch(1),
+    isHighActive: z.boolean().catch(false),
+    baselineValue: z.number().catch(0),
+    peakValue: z.number().catch(100),
+    sparklinePoints: z.array(z.number()).min(2).catch([10, 40, 70, 100]),
   }),
   statusBadge: z.object({
-    text: z.string(), // e.g., "MENDIDIH", "AMAN", "BERTEKANAN", "TERKUNCI", "MAMPET!"
-    variant: z.enum(["green", "red", "amber"]).default("green"),
+    text: z.string(),
+    variant: z.enum(["green", "red", "amber"]).catch("green"),
   }),
-  secondaryMetric: z.string(), // e.g., "terbuka", "0,6 kg/cm²", "+69 menit"
+  secondaryMetric: z.string(),
   pillLabels: z.array(PillLabelItemSchema).min(1),
-  sfxCue: SfxCueSchema.optional(),
+  sfxCue: SfxCueSchema.optional().nullable(),
   showChecklistCard: z.boolean().default(false),
 });
 
@@ -199,39 +216,101 @@ export type WordTiming = z.infer<typeof WordTimingSchema>;
 export type AudioSfxTrigger = z.infer<typeof AudioSfxTriggerSchema>;
 
 /**
- * 4. AGENT 4 OUTPUT & REMOTION PROPS: Cutaway & Camera Choreographer (`visual.worker.ts`)
+ * 4. AGENT 4 OUTPUT: Dynamic Parametric Cutaway & SVG Scene Composer (`visual.worker.ts`)
  */
+export const CustomSvgElementSchema = z.object({
+  id: z.string().catch("svg_el"),
+  componentId: z.string().optional(),
+  shape: z
+    .enum(["rect", "circle", "ellipse", "path", "polygon", "line"])
+    .catch("rect"),
+  /**
+   * Coordinates inside the 1080x1920 viewport (cutaway stage area is x: 180..900, y: 580..1460)
+   */
+  x: z.number().optional(),
+  y: z.number().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  rx: z.number().optional(),
+  ry: z.number().optional(),
+  r: z.number().optional(),
+  x2: z.number().optional(),
+  y2: z.number().optional(),
+  d: z.string().optional(),
+  points: z.string().optional(),
+  fill: z.string().catch("#E2E8F0"),
+  stroke: z.string().catch("#1E293B"),
+  strokeWidth: z.number().catch(2.5),
+  strokeDasharray: z.string().optional(),
+  opacity: z.number().min(0.1).max(1).optional().catch(1),
+  label: z.string().optional(),
+});
+
+export const InternalCutawayLayerSchema = z.object({
+  id: z.string().catch("layer_id"),
+  componentId: z.string(),
+  name: z.string(),
+  everydayRole: z.string().catch(""),
+  zIndex: z.number().int().catch(1),
+  fillColor: z.string().catch("#E2E8F0"),
+  outlineColor: z.string().catch("#1E293B"),
+  strokeWidth: z.number().catch(2.5),
+  bounds: z.object({
+    x: z.number().catch(260),
+    y: z.number().catch(700),
+    width: z.number().catch(240),
+    height: z.number().catch(320),
+    rx: z.number().catch(14),
+  }),
+  anchorScreenCoord: z.object({
+    x: z.number().catch(420),
+    y: z.number().catch(900),
+  }),
+  customSvgElements: z.array(CustomSvgElementSchema).catch([]),
+});
+
+export const ParticleFlowSpecSchema = z.object({
+  id: z.string().catch("flow_id"),
+  type: ParticleFlowTypeSchema,
+  color: z.string().catch("#FACC15"),
+  from: z.object({
+    x: z.number().catch(360),
+    y: z.number().catch(860),
+  }),
+  to: z.object({
+    x: z.number().catch(720),
+    y: z.number().catch(860),
+  }),
+  count: z.number().int().min(3).max(24).catch(10),
+  speed: z.number().min(0.4).max(4).catch(1.4),
+  size: z.number().min(4).max(22).catch(10),
+  activeInPhases: z.array(z.number().int()).catch([0, 1, 2, 3]),
+});
+
+export const ParametricSceneGraphSchema = z.object({
+  containerType: CutawayContainerTypeSchema,
+  containerTitle: z.string(),
+  containerSubtitle: z.string().optional(),
+  outerBounds: z.object({
+    x: z.number().default(220),
+    y: z.number().default(620),
+    width: z.number().default(640),
+    height: z.number().default(760),
+    wallThickness: z.number().default(26),
+    outerFill: z.string().default("#E2E8F0"),
+    interiorFill: z.string().default("#F8FAFC"),
+  }),
+  internalLayers: z.array(InternalCutawayLayerSchema).min(3),
+  customSvgElements: z.array(CustomSvgElementSchema).default([]),
+  particleFlows: z.array(ParticleFlowSpecSchema).min(1),
+});
+
 export const CameraZoomKeyframeSchema = z.object({
   startFrame: z.number().int().nonnegative(),
   endFrame: z.number().int().positive(),
   x: z.number().min(-450).max(450).default(0),
   y: z.number().min(-550).max(550).default(0),
   scale: z.number().min(0.9).max(2.4).default(1.0),
-  cutawayOpenRatio: z.number().min(0).max(1).default(1.0),
-  steamIntensity: z.number().min(0).max(1.5).default(0.5),
-  bubbleIntensity: z.number().min(0).max(1.5).default(0.6),
-});
-
-export const CutawayVectorLayerSchema = z.object({
-  id: z.string(),
-  componentId: z.string(),
-  name: z.string(),
-  everydayRole: z.string(),
-  zIndex: z.number().int(),
-  outlineColor: z.string().default("#1E293B"),
-  strokeWidth: z.number().default(2.5),
-  fillColor: z.string(), // Warm palette: #E2E8F0, #FACC15, #86EFAC, #F87171, #93C5FD
-  partType: z.enum([
-    "POT_BODY_CUTAWAY",
-    "BOILING_WATER_FLUID",
-    "CORE_SUBJECT_ITEM",
-    "PRESSURE_WEIGHT_VALVE",
-    "LID_SAFETY_LOCK",
-  ]),
-  anchorScreenCoord: z.object({
-    x: z.number(),
-    y: z.number(),
-  }),
 });
 
 export const FramePillCalloutSchema = z.object({
@@ -239,7 +318,7 @@ export const FramePillCalloutSchema = z.object({
   componentId: z.string(),
   startFrame: z.number().int().nonnegative(),
   endFrame: z.number().int().positive(),
-  text: z.string(), // e.g. "DURI KERAS →", "← UAP TERKURUNG", "PEMBERAT →"
+  text: z.string(),
   direction: z.enum(["LEFT", "RIGHT"]),
   anchor: z.object({
     x: z.number(),
@@ -251,7 +330,7 @@ export const FrameSfxOverlaySchema = z.object({
   id: z.string(),
   startFrame: z.number().int().nonnegative(),
   endFrame: z.number().int().positive(),
-  text: z.string(), // "PSSST!", "TERKUNCI", "BERJAM-JAM", "MAMPET!"
+  text: z.string(),
   variant: z.enum(["STEAM_YELLOW_BLUE", "RED_STAMP", "FADED_BG", "GREEN_POP"]),
   x: z.number(),
   y: z.number(),
@@ -282,7 +361,6 @@ export const RemotionCompositionPropsSchema = z.object({
   laymanHookTitle: z.string(),
   everydayCategory: z.string(),
   coreSimpleTruth: z.string(),
-  primaryArchetype: VisualArchetypeSchema,
   width: z.number().int().default(1080),
   height: z.number().int().default(1920),
   fps: z.number().int().default(60),
@@ -292,7 +370,7 @@ export const RemotionCompositionPropsSchema = z.object({
     title: z.string(),
     items: z.array(z.string()),
   }),
-  cutawayLayers: z.array(CutawayVectorLayerSchema),
+  scene: ParametricSceneGraphSchema,
   phases: z.array(PhaseTimelineBlockSchema).length(4),
   pillCallouts: z.array(FramePillCalloutSchema),
   sfxOverlays: z.array(FrameSfxOverlaySchema),
@@ -300,7 +378,10 @@ export const RemotionCompositionPropsSchema = z.object({
 });
 
 export type RemotionCompositionProps = z.infer<typeof RemotionCompositionPropsSchema>;
-export type CutawayVectorLayer = z.infer<typeof CutawayVectorLayerSchema>;
+export type ParametricSceneGraph = z.infer<typeof ParametricSceneGraphSchema>;
+export type InternalCutawayLayer = z.infer<typeof InternalCutawayLayerSchema>;
+export type CustomSvgElement = z.infer<typeof CustomSvgElementSchema>;
+export type ParticleFlowSpec = z.infer<typeof ParticleFlowSpecSchema>;
 export type FramePillCallout = z.infer<typeof FramePillCalloutSchema>;
 export type FrameSfxOverlay = z.infer<typeof FrameSfxOverlaySchema>;
 export type PhaseTimelineBlock = z.infer<typeof PhaseTimelineBlockSchema>;

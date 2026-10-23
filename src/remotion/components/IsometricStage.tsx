@@ -7,20 +7,504 @@ import {
   useVideoConfig,
 } from "remotion";
 import type {
-  CutawayVectorLayer,
+  CustomSvgElement,
+  ParametricSceneGraph,
+  ParticleFlowSpec,
   PhaseTimelineBlock,
-  VisualArchetype,
 } from "@/schemas/video-blueprint";
 
 interface IsometricStageProps {
-  layers: CutawayVectorLayer[];
+  scene: ParametricSceneGraph;
   phases: PhaseTimelineBlock[];
-  primaryArchetype: VisualArchetype;
+}
+
+function renderCustomSvgElement(el: CustomSvgElement, key: string) {
+  const stroke = el.stroke || "#1E293B";
+  const strokeWidth = el.strokeWidth ?? 2.5;
+  const fill = el.fill || "#E2E8F0";
+
+  switch (el.shape) {
+    case "rect": {
+      const rx = el.rx ?? 10;
+      const x = el.x ?? 300;
+      const y = el.y ?? 750;
+      const w = el.width ?? 160;
+      const h = el.height ?? 80;
+      return (
+        <g key={key} opacity={el.opacity ?? 1}>
+          <rect
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            rx={rx}
+            fill={fill}
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeDasharray={el.strokeDasharray}
+          />
+          {el.label && (
+            <text
+              x={x + w / 2}
+              y={y + h / 2 + 6}
+              textAnchor="middle"
+              fill="#0F172A"
+              fontSize={18}
+              fontWeight={800}
+              fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
+            >
+              {el.label}
+            </text>
+          )}
+        </g>
+      );
+    }
+    case "circle": {
+      const cx = el.x ?? 540;
+      const cy = el.y ?? 980;
+      const r = el.r ?? 32;
+      return (
+        <g key={key} opacity={el.opacity ?? 1}>
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill={fill}
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeDasharray={el.strokeDasharray}
+          />
+          {el.label && (
+            <text
+              x={cx}
+              y={cy + 6}
+              textAnchor="middle"
+              fill="#0F172A"
+              fontSize={16}
+              fontWeight={800}
+              fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
+            >
+              {el.label}
+            </text>
+          )}
+        </g>
+      );
+    }
+    case "ellipse": {
+      const cx = el.x ?? 540;
+      const cy = el.y ?? 980;
+      const rx = el.rx ?? el.width ?? 80;
+      const ry = el.ry ?? el.height ?? 36;
+      return (
+        <ellipse
+          key={key}
+          cx={cx}
+          cy={cy}
+          rx={rx}
+          ry={ry}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={el.strokeDasharray}
+          opacity={el.opacity ?? 1}
+        />
+      );
+    }
+    case "line": {
+      return (
+        <line
+          key={key}
+          x1={el.x ?? 340}
+          y1={el.y ?? 800}
+          x2={el.x2 ?? 740}
+          y2={el.y2 ?? 800}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={el.strokeDasharray}
+          strokeLinecap="round"
+          opacity={el.opacity ?? 1}
+        />
+      );
+    }
+    case "polygon": {
+      if (!el.points) return null;
+      return (
+        <polygon
+          key={key}
+          points={el.points}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          opacity={el.opacity ?? 1}
+        />
+      );
+    }
+    case "path": {
+      if (!el.d) return null;
+      return (
+        <path
+          key={key}
+          d={el.d}
+          fill={fill === "none" ? "none" : fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={el.strokeDasharray}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity={el.opacity ?? 1}
+        />
+      );
+    }
+    default:
+      return null;
+  }
+}
+
+function renderParametricOuterContainer(scene: ParametricSceneGraph) {
+  const { containerType, outerBounds } = scene;
+  const x = outerBounds.x ?? 220;
+  const y = outerBounds.y ?? 620;
+  const w = outerBounds.width ?? 640;
+  const h = outerBounds.height ?? 760;
+  const wall = outerBounds.wallThickness ?? 24;
+  const outerFill = outerBounds.outerFill || "#E2E8F0";
+  const interiorFill = outerBounds.interiorFill || "#F8FAFC";
+  const cx = x + w / 2;
+
+  switch (containerType) {
+    case "cylinder-cutaway": {
+      const rx = w / 2;
+      const ry = 76;
+      return (
+        <g>
+          {/* Bottom Cylinder Base */}
+          <ellipse
+            cx={cx}
+            cy={y + h}
+            rx={rx}
+            ry={ry}
+            fill="#CBD5E1"
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          {/* Outer Shell */}
+          <path
+            d={`M ${x} ${y} L ${x} ${y + h} A ${rx} ${ry} 0 0 0 ${x + w} ${y + h} L ${x + w} ${y} Z`}
+            fill={outerFill}
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          {/* 90-Degree Cross-Section Cutaway Cavity */}
+          <rect
+            x={x + wall}
+            y={y + wall}
+            width={w - wall * 2}
+            height={h - wall * 1.4}
+            rx={18}
+            fill={interiorFill}
+            stroke="#1E293B"
+            strokeWidth={2.5}
+          />
+          {/* Top Rim */}
+          <ellipse
+            cx={cx}
+            cy={y}
+            rx={rx}
+            ry={ry}
+            fill="#E2E8F0"
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+        </g>
+      );
+    }
+
+    case "dual-chamber": {
+      const gap = 22;
+      const chamberW = (w - wall * 2 - gap) / 2;
+      return (
+        <g>
+          {/* Isometric 3D Depth Shadow Block */}
+          <rect
+            x={x + 16}
+            y={y + 16}
+            width={w}
+            height={h}
+            rx={32}
+            fill="#94A3B8"
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          {/* Outer Casing */}
+          <rect
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            rx={30}
+            fill={outerFill}
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          {/* Left Chamber Cutaway */}
+          <rect
+            x={x + wall}
+            y={y + wall + 30}
+            width={chamberW}
+            height={h - wall * 2 - 45}
+            rx={18}
+            fill={interiorFill}
+            stroke="#1E293B"
+            strokeWidth={2.5}
+          />
+          {/* Right Chamber Cutaway */}
+          <rect
+            x={x + wall + chamberW + gap}
+            y={y + wall + 30}
+            width={chamberW}
+            height={h - wall * 2 - 45}
+            rx={18}
+            fill={interiorFill}
+            stroke="#1E293B"
+            strokeWidth={2.5}
+          />
+          {/* Top Bridge Terminal Header */}
+          <rect
+            x={cx - 110}
+            y={y - 26}
+            width={220}
+            height={38}
+            rx={10}
+            fill="#FACC15"
+            stroke="#1E293B"
+            strokeWidth={2.5}
+          />
+        </g>
+      );
+    }
+
+    case "layered-stack": {
+      return (
+        <g>
+          {/* 3D Isometric Extrusion Backplate */}
+          <rect
+            x={x + 18}
+            y={y + 18}
+            width={w}
+            height={h}
+            rx={28}
+            fill="#94A3B8"
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          {/* Outer Frame */}
+          <rect
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            rx={26}
+            fill={outerFill}
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          {/* Cutaway Window */}
+          <rect
+            x={x + wall}
+            y={y + wall}
+            width={w - wall * 2}
+            height={h - wall * 2}
+            rx={16}
+            fill={interiorFill}
+            stroke="#1E293B"
+            strokeWidth={2.5}
+          />
+        </g>
+      );
+    }
+
+    case "circuit-board": {
+      return (
+        <g>
+          <rect
+            x={x + 14}
+            y={y + 14}
+            width={w}
+            height={h}
+            rx={24}
+            fill="#1E293B"
+          />
+          <rect
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            rx={24}
+            fill="#DCFCE7"
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          <rect
+            x={x + wall}
+            y={y + wall}
+            width={w - wall * 2}
+            height={h - wall * 2}
+            rx={14}
+            fill={interiorFill}
+            stroke="#1E293B"
+            strokeWidth={2.5}
+          />
+        </g>
+      );
+    }
+
+    case "mechanical-housing":
+    case "box-cutaway":
+    default: {
+      return (
+        <g>
+          <rect
+            x={x + 16}
+            y={y + 16}
+            width={w}
+            height={h}
+            rx={28}
+            fill="#94A3B8"
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          <rect
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            rx={28}
+            fill={outerFill}
+            stroke="#1E293B"
+            strokeWidth={3}
+          />
+          <rect
+            x={x + wall}
+            y={y + wall}
+            width={w - wall * 2}
+            height={h - wall * 2}
+            rx={18}
+            fill={interiorFill}
+            stroke="#1E293B"
+            strokeWidth={2.5}
+          />
+        </g>
+      );
+    }
+  }
+}
+
+function renderParticleFlow(
+  flow: ParticleFlowSpec,
+  frame: number,
+  activeSegmentIndex: number,
+) {
+  if (
+    flow.activeInPhases &&
+    flow.activeInPhases.length > 0 &&
+    !flow.activeInPhases.includes(activeSegmentIndex)
+  ) {
+    return null;
+  }
+
+  const count = Math.min(20, Math.max(4, flow.count || 10));
+  const speed = flow.speed || 1.4;
+  const r = flow.size || 10;
+  const dx = flow.to.x - flow.from.x;
+  const dy = flow.to.y - flow.from.y;
+
+  return (
+    <g key={flow.id}>
+      {/* Guide Flow Path */}
+      <line
+        x1={flow.from.x}
+        y1={flow.from.y}
+        x2={flow.to.x}
+        y2={flow.to.y}
+        stroke={flow.color}
+        strokeWidth={3}
+        strokeDasharray="8 10"
+        strokeDashoffset={-(frame * speed * 2.5)}
+        opacity={0.45}
+      />
+
+      {/* Animated Moving Particles */}
+      {Array.from({ length: count }).map((_, idx) => {
+        const phaseOffset = idx / count;
+        const t = (frame * 0.014 * speed + phaseOffset) % 1;
+        const wave = Math.sin(t * Math.PI * 2 + idx) * 10;
+        const px =
+          flow.from.x + dx * t + (Math.abs(dy) > Math.abs(dx) ? wave : 0);
+        const py =
+          flow.from.y + dy * t + (Math.abs(dx) >= Math.abs(dy) ? wave : 0);
+
+        if (flow.type === "ions" || flow.type === "electrons") {
+          return (
+            <g
+              key={`${flow.id}_p_${idx}`}
+              transform={`translate(${px}, ${py})`}
+            >
+              <circle
+                cx={0}
+                cy={0}
+                r={r}
+                fill={flow.color}
+                stroke="#1E293B"
+                strokeWidth={2}
+              />
+              <text
+                x={0}
+                y={4}
+                textAnchor="middle"
+                fill="#0F172A"
+                fontSize={12}
+                fontWeight={900}
+                fontFamily="monospace"
+              >
+                {flow.type === "ions" ? "+" : "e⁻"}
+              </text>
+            </g>
+          );
+        }
+
+        if (flow.type === "heat-waves" || flow.type === "airflow") {
+          return (
+            <path
+              key={`${flow.id}_p_${idx}`}
+              d={`M ${px - r} ${py} Q ${px} ${py - r}, ${px + r} ${py}`}
+              fill="none"
+              stroke={flow.color}
+              strokeWidth={3.5}
+              strokeLinecap="round"
+            />
+          );
+        }
+
+        return (
+          <circle
+            key={`${flow.id}_p_${idx}`}
+            cx={px}
+            cy={py}
+            r={r}
+            fill={flow.color}
+            fillOpacity={0.88}
+            stroke="#1E293B"
+            strokeWidth={2}
+          />
+        );
+      })}
+    </g>
+  );
 }
 
 export const IsometricStage: React.FC<IsometricStageProps> = ({
+  scene,
   phases,
-  primaryArchetype,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -35,7 +519,7 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
 
   const localFrame = Math.max(0, frame - (activePhase?.startFrame ?? 0));
 
-  // Smooth spring camera zoom & pan (damping: 18, stiffness: 120 as specified)
+  // Smooth spring camera zoom & pan (damping: 18, stiffness: 120)
   const camSpring = spring({
     frame: localFrame,
     fps,
@@ -61,24 +545,9 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
     [prevPhase?.camera.scale ?? 1, activePhase?.camera.scale ?? 1],
   );
 
-  const isPressurized =
-    activePhase?.statusBadge.variant === "red" ||
-    activePhase?.primaryMetric.isHighActive;
-  const isSoftBones = (activePhase?.segmentIndex ?? 0) >= 1;
-
-  // Physics micro-animations: rising bubbles, steam wisps, jiggling weight valve
-  const bubbleRise1 = (frame * 3.4) % 180;
-  const bubbleRise2 = ((frame + 45) * 3.8) % 180;
-  const bubbleRise3 = ((frame + 95) * 3.1) % 180;
-
-  const valveJiggleDeg = isPressurized ? Math.sin(frame * 0.65) * 6 : 0;
-  const valveLiftY = isPressurized
-    ? interpolate(Math.sin(frame * 0.45), [-1, 1], [-8, 0])
-    : 0;
-  const safetyPinLiftY = isPressurized ? -16 : 0;
-
-  const steamDashOffset = -(frame * 4.2);
-  const isTumbler = primaryArchetype === "THERMAL_TUMBLER";
+  const sortedLayers = [...(scene.internalLayers || [])].sort(
+    (a, b) => a.zIndex - b.zIndex,
+  );
 
   return (
     <AbsoluteFill
@@ -94,9 +563,9 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
         style={{
           position: "absolute",
           left: "50%",
-          top: 1380,
+          top: 1410,
           width: 680,
-          height: 150,
+          height: 140,
           marginLeft: -340,
           borderRadius: "50%",
           background:
@@ -105,7 +574,7 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
         }}
       />
 
-      {/* Main Cel-Shaded Isometric 90-Degree Cutaway SVG Viewport */}
+      {/* Pure Data-Driven Parametric Cutaway SVG Composer */}
       <svg
         viewBox="0 0 1080 1920"
         style={{
@@ -117,450 +586,112 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
           transformOrigin: "540px 980px",
         }}
       >
-        {isTumbler ? (
-          /* =================================================================
-             ARCHETYPE B: CEL-SHADED ISOMETRIC TUMBLER 90° CUTAWAY
-             ================================================================= */
+        {/* 1. Parametric Outer Cutaway Container */}
+        {renderParametricOuterContainer(scene)}
+
+        {/* 2. Container Top Header Label */}
+        {scene.containerTitle && (
           <g>
-            {/* Outer Stainless Body (#E2E8F0 with #1E293B 2.5px outline) */}
-            <ellipse
-              cx={540}
-              cy={1380}
-              rx={195}
-              ry={72}
-              fill="#CBD5E1"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-            <path
-              d="M 345 720 L 345 1380 A 195 72 0 0 0 735 1380 L 735 720 Z"
-              fill="#E2E8F0"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* 90-Degree Cutaway Window Revealing Vacuum Gap & Copper Lining */}
             <rect
-              x={385}
-              y={770}
-              width={310}
-              height={560}
-              rx={18}
-              fill="#1E293B"
+              x={310}
+              y={545}
+              width={460}
+              height={48}
+              rx={24}
+              fill="#FFFFFF"
               stroke="#1E293B"
               strokeWidth={2.5}
             />
-
-            {/* Warm Yellow Vacuum / Copper Shield Layer (#FACC15) */}
-            <rect
-              x={408}
-              y={792}
-              width={264}
-              height={515}
-              rx={14}
-              fill="#FACC15"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* Inner Beverage Chamber (#93C5FD / #F87171 hot liquid) */}
-            <rect
-              x={430}
-              y={815}
-              width={220}
-              height={470}
-              rx={10}
-              fill="#F87171"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-            <ellipse
-              cx={540}
-              cy={845}
-              rx={110}
-              ry={34}
-              fill="#FCA5A5"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* Heat Reflection Arrows Bouncing Back Inside */}
-            <path
-              d="M 480 980 L 436 1015 L 485 1050"
-              fill="none"
-              stroke="#FEF08A"
-              strokeWidth={4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M 600 980 L 644 1015 L 595 1050"
-              fill="none"
-              stroke="#FEF08A"
-              strokeWidth={4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {/* Top Lid & Silicone O-Ring Seal */}
-            <path
-              d="M 355 645 L 355 720 A 185 64 0 0 0 725 720 L 725 645 Z"
-              fill="#334155"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-            <ellipse
-              cx={540}
-              cy={645}
-              rx={185}
-              ry={64}
-              fill="#475569"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-            {/* Silicone Seal Band (#86EFAC) */}
-            <rect
-              x={365}
-              y={704}
-              width={350}
-              height={22}
-              rx={10}
-              fill="#86EFAC"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-          </g>
-        ) : (
-          /* =================================================================
-             ARCHETYPE A: CEL-SHADED ISOMETRIC PRESTO 90° CUTAWAY (REFERENCE)
-             ================================================================= */
-          <g>
-            {/* Left & Right Bakelite Side Handles */}
-            <path
-              d="M 250 960 L 165 960 C 145 960, 145 1015, 165 1015 L 250 1015 Z"
-              fill="#334155"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-            <path
-              d="M 830 960 L 915 960 C 935 960, 935 1015, 915 1015 L 830 1015 Z"
-              fill="#334155"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* Pot Bottom Base Shadow & Lower Rim */}
-            <ellipse
-              cx={540}
-              cy={1340}
-              rx={285}
-              ry={105}
-              fill="#CBD5E1"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* Outer Aluminum Pot Cylinder (#E2E8F0 with #1E293B 2.5px outline) */}
-            <path
-              d="M 255 830 L 255 1340 A 285 105 0 0 0 825 1340 L 825 830 Z"
-              fill="#E2E8F0"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* 90-Degree Cross-Section Cutaway Interior Cavity */}
-            <path
-              d="M 290 850 L 290 1315 A 250 88 0 0 0 790 1315 L 790 850 Z"
-              fill="#F1F5F9"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* Cutaway Wall Thickness Faces (Left & Right Cross-Section Edges) */}
-            <rect
-              x={255}
-              y={830}
-              width={35}
-              height={485}
-              fill="#94A3B8"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-            <rect
-              x={790}
-              y={830}
-              width={35}
-              height={485}
-              fill="#94A3B8"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* Trapped Pressurized Steam Zone (Top Half of Pot Interior) */}
-            <path
-              d="M 290 850 L 290 1055 L 790 1055 L 790 850 Z"
-              fill={
-                isPressurized
-                  ? "rgba(250, 204, 21, 0.28)"
-                  : "rgba(226, 232, 240, 0.4)"
-              }
-            />
-
-            {/* Boiling Water Layer (#93C5FD water blue) */}
-            <path
-              d="M 290 1045 L 290 1315 A 250 88 0 0 0 790 1315 L 790 1045 Z"
-              fill="#93C5FD"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-            {/* Isometric Water Surface Ellipse */}
-            <ellipse
-              cx={540}
-              cy={1045}
-              rx={250}
-              ry={72}
-              fill="#BFDBFE"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* Bandeng Fish Cross-Section & Spine Bones Inside Boiling Water */}
-            <g transform="translate(540, 1185)">
-              {/* Fish Body Silhouette */}
-              <path
-                d="M -175 0 C -120 -68, 85 -68, 165 0 C 85 68, -120 68, -175 0 Z"
-                fill={isSoftBones ? "#86EFAC" : "#F87171"}
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-              {/* Fish Tail */}
-              <path
-                d="M 155 0 L 210 -42 L 198 0 L 210 42 Z"
-                fill={isSoftBones ? "#86EFAC" : "#F87171"}
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-              {/* Fish Skeleton / Rib Bones (Duri Bandeng) */}
-              <line
-                x1={-115}
-                y1={0}
-                x2={125}
-                y2={0}
-                stroke="#1E293B"
-                strokeWidth={3.5}
-              />
-              {[-85, -45, -5, 35, 75, 105].map((ribX, idx) => (
-                <g key={idx}>
-                  <line
-                    x1={ribX}
-                    y1={-34}
-                    x2={ribX - 12}
-                    y2={34}
-                    stroke="#1E293B"
-                    strokeWidth={2.5}
-                    strokeDasharray={isSoftBones ? "5 4" : undefined}
-                  />
-                </g>
-              ))}
-              {/* Fish Eye */}
-              <circle
-                cx={-120}
-                cy={-10}
-                r={10}
-                fill="#FFFFFF"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-              <circle cx={-120} cy={-10} r={4.5} fill="#1E293B" />
-            </g>
-
-            {/* Rising Boiling Water Bubbles */}
-            {[
-              { cx: 380, base: 1260, offset: bubbleRise1, r: 12 },
-              { cx: 465, base: 1280, offset: bubbleRise2, r: 16 },
-              { cx: 615, base: 1270, offset: bubbleRise3, r: 14 },
-              { cx: 705, base: 1250, offset: bubbleRise1 * 0.9, r: 11 },
-              { cx: 535, base: 1290, offset: bubbleRise2 * 0.85, r: 15 },
-            ].map((b, i) => (
-              <circle
-                key={i}
-                cx={b.cx + Math.sin((frame + i * 20) * 0.12) * 8}
-                cy={b.base - b.offset}
-                r={b.r}
-                fill="#FFFFFF"
-                fillOpacity={0.85}
-                stroke="#1E293B"
-                strokeWidth={2}
-              />
-            ))}
-
-            {/* Circulating Trapped Steam Arrows Inside Top Cavity */}
-            <path
-              d="M 410 995 C 390 925, 435 885, 495 910"
-              fill="none"
-              stroke={isPressurized ? "#EF4444" : "#64748B"}
-              strokeWidth={3.5}
-              strokeLinecap="round"
-              strokeDasharray="10 8"
-              strokeDashoffset={steamDashOffset}
-            />
-            <path
-              d="M 670 995 C 690 925, 645 885, 585 910"
-              fill="none"
-              stroke={isPressurized ? "#EF4444" : "#64748B"}
-              strokeWidth={3.5}
-              strokeLinecap="round"
-              strokeDasharray="10 8"
-              strokeDashoffset={steamDashOffset}
-            />
-
-            {/* Isometric Sealed Lid Assembly */}
-            <path
-              d="M 245 775 L 245 835 A 295 96 0 0 0 835 835 L 835 775 Z"
-              fill="#CBD5E1"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-            <ellipse
-              cx={540}
-              cy={775}
-              rx={295}
-              ry={96}
-              fill="#E2E8F0"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* Red Silicone Sealing Gasket Ring Inside Lid Rim */}
-            <rect
-              x={255}
-              y={822}
-              width={570}
-              height={16}
-              rx={8}
-              fill="#F87171"
-              stroke="#1E293B"
-              strokeWidth={2.5}
-            />
-
-            {/* COMPONENT 1: Center Pressure Regulator Weight ("Pemberat" - #FACC15) */}
-            <g
-              transform={`translate(540, ${735 + valveLiftY}) rotate(${valveJiggleDeg})`}
+            <text
+              x={540}
+              y={576}
+              textAnchor="middle"
+              fill="#0F172A"
+              fontSize={20}
+              fontWeight={800}
+              fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
             >
-              {/* Valve Stem */}
-              <rect
-                x={-14}
-                y={0}
-                width={28}
-                height={42}
-                fill="#94A3B8"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-              {/* Heavy Regulator Weight Cylinder */}
-              <rect
-                x={-44}
-                y={-68}
-                width={88}
-                height={72}
-                rx={16}
-                fill="#FACC15"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-              <ellipse
-                cx={0}
-                cy={-68}
-                rx={44}
-                ry={16}
-                fill="#FDE047"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-              {/* Steam Jets Shooting Out When Pressurized */}
-              {isPressurized && (
-                <g>
-                  <path
-                    d="M -48 -45 C -95 -75, -135 -115, -165 -165"
-                    fill="none"
-                    stroke="#93C5FD"
-                    strokeWidth={5}
-                    strokeLinecap="round"
-                    strokeDasharray="12 10"
-                    strokeDashoffset={steamDashOffset}
-                  />
-                  <path
-                    d="M 48 -45 C 95 -75, 135 -115, 165 -165"
-                    fill="none"
-                    stroke="#93C5FD"
-                    strokeWidth={5}
-                    strokeLinecap="round"
-                    strokeDasharray="12 10"
-                    strokeDashoffset={steamDashOffset}
-                  />
-                </g>
-              )}
-            </g>
-
-            {/* COMPONENT 2: Red Safety Valve ("Katup Pengaman" - #F87171) */}
-            <g transform={`translate(390, ${755 + safetyPinLiftY * 0.5})`}>
-              <rect
-                x={-22}
-                y={-32}
-                width={44}
-                height={38}
-                rx={8}
-                fill="#F87171"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-              <circle
-                cx={0}
-                cy={-38}
-                r={12}
-                fill="#EF4444"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-            </g>
-
-            {/* COMPONENT 3: Lid Safety Lock Pin ("Pengunci Tutup" - #86EFAC) */}
-            <g transform={`translate(715, ${765 + safetyPinLiftY})`}>
-              <rect
-                x={-26}
-                y={-36}
-                width={52}
-                height={44}
-                rx={10}
-                fill="#86EFAC"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-              <rect
-                x={-10}
-                y={-54}
-                width={20}
-                height={22}
-                rx={4}
-                fill="#16A34A"
-                stroke="#1E293B"
-                strokeWidth={2.5}
-              />
-            </g>
-
-            {/* Bottom Stove Flame Under the Pot */}
-            <g transform="translate(540, 1455)">
-              {[-140, -70, 0, 70, 140].map((fx, idx) => (
-                <path
-                  key={idx}
-                  d={`M ${fx - 22} 20 C ${fx - 10} -28, ${fx + 10} -28, ${fx + 22} 20 Z`}
-                  fill={idx % 2 === 0 ? "#FACC15" : "#F87171"}
-                  stroke="#1E293B"
-                  strokeWidth={2.5}
-                />
-              ))}
-            </g>
+              {scene.containerTitle.toUpperCase()}
+            </text>
           </g>
+        )}
+
+        {/* 3. Dynamic Internal Anatomy Layers */}
+        {sortedLayers.map((layer) => {
+          const isFocused =
+            activePhase?.activeComponentIds?.includes(layer.componentId) ??
+            true;
+          const pulseScale = isFocused ? 1 + Math.sin(frame * 0.12) * 0.012 : 1;
+          const b = layer.bounds;
+          const centerX = b.x + b.width / 2;
+          const centerY = b.y + b.height / 2;
+
+          return (
+            <g
+              key={layer.id}
+              opacity={isFocused ? 1 : 0.72}
+              transform={`translate(${centerX}, ${centerY}) scale(${pulseScale}) translate(${-centerX}, ${-centerY})`}
+            >
+              {/* Layer Cutaway Block */}
+              <rect
+                x={b.x}
+                y={b.y}
+                width={b.width}
+                height={b.height}
+                rx={b.rx ?? 14}
+                fill={layer.fillColor}
+                stroke={layer.outlineColor || "#1E293B"}
+                strokeWidth={isFocused ? 3.2 : layer.strokeWidth || 2.5}
+              />
+
+              {/* Layer Name & Role Tag Inside Cutaway */}
+              <text
+                x={b.x + 18}
+                y={b.y + 32}
+                fill="#0F172A"
+                fontSize={21}
+                fontWeight={900}
+                fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
+              >
+                {layer.name}
+              </text>
+              <text
+                x={b.x + 18}
+                y={b.y + 56}
+                fill="#334155"
+                fontSize={16}
+                fontWeight={700}
+                fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
+              >
+                {layer.everydayRole}
+              </text>
+
+              {/* Layer-Specific Custom SVG Primitives */}
+              {(layer.customSvgElements || []).map((el, idx) =>
+                renderCustomSvgElement(el, `${layer.id}_custom_${idx}`),
+              )}
+
+              {/* Anchor Target Dot for Pill Pointers */}
+              <circle
+                cx={layer.anchorScreenCoord.x}
+                cy={layer.anchorScreenCoord.y}
+                r={7}
+                fill="#FFFFFF"
+                stroke="#1E293B"
+                strokeWidth={3}
+              />
+            </g>
+          );
+        })}
+
+        {/* 4. Scene-Level Custom SVG Elements */}
+        {(scene.customSvgElements || []).map((el, idx) =>
+          renderCustomSvgElement(el, `scene_custom_${idx}`),
+        )}
+
+        {/* 5. Dynamic Particle & Flow Systems (ions, electrons, heat-waves, fluid, airflow) */}
+        {(scene.particleFlows || []).map((flow) =>
+          renderParticleFlow(flow, frame, activePhase?.segmentIndex ?? 0),
         )}
       </svg>
     </AbsoluteFill>

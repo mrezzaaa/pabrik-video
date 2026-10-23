@@ -63,7 +63,7 @@ export function startVisualWorker(): Worker {
           {
             agent: "AGENT_4_VISUAL",
             level: "SUCCESS",
-            message: `Clean Cutaway Props compiled: ${compositionProps.cutawayLayers.length} layers, ${compositionProps.pillCallouts.length} pill callouts (${compositionProps.width}x${compositionProps.height} @ ${compositionProps.fps}fps).`,
+            message: `Parametric Scene Graph compiled: ${compositionProps.scene.internalLayers.length} cutaway layers (${compositionProps.scene.containerType}), ${compositionProps.scene.particleFlows.length} particle flows, ${compositionProps.pillCallouts.length} pill callouts.`,
           }
         );
 

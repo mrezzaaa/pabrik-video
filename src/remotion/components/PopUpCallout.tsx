@@ -182,7 +182,7 @@ export const PopUpCalloutLayer: React.FC<PopUpCalloutLayerProps> = ({
         );
       })}
 
-      {/* 3. Practical Checklist Card ("CEK SEBELUM BELI: [✅ Pemberat, ✅ Katup pengaman, ✅ Pengunci tutup]") */}
+      {/* 3. Practical Checklist Card (Actionable Summary Box) */}
       {showChecklist && (
         <div
           style={{

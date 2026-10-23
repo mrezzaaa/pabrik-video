@@ -12,7 +12,7 @@ export function getOmnirouteClient(): OpenAI {
     _omnirouteClient = new OpenAI({
       baseURL: env.OMNIROUTE_BASE_URL,
       apiKey: env.OMNIROUTE_API_KEY,
-      timeout: 45_000,
+      timeout: 60_000,
       maxRetries: 2,
       dangerouslyAllowBrowser: true,
     });
@@ -25,7 +25,6 @@ const MODEL_FALLBACK_CASCADE = [
   env.OMNIROUTE_FAST_MODEL,
   "kr/claude-sonnet-4.5",
   "kr/claude-haiku-4.5",
-  "agy/gemini-3-flash",
 ];
 
 export function extractJsonFromText(raw: string): unknown {
@@ -39,6 +38,11 @@ export function extractJsonFromText(raw: string): unknown {
   return JSON.parse(jsonSlice);
 }
 
+/**
+ * Dynamically generates topic-specific structured JSON via Omniroute LLM.
+ * If a model returns a validation error, feeds the Zod error back to the LLM to self-correct.
+ * NEVER falls back to hardcoded mock topics—throws a visible error if all LLM attempts fail.
+ */
 export async function generateStructuredOmniroute<T>(params: {
   systemPrompt: string;
   userPrompt: string;
@@ -47,7 +51,6 @@ export async function generateStructuredOmniroute<T>(params: {
   preferredModel?: string;
   temperature?: number;
   maxTokens?: number;
-  fallbackGenerator?: () => T;
 }): Promise<{ data: T; modelUsed: string }> {
   const {
     systemPrompt,
@@ -56,52 +59,55 @@ export async function generateStructuredOmniroute<T>(params: {
     preferredModel,
     temperature = 0.25,
     maxTokens = 6000,
-    fallbackGenerator,
   } = params;
 
   const modelsToTry = Array.from(
-    new Set([preferredModel, ...MODEL_FALLBACK_CASCADE].filter((m): m is string => Boolean(m && m.trim())))
+    new Set(
+      [preferredModel, ...MODEL_FALLBACK_CASCADE].filter((m): m is string =>
+        Boolean(m && m.trim())
+      )
+    )
   );
 
-  let lastError: unknown;
+  const errors: string[] = [];
 
   for (const model of modelsToTry) {
-    try {
-      const combinedPrompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
-      const response = await getOmnirouteClient().chat.completions.create({
-        model,
-        temperature,
-        max_tokens: maxTokens,
-        messages: [
-          { role: "user", content: combinedPrompt },
-        ],
-      });
+    let promptAttempt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
 
-      const msg = response.choices?.[0]?.message;
-      const rawContent = (msg?.content || (msg as unknown as { reasoning_content?: string })?.reasoning_content || "").trim();
+    for (let retry = 0; retry < 2; retry++) {
+      try {
+        const response = await getOmnirouteClient().chat.completions.create({
+          model,
+          temperature,
+          max_tokens: maxTokens,
+          messages: [{ role: "user", content: promptAttempt }],
+        });
 
-      if (!rawContent) {
-        throw new Error(`Empty response content from model ${model}`);
+        const msg = response.choices?.[0]?.message;
+        const rawContent = (
+          msg?.content ||
+          (msg as unknown as { reasoning_content?: string })?.reasoning_content ||
+          ""
+        ).trim();
+
+        if (!rawContent) {
+          throw new Error(`Empty response content from model ${model}`);
+        }
+
+        const parsedJson = extractJsonFromText(rawContent);
+        const validated = schema.parse(parsedJson);
+        return { data: validated, modelUsed: model };
+      } catch (err) {
+        const errMessage = err instanceof Error ? err.message : String(err);
+        errors.push(`[${model}#${retry + 1}]: ${errMessage}`);
+        console.warn(`[Omniroute] Model ${model} (attempt ${retry + 1}) failed:`, errMessage);
+
+        promptAttempt = `${systemPrompt}\n\n---\n\n${userPrompt}\n\nIMPORTANT: Your previous JSON response failed validation with this error:\n${errMessage}\nFix ALL schema issues and return ONLY valid JSON.`;
       }
-
-      const parsedJson = extractJsonFromText(rawContent);
-      const validated = schema.parse(parsedJson);
-      return { data: validated, modelUsed: model };
-    } catch (err) {
-      lastError = err;
-      console.warn(`[Omniroute] Model ${model} attempt failed:`, err instanceof Error ? err.message : String(err));
     }
   }
 
-  if (fallbackGenerator) {
-    console.warn("[Omniroute] All LLM models failed or timed out; using deterministic engineering fallback blueprint.");
-    return {
-      data: fallbackGenerator(),
-      modelUsed: "deterministic-engineering-fallback",
-    };
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Failed to generate structured output from Omniroute gateway");
+  throw new Error(
+    `Omniroute LLM failed to generate valid JSON after trying [${modelsToTry.join(", ")}]: ${errors.slice(-2).join(" | ")}`
+  );
 }

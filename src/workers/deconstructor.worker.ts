@@ -38,7 +38,7 @@ export function startDeconstructorWorker(): Worker {
           {
             agent: "AGENT_1_DECONSTRUCTOR",
             level: "SUCCESS",
-            message: `Layman Storyboard ready (${modelUsed}): ${blueprint.components.length} cutaway parts, 4 acts (${blueprint.primaryArchetype}).`,
+            message: `Layman Storyboard ready (${modelUsed}): ${blueprint.components.length} cutaway parts, 4 acts (${blueprint.containerType}).`,
           }
         );
 
