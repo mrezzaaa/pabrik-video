@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "produce": "tsx src/run.ts",
+    "produce": "node lib/pabrik/run.ts",
+    "test": "node --test lib/pabrik/__tests__/pipeline.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
