@@ -95,8 +95,10 @@ export function runQaPacing(targetDirOrFile: string): {
     endSec: Number((p.endFrame / fps).toFixed(3)),
   }));
 
+  const totalVideoSec = Number((props.durationInFrames / fps).toFixed(3));
+
   const classifiedSilences: SilenceEvent[] = rawSilences.map((s) => {
-    // Check if silence sits at/near a beat boundary (within 0.45s of beat transition)
+    // Check if silence sits at/near a beat boundary or at the end of video
     let isBoundary = false;
     let boundaryPair = "";
 
@@ -107,6 +109,12 @@ export function runQaPacing(targetDirOrFile: string): {
         boundaryPair = `Beat ${i} → Beat ${i + 1}`;
         break;
       }
+    }
+
+    const isEndingTail = Math.abs(s.end - totalVideoSec) <= 0.15 || s.start >= totalVideoSec - 0.45;
+    if (isEndingTail && !isBoundary) {
+      isBoundary = true;
+      boundaryPair = "Akhir Video (Outro Tail)";
     }
 
     const category: "DALAM BEAT" | "ANTAR BEAT" = isBoundary ? "ANTAR BEAT" : "DALAM BEAT";
@@ -122,7 +130,7 @@ export function runQaPacing(targetDirOrFile: string): {
     } else {
       if (s.duration > 0.60) {
         isViolation = true;
-        violationReason = `Silence antar beat (${s.duration.toFixed(3)}s di ${boundaryPair}) melebihi batas 0.60s`;
+        violationReason = `Silence antar beat / akhir (${s.duration.toFixed(3)}s di ${boundaryPair}) melebihi batas 0.60s`;
         violations.push(violationReason);
       }
     }
