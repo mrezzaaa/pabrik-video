@@ -23,8 +23,10 @@ export function getOmnirouteClient(): OpenAI {
 const MODEL_FALLBACK_CASCADE = [
   env.OMNIROUTE_PRIMARY_MODEL,
   env.OMNIROUTE_FAST_MODEL,
-  "kr/claude-sonnet-4.5",
-  "kr/claude-haiku-4.5",
+  "antigravity/claude-sonnet-4-6",
+  "antigravity/gemini-3.8-flash-high",
+  "antigravity/gemini-3-flash",
+  "cloudflare-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 ];
 
 export function extractJsonFromText(raw: string): unknown {
@@ -108,6 +110,6 @@ export async function generateStructuredOmniroute<T>(params: {
   }
 
   throw new Error(
-    `Omniroute LLM failed to generate valid JSON after trying [${modelsToTry.join(", ")}]: ${errors.slice(-2).join(" | ")}`
+    `Omniroute LLM failed to generate valid JSON after trying [${modelsToTry.join(", ")}]:\n${errors.join("\n")}`
   );
 }

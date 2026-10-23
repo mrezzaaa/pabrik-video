@@ -12,8 +12,8 @@ const envSchema = z.object({
   // Omniroute OpenAI-compatible Gateway
   OMNIROUTE_BASE_URL: z.string().url().default("http://localhost:20128/v1"),
   OMNIROUTE_API_KEY: z.string().min(1).default("free-key"),
-  OMNIROUTE_PRIMARY_MODEL: z.string().default("kr/claude-sonnet-4.5"),
-  OMNIROUTE_FAST_MODEL: z.string().default("kr/claude-haiku-4.5"),
+  OMNIROUTE_PRIMARY_MODEL: z.string().default("antigravity/claude-sonnet-4-6"),
+  OMNIROUTE_FAST_MODEL: z.string().default("antigravity/gemini-3.8-flash-high"),
 
   // UnlimitedTTS Settings
   UNLIMITEDTTS_LANGUAGE: z.string().default("id-ID"),
@@ -28,6 +28,18 @@ const envSchema = z.object({
 export type EnvConfig = z.infer<typeof envSchema>;
 
 function parseEnv(): EnvConfig {
+  if (typeof process !== "undefined" && typeof process.loadEnvFile === "function") {
+    try {
+      process.loadEnvFile(".env.local");
+    } catch {
+      try {
+        process.loadEnvFile(".env");
+      } catch {
+        // Files may not exist in container/production, fallback to process.env
+      }
+    }
+  }
+
   const parsed = envSchema.safeParse({
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
