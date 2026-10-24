@@ -23,6 +23,8 @@ export function getOmnirouteClient(): OpenAI {
 const MODEL_FALLBACK_CASCADE = [
   env.OMNIROUTE_PRIMARY_MODEL,
   env.OMNIROUTE_FAST_MODEL,
+  "auto/fast",
+  "auto/chat",
   "auto",
   "cloudflare-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 ];

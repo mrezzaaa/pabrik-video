@@ -119,6 +119,8 @@ const SceneComponent: React.FC<SceneComponentProps> = ({ scene, visualScene }) =
       baseZoom: 170,
     },
     enableSteamWisps: false,
+    svgComponentPath: scene.visual.svgComponentPath || visualScene?.svgComponentPath,
+    svgContent: scene.visual.svgContent || visualScene?.svgContent,
     nodes: scene.visual.nodes || visualScene?.nodes || [],
   };
 

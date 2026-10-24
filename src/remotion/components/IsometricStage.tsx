@@ -8,10 +8,10 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { IsoSceneGraph, PhaseTimelineBlock, ThreeNode } from "@/schemas/video-blueprint";
 import { ThreeAssetNode } from "../three-assets/ThreeAssetNode";
+import { AnatomyFigureRenderer } from "./AnatomyFigureRenderer";
 import { project3DTo2D } from "../projection";
 
 export { project3DTo2D };
-
 
 function CameraRig({
   position,
@@ -67,6 +67,25 @@ export const IsometricStage: React.FC<IsometricStageProps> = ({
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
+
+  // Check if scene has Anatomy SVG content or svg-part nodes
+  const hasAnatomySvg = Boolean(
+    visualScene?.svgContent ||
+    visualScene?.svgComponentPath ||
+    (visualScene?.nodes && visualScene.nodes.some((n) => n.geometryType === "svg-part"))
+  );
+
+  if (hasAnatomySvg) {
+    return (
+      <AnatomyFigureRenderer
+        svgContent={visualScene.svgContent}
+        svgComponentPath={visualScene.svgComponentPath}
+        nodes={visualScene.nodes}
+        frame={frame}
+        title={visualScene.subjectTitle}
+      />
+    );
+  }
 
   // Find active phase
   const activePhaseIdx = useMemo(() => {

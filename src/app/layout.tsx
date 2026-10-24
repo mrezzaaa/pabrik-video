@@ -1,10 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "PABRIK VIDEO // Automated Kitabedah.id Video Factory",
   description:
     "Multi-Agent Isometric 3D Explanatory Video Factory powered by Next.js 16, BullMQ FlowProducer, Omniroute LLM, UnlimitedTTS (Ethan 1.1x), and Remotion 60fps.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

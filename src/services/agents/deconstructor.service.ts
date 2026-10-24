@@ -10,13 +10,13 @@ import { loadAgentSkill } from "@/lib/skill-loader";
 
 const BLUEPRINT_SCHEMA_TEMPLATE = `{
   "topic": "<user topic string>",
-  "suggestedArchetype": "AERODYNAMIC_DRONE | ROTARY_PNEUMATIC_ENGINE | ELECTROCHEMICAL_BATTERY | ELECTRONIC_COMPUTING | PHOTOVOLTAIC_ENERGY | ANATOMICAL_ORGAN | UNIVERSAL_CUTAWAY",
+  "suggestedArchetype": "<Free string archetype matching the topic, e.g., FELINE_RIGHTING_REFLEX, VACUUM_INSULATION_DYNAMICS, VISCOUS_FLUID_DYNAMICS, ELECTROMAGNETIC_MOTOR>",
   "laymanHookTitle": "<Short hook title with <highlight>key words</highlight>>",
   "everydayCategory": "<Category in uppercase, e.g., TEKNOLOGI & REKAYASA SEHARI-HARI>",
   "coreSimpleTruth": "<One sentence layman summary of the core physical mechanism>",
   "baselineMetricValue": 10,
   "peakMetricValue": 100,
-  "metricUnit": "<realistic unit for this topic, e.g., jam | Bar | V | W | RPM | °C | % | km/j>",
+  "metricUnit": "<realistic unit for this topic, e.g., jam | Bar | V | W | RPM | °C | % | km/j | rad/s | cP>",
   "practicalChecklistTitle": "CEK SEBELUM BELI / PAKAI:",
   "practicalChecklistItems": [
     "<3-4 words item 1 strictly tailored to this topic>",
@@ -32,7 +32,7 @@ const BLUEPRINT_SCHEMA_TEMPLATE = `{
       "simpleCauseEffect": "<Simple cause & effect>",
       "fillColor": "#E2E8F0",
       "position3D": [0, 0, 0],
-      "recommendedGeometryType": "<drone-assembly | battery-assembly | piston-assembly | turbine-assembly | circuit-board | solar-assembly | hollow-cylinder | hollow-box>",
+      "recommendedGeometryType": "<box | cylinder | capsule | lathe | tube | torus | liquid | hollow-cylinder | hollow-box>",
       "zoomTarget": { "focusPosition3D": [0, 0, 0], "zoomMultiplier": 1.2 }
     },
     {

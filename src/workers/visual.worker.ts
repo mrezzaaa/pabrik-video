@@ -25,7 +25,7 @@ export function startVisualWorker(): Worker {
           agent: "AGENT_4_VISUAL",
           level: "INFO",
           message:
-            "Executing 2-Step Anatomy-to-3D CAD Process: compiling 3D isometric cutaway geometry, Painter's Algorithm depth sorting & pill socket projection...",
+            "Executing Anatomy Skill (wheresryan22/anatomy): generating 4-tone shaded isometric cutaway SVG figures with Painter's depth order...",
         }
       );
 
@@ -68,7 +68,7 @@ export function startVisualWorker(): Worker {
           {
             agent: "AGENT_4_VISUAL",
             level: "SUCCESS",
-            message: `Three.js Cutaway Scene compiled: ${compositionProps.visualScene.nodes.length} 3D nodes (${compositionProps.visualScene.nodes.map((n) => n.name).join(", ")}), ${compositionProps.pillCallouts.length} projected callout sockets.`,
+            message: `Anatomy Figure compiled via wheresryan22/anatomy: ${compositionProps.visualScene.nodes.length} solid parts (${compositionProps.visualScene.nodes.map((n) => n.name).join(", ")}), ${compositionProps.pillCallouts.length} projected callout sockets.`,
           }
         );
 

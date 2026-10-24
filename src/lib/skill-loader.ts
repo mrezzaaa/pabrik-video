@@ -92,26 +92,7 @@ export async function loadAgentSkill(
     let accumulatedContent = "";
 
     if (fs.existsSync(skillMdPath)) {
-      accumulatedContent += fs.readFileSync(skillMdPath, "utf-8") + "\n\n";
-    }
-
-    // Read additional markdown, txt, or json files if present
-    const entries = fs.readdirSync(resolvedPath, { withFileTypes: true });
-    for (const entry of entries) {
-      if (
-        entry.isFile() &&
-        entry.name !== "SKILL.md" &&
-        /\.(md|txt|json)$/i.test(entry.name) &&
-        !entry.name.startsWith(".")
-      ) {
-        try {
-          const filePath = path.join(resolvedPath, entry.name);
-          const content = fs.readFileSync(filePath, "utf-8");
-          accumulatedContent += `\n\n--- FILE: ${entry.name} ---\n${content}`;
-        } catch {
-          // ignore unreadable files
-        }
-      }
+      accumulatedContent = fs.readFileSync(skillMdPath, "utf-8");
     }
 
     if (!accumulatedContent.trim()) {
@@ -120,7 +101,7 @@ export async function loadAgentSkill(
 
     // Ensure universal 4-layer guidelines are present
     if (!accumulatedContent.includes("OUTER_CUTAWAY_SHELL")) {
-      accumulatedContent += "\n\n" + DEFAULT_BOOTSTRAP_CONTENT;
+      accumulatedContent = DEFAULT_BOOTSTRAP_CONTENT + "\n\n" + accumulatedContent.slice(0, 4000);
     }
 
     return accumulatedContent;

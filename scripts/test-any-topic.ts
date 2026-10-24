@@ -38,8 +38,8 @@ async function testTopic(topic: string, tag: string) {
   });
   console.log(`   Audio synced: ${ttsOutput.totalDurationInSeconds}s (${ttsOutput.totalDurationInFrames} frames @ ${VIDEO_FPS}fps)`);
 
-  // 4. Visual Universal Choreographer
-  console.log(`\n[4/5] Agent 4 Universal 3D Visual Choreography...`);
+  // 4. Visual Anatomy Choreographer
+  console.log(`\n[4/5] Agent 4 Visual Anatomy Choreography (wheresryan22/anatomy)...`);
   const compositionProps = await runVisualChoreographerAgent({
     jobId,
     blueprint,
@@ -48,9 +48,10 @@ async function testTopic(topic: string, tag: string) {
     dynamicScenes: updatedScenes || scenes,
     aspectRatioMode: "SHORTS_9_16",
   });
-  console.log(`   3D Nodes assembled: ${compositionProps.visualScene.nodes.length} nodes`);
+  console.log(`   Anatomy Parts assembled: ${compositionProps.visualScene.nodes.length} parts`);
+  console.log(`   SVG Component: ${compositionProps.visualScene.svgComponentPath}`);
   for (const n of compositionProps.visualScene.nodes) {
-    console.log(`     Node: "${n.name}" -> geometryType="${n.geometryType}"`);
+    console.log(`     Part: "${n.name}" -> geometryType="${n.geometryType}"`);
   }
 
   // 5. Render Remotion Video

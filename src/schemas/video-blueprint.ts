@@ -16,12 +16,13 @@ export const Vec3TupleSchema = z
 
 export const SubjectArchetypeSchema = z.string()
   .default("UNIVERSAL_CUTAWAY")
-  .describe("Bebas. LLM boleh ngarang archetype baru sesuai topik. Contoh: 'FELINE_RIGHTING_REFLEX' untuk kucing, 'VACUUM_INSULATION_DYNAMICS' untuk tumbler, 'ELECTROMAGNETIC_MOTOR' untuk mobil listrik, 'VISCOUS_FLUID_DYNAMICS' untuk kecap. Visual worker harus handle string apapun dengan fallback rakit dari primitive geometry.");
+  .describe("Visual routing hint bebas dari LLM. Bisa 'FELINE_RIGHTING_REFLEX', 'VACUUM_INSULATION', 'VISCOUS_FLUID'. Visual worker harus handle string apapun.");
 
 export type SubjectArchetype = z.infer<typeof SubjectArchetypeSchema>;
 
 export const ThreeGeometryTypeSchema = z
   .enum([
+    "svg-part",         // Anatomy SVG part (paths, shades, outlines)
     "gltf-asset",       // Loads .glb/.gltf model from /public/assets/models/ or URL
     "hollow-cylinder",  // Smooth 3D vessel/housing with configurable arcAngleDeg (e.g., 270° cutaway)
     "cylinder",         // Solid 3D cylinder / shaft / disk / core
@@ -42,7 +43,7 @@ export const ThreeGeometryTypeSchema = z
     "circuit-board",    // Complete 3D electronic PCB with central chip, micro-components, capacitors & bus traces
     "solar-assembly",   // Complete 3D photovoltaic solar panel with aluminum frame & silicon cell grid
   ])
-  .catch("cylinder");
+  .catch("box");
 
 export const ThreeMaterialTypeSchema = z
   .enum(["toon", "standard-matte", "metallic", "glass-translucent", "emissive-glow", "liquid"])
@@ -246,6 +247,8 @@ export const ThreeNodeSchema = z.object({
   name: z.string(),
   geometryType: ThreeGeometryTypeSchema,
   assetUrl: z.string().optional(), // Optional .glb/.gltf path from /assets/models/
+  svgPath: z.string().optional(), // SVG path string or file path for anatomy parts
+  svgComponentPath: z.string().optional(), // React component path (e.g. @/examples/kebab-topic/figure)
   position: Vec3TupleSchema,
   rotation: Vec3TupleSchema,
   scale: z.tuple([z.coerce.number().catch(1), z.coerce.number().catch(1), z.coerce.number().catch(1)]).catch([1, 1, 1]),
@@ -287,6 +290,8 @@ export const IsoSceneGraphRawSchema = z.object({
     })
     .default({ basePosition: [8, 6.5, 8], baseZoom: 170 }),
   enableSteamWisps: z.boolean().catch(false), // Subtle rising SVG steam lines ONLY when boiling/steaming
+  svgComponentPath: z.string().optional(),
+  svgContent: z.string().optional(),
   nodes: z.array(ThreeNodeSchema).default([]),
 });
 
@@ -422,6 +427,8 @@ export const VideoBlueprintSceneSchema = z.object({
     description: z.string(),
     popup_labels: z.array(PopupLabelItemSchema),
     nodes: z.array(ThreeNodeSchema).optional(),
+    svgComponentPath: z.string().optional(),
+    svgContent: z.string().optional(),
   }),
   caption: z.object({
     text: z.string(),

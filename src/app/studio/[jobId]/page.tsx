@@ -114,48 +114,48 @@ export default function StudioJobPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090D16] text-slate-100">
+    <div className="min-h-screen bg-[#090D16] text-slate-100 pb-12 sm:pb-8">
       {/* Studio Top Bar */}
-      <header className="border-b border-slate-800 bg-[#090D16]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="outline" size="sm" className="gap-1.5 font-mono">
+      <header className="sticky top-0 z-30 border-b border-slate-800 bg-[#090D16]/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl flex-col sm:flex-row sm:items-center justify-between gap-3 px-3.5 sm:px-6 py-3 sm:py-3.5">
+          <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+            <Link href="/" className="shrink-0">
+              <Button variant="outline" size="sm" className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs gap-1.5 font-mono">
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Factory Dashboard
+                <span className="hidden sm:inline">Dashboard</span>
               </Button>
             </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-sky-400">
-                  REMOTION STUDIO // {jobId}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-mono text-[10px] sm:text-xs font-bold text-sky-400 shrink-0">
+                  STUDIO // {jobId}
                 </span>
-                <Badge variant="default">
-                  {compositionProps.width}x{compositionProps.height} @{" "}
-                  {compositionProps.fps}FPS (LIGHT-MODE CUTAWAY)
+                <Badge variant="default" className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0 truncate">
+                  {compositionProps.width}x{compositionProps.height} @ {compositionProps.fps}FPS
                 </Badge>
               </div>
-              <h1 className="text-sm font-semibold text-slate-200 line-clamp-1">
+              <h1 className="text-xs sm:text-sm font-semibold text-slate-200 truncate mt-0.5">
                 {compositionProps.topic}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             {jobState?.outputMp4Url && (
               <a
                 href={jobState.outputMp4Url}
                 download={`${jobId}-kitabedah.mp4`}
                 target="_blank"
                 rel="noreferrer"
+                className="flex-1 sm:flex-initial"
               >
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="gap-1.5 font-mono"
+                  className="w-full sm:w-auto h-8 sm:h-9 gap-1.5 font-mono text-xs"
                 >
                   <Download className="h-3.5 w-3.5 text-emerald-400" />
-                  Download 1080x1920 MP4
+                  <span>Download MP4</span>
                 </Button>
               </a>
             )}
@@ -167,17 +167,17 @@ export default function StudioJobPage() {
                 disabled={
                   isTriggeringRender || jobState?.status === "RENDERING_MP4"
                 }
-                className="gap-1.5 font-mono"
+                className="flex-1 sm:flex-initial h-8 sm:h-9 gap-1.5 font-mono text-xs bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold"
               >
                 {jobState?.status === "RENDERING_MP4" || isTriggeringRender ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Rendering MP4 ({jobState?.progressPercent ?? 90}%)...
+                    <span>Rendering...</span>
                   </>
                 ) : (
                   <>
                     <Film className="h-3.5 w-3.5" />
-                    Render Final MP4 (Agent 5)
+                    <span>Render MP4</span>
                   </>
                 )}
               </Button>
@@ -186,12 +186,12 @@ export default function StudioJobPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-6 space-y-6">
+      <main className="mx-auto max-w-7xl px-3.5 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {jobState &&
           jobState.status !== "COMPLETED" &&
           jobState.status !== "READY_FOR_PREVIEW" && (
             <Card className="border-sky-500/40 bg-sky-950/20">
-              <CardContent className="p-4 flex flex-col gap-2">
+              <CardContent className="p-3 sm:p-4 flex flex-col gap-2">
                 <div className="flex items-center justify-between font-mono text-xs">
                   <span className="flex items-center gap-2 text-sky-300 font-semibold">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -201,36 +201,35 @@ export default function StudioJobPage() {
                     {jobState.progressPercent}%
                   </span>
                 </div>
-                <Progress value={jobState.progressPercent} />
+                <Progress value={jobState.progressPercent} className="h-2" />
               </CardContent>
             </Card>
           )}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12">
           {/* Left Column (7 cols): Real-Time Remotion Player Preview & 4-Act Timeline */}
-          <div className="lg:col-span-7 space-y-5">
+          <div className="lg:col-span-7 space-y-4 sm:space-y-5">
             <Card className="border-slate-800 bg-slate-950/90 overflow-hidden">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <CardHeader className="p-3.5 sm:p-5 pb-2 sm:pb-3 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-sm font-mono flex items-center gap-2">
+                  <CardTitle className="text-xs sm:text-sm font-mono flex items-center gap-1.5 sm:gap-2">
                     <Play className="h-4 w-4 text-sky-400" />
-                    WARM EDITORIAL CUTAWAY PREVIEW (@REMOTION/PLAYER)
+                    REMOTION PLAYER PREVIEW
                   </CardTitle>
-                  <CardDescription>
-                    Clean Light-Mode 90° Cutaway + 3-Element Header + Dark Pill
-                    Pointers + Karaoke Word Highlight
+                  <CardDescription className="text-[11px] sm:text-xs">
+                    Light-Mode 4-Tone Isometric SVG + Telemetry + Dark Pill Pointers
                   </CardDescription>
                 </div>
-                <Badge variant="success" className="font-mono">
+                <Badge variant="success" className="font-mono text-[10px] sm:text-xs shrink-0">
                   {(
                     compositionProps.durationInFrames / compositionProps.fps
                   ).toFixed(1)}
-                  s ({compositionProps.durationInFrames} Frames)
+                  s ({compositionProps.durationInFrames} F)
                 </Badge>
               </CardHeader>
 
-              <CardContent className="space-y-4">
-                <div className="flex justify-center overflow-hidden rounded-xl border border-slate-800 bg-[#F8F9FA] p-3 shadow-2xl">
+              <CardContent className="p-3 sm:p-5 pt-0 space-y-3 sm:space-y-4">
+                <div className="flex justify-center overflow-hidden rounded-xl border border-slate-800 bg-[#F8F9FA] p-2 sm:p-3 shadow-2xl">
                   <Player
                     component={BedahVideoComposition}
                     inputProps={compositionProps}
@@ -239,10 +238,11 @@ export default function StudioJobPage() {
                     compositionWidth={compositionProps.width}
                     compositionHeight={compositionProps.height}
                     style={{
-                      width:
+                      width: "100%",
+                      maxWidth:
                         compositionProps.aspectRatioMode === "SHORTS_9_16"
-                          ? 380
-                          : "100%",
+                          ? 340
+                          : 640,
                       aspectRatio:
                         compositionProps.aspectRatioMode === "SHORTS_9_16"
                           ? "9 / 16"
@@ -256,7 +256,7 @@ export default function StudioJobPage() {
                 </div>
 
                 {/* 4-Act Storyboard Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {compositionProps.phases.map((p) => (
                     <div
                       key={p.segmentIndex}

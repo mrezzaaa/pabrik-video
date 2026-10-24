@@ -99,6 +99,42 @@ export function buildUniversalScene(blueprint: DeconstructionBlueprint): IsoScen
   };
 }
 
+import { generateAnatomyFigure } from "@/lib/anatomy-wrapper";
+
+export async function choreographVisuals(blueprint: DeconstructionBlueprint) {
+  const topic = blueprint.topic;
+  const components = blueprint.components.map((c) => c.name).join(", ");
+
+  const prompt = `
+    /anatomy explain ${topic} - ${blueprint.coreSimpleTruth}
+    Show components: ${components}
+    Isometric cutaway, 4 phases: ${blueprint.phases?.map((p) => p.title).join(" -> ")}
+    Style: kitabedah.id toon shading, framed card with live readout, light theme
+    Output: React/Next.js component + standalone SVG + HTML preview
+    No 3D glb, pure SVG with many small solid parts
+  `;
+
+  // Hasil anatomy bakal ada di examples/${kebab-case-topic}/ - ada .tsx, .svg, .html
+  const figure = await generateAnatomyFigure(prompt);
+
+  // Convert figure parts jadi ThreeNode / Remotion props
+  return {
+    subjectTitle: topic,
+    visualScene: {
+      nodes: figure.parts.map((part) => ({
+        nodeId: part.id,
+        geometryType: "svg-part" as const,
+        svgPath: part.path,
+        color: part.fillColor,
+        position: part.position3D,
+      })),
+      svgComponentPath: figure.reactComponentPath,
+      svgContent: figure.svgContent,
+    },
+    ragMeta: { generatedBy: "anatomy-skill", topic },
+  };
+}
+
 export async function runVisualChoreographerAgent(params: {
   jobId: string;
   aspectRatioMode?: "SHORTS_9_16" | "LANDSCAPE_16_9";
@@ -120,69 +156,50 @@ export async function runVisualChoreographerAgent(params: {
   const width = isLandscape ? 1920 : VIDEO_WIDTH;
   const height = isLandscape ? 1080 : VIDEO_HEIGHT;
 
-  // Dynamically load the anatomy skill instructions
-  const anatomySkill = await loadAgentSkill(".agents/skill/anatomy");
+  // Generate 100% topic-dynamic Anatomy Figure via wheresryan22/anatomy skill
+  const anatomyResult = await choreographVisuals(blueprint);
 
-  const systemPrompt = `${THREEJS_CUTAWAY_VISUAL_SYSTEM_PROMPT}
-
---- AGENT SKILL PLAYBOOK (.agents/skill/anatomy) ---
-${anatomySkill}
----------------------------------------------------`;
-
-  const userPrompt = `Design a high-fidelity Three.js 3D Isometric Cutaway Scene ("IsoSceneGraphSchema") for:
-
-TOPIC: "${blueprint.topic}"
-SUGGESTED ARCHETYPE: "${blueprint.suggestedArchetype || "UNIVERSAL_CUTAWAY"}"
-CATEGORY: "${blueprint.everydayCategory}"
-CORE MECHANISM: "${blueprint.coreSimpleTruth}"
-
-BLUEPRINT COMPONENTS TO ASSEMBLE:
-${JSON.stringify(blueprint.components, null, 2)}
-
-SCRIPT STORYBOARD (4 BEATS):
-${JSON.stringify(
-  script.segments.map((s) => ({
-    segmentIndex: s.segmentIndex,
-    chapterTitle: s.chapterTitle,
-    pillLabels: s.pillLabels,
-  })),
-  null,
-  2
-)}
-
-STRICT 3D GEOMETRY GUIDELINES:
-1. Select the geometryType that accurately models this topic's physical reality:
-   - For Drone/UAV -> Use "drone-assembly" as the primary node (or combine with focused sub-nodes for Act 3 zoom-in)!
-   - For Battery/Powerbank -> Use "battery-assembly"!
-   - For AC Compressor/Engine/Piston -> Use "piston-assembly"!
-   - For Turbine/Jet -> Use "turbine-assembly"!
-   - For Computer/Server/CPU/PCB -> Use "circuit-board"!
-   - For Solar Panel -> Use "solar-assembly"!
-   - For Cylindrical machinery/vessels -> Use "hollow-cylinder" with arcAngleDeg: 270!
-   - For Box enclosures -> Use "hollow-box"!
-2. Each node must have a componentId matching one of the blueprint component IDs!
-3. All coordinates must be within normalized Three.js metric space [-2.5..2.5].
-4. Set enableSteamWisps to true ONLY if the topic involves boiling, steaming, exhaust fumes, or gas release.
-5. Return ONLY valid JSON conforming to this schema structure:
-${ISO_SCENE_TEMPLATE}`;
-
-  let visualScene: IsoSceneGraph;
-  try {
-    const response = await generateStructuredOmniroute<IsoSceneGraph>({
-      systemPrompt,
-      userPrompt,
-      schema: IsoSceneGraphSchema,
-      preferredModel: env.OMNIROUTE_PRIMARY_MODEL,
-      temperature: 0.2,
-    });
-    visualScene = response.data;
-    if (!visualScene.nodes || visualScene.nodes.length === 0) {
-      visualScene = buildUniversalScene(blueprint);
-    }
-  } catch (err) {
-    console.warn(`[Visual] LLM 3D graph generation failed, using universal component factory:`, err);
-    visualScene = buildUniversalScene(blueprint);
-  }
+  const visualScene: IsoSceneGraph = {
+    subjectTitle: anatomyResult.subjectTitle,
+    objectFormFactor: `${blueprint.suggestedArchetype || "UNIVERSAL"} Anatomy Model`,
+    anatomyDecomposition: {
+      outerHousingShell: blueprint.components[0]?.name || "Outer Shell",
+      primaryInternalMechanism: blueprint.components[1]?.name || "Internal Mechanism",
+      zoomInSubComponents: blueprint.components[2]?.name || "Key Components",
+      physicalStateChange: blueprint.coreSimpleTruth,
+    },
+    cameraPreset: {
+      basePosition: [8, 6.5, 8],
+      baseZoom: 170,
+    },
+    enableSteamWisps: false,
+    svgComponentPath: anatomyResult.visualScene.svgComponentPath,
+    svgContent: anatomyResult.visualScene.svgContent,
+    nodes: anatomyResult.visualScene.nodes.map((n, idx) => ({
+      nodeId: n.nodeId,
+      componentId: n.nodeId,
+      name: blueprint.components[idx]?.name || `Part ${idx + 1}`,
+      geometryType: "svg-part" as const,
+      svgPath: n.svgPath,
+      svgComponentPath: anatomyResult.visualScene.svgComponentPath,
+      position: n.position,
+      rotation: [0, 0, 0] as [number, number, number],
+      scale: [1, 1, 1] as [number, number, number],
+      color: n.color,
+      materialType: "toon" as const,
+      opacity: 1,
+      enableCutawayClip: false,
+      showEdgesOutline: true,
+      geometryArgs: {},
+      animation: {
+        type: "none" as const,
+        axis: "y" as const,
+        speed: 1,
+        amplitude: 0,
+        activeInPhases: [0, 1, 2, 3],
+      },
+    })),
+  };
 
   // Build Camera Keyframes per beat
   const baseCamPos = visualScene.cameraPreset?.basePosition ?? [8, 6.5, 8];
@@ -353,6 +370,8 @@ ${ISO_SCENE_TEMPLATE}`;
         }));
       }
       scene.visual.nodes = visualScene.nodes;
+      scene.visual.svgComponentPath = visualScene.svgComponentPath;
+      scene.visual.svgContent = visualScene.svgContent;
     }
   }
 

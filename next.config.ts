@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     "bullmq",
     "ioredis",
   ],
-  transpilePackages: ["three", "@remotion/three", "@react-three/fiber", "@react-three/drei"]
+  transpilePackages: ["three", "@remotion/three", "@react-three/fiber", "@react-three/drei"],
+  allowedDevOrigins: ['algas-dev.taild765a1.ts.net']
 };
-
 export default nextConfig;
