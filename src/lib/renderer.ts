@@ -3,6 +3,7 @@ import fs from "fs";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import { VideoProps } from "./types";
+import type { TechVideoProps } from "./tech-storyboard";
 
 export class RemotionRendererService {
   private bundleLocationPromise: Promise<string> | null = null;
@@ -58,8 +59,9 @@ export class RemotionRendererService {
    */
   async renderVideo(
     jobId: string,
-    videoProps: VideoProps,
-    onProgress?: (progress: number) => void
+    videoProps: VideoProps | TechVideoProps,
+    onProgress?: (progress: number) => void,
+    compositionId: "MainVideo" | "TechVideo" = "MainVideo"
   ): Promise<{ outputPath: string; outputUrl: string; durationMs: number }> {
     const startTime = Date.now();
     const bundleLocation = await this.getBundleLocation();
@@ -82,11 +84,18 @@ export class RemotionRendererService {
     // Use a dedicated high port (3123) for Remotion's internal HTTP server to avoid Vite collision on 3000
     const remotionPort = 3123;
 
+    // Komposisi 3D memakai WebGL; di container tanpa GPU butuh renderer software.
+    const chromiumOptions =
+      compositionId === "TechVideo"
+        ? { gl: (process.env.REMOTION_GL || "swiftshader") as "swiftshader" }
+        : undefined;
+
     const composition = await selectComposition({
       serveUrl: bundleLocation,
-      id: "MainVideo",
+      id: compositionId,
       inputProps: videoProps,
       port: remotionPort,
+      chromiumOptions,
     });
 
     const concurrency = parseInt(process.env.REMOTION_CONCURRENCY || "2", 10);
@@ -99,6 +108,7 @@ export class RemotionRendererService {
       serveUrl: bundleLocation,
       codec: "h264",
       port: remotionPort,
+      chromiumOptions,
       outputLocation: outputPath,
       inputProps: videoProps,
       concurrency,

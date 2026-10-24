@@ -10,46 +10,15 @@ import { ttsEngine } from "../lib/tts-ethan";
 import { AssetFetcher } from "../lib/asset-fetcher";
 import { remotionRenderer } from "../lib/renderer";
 import { Storyboard, VideoProps } from "../lib/types";
+import { logTelemetry } from "../lib/job-log";
+import { computeWordTimestamps } from "../lib/subtitle-sync";
+import { runTechStages } from "./tech-stages";
 
 /**
- * Approximate spoken word alignment for dynamic subtitles
+ * Gaya video: "tech" (gambar teknik 3D ala Real Engineering, default di branch ini)
+ * atau "classic" (foto + Ken Burns + HUD). Atur lewat env PIPELINE_STYLE.
  */
-function computeWordTimestamps(
-  narration: string,
-  totalDurationMs: number
-): Array<{ word: string; startMs: number; endMs: number }> {
-  const words = narration.split(/\s+/).filter((w) => w.length > 0);
-  if (words.length === 0) return [];
-
-  const intervalMs = totalDurationMs / words.length;
-  return words.map((word, idx) => ({
-    word,
-    startMs: Math.round(idx * intervalMs),
-    endMs: Math.round((idx + 1) * intervalMs),
-  }));
-}
-
-async function logTelemetry(
-  jobId: string,
-  stage: string,
-  message: string,
-  level: "INFO" | "WARN" | "ERROR" = "INFO",
-  metadata?: any
-) {
-  try {
-    await prisma.jobLog.create({
-      data: {
-        jobId,
-        stage,
-        level,
-        message,
-        metadata: metadata ? metadata : undefined,
-      },
-    });
-  } catch (err) {
-    console.error("Failed to write job log:", err);
-  }
-}
+const PIPELINE_STYLE = (process.env.PIPELINE_STYLE || "tech").toLowerCase();
 
 export const videoWorker = new Worker<VideoJobData>(
   VIDEO_PIPELINE_QUEUE_NAME,
@@ -124,6 +93,19 @@ export const videoWorker = new Worker<VideoJobData>(
           "01_SEARXNG_RECON",
           `Resumed: Using existing knowledge base facts. Skipping Stage 1.`
         );
+      }
+
+      // Gaya "tech": stage 2, 3, 5 dijalankan oleh pipeline 3D (stage 4 dilewati).
+      if (PIPELINE_STYLE === "tech") {
+        await runTechStages({
+          jobId,
+          topic,
+          modelId,
+          knowledgeBase,
+          existingStoryboard: existingJob?.storyboard,
+          startTime,
+        });
+        return;
       }
 
       // ----------------------------------------------------------------------

@@ -10,6 +10,7 @@
     "lint": "next lint",
     "worker": "tsx src/queues/video-worker.ts",
     "studio": "remotion studio src/remotion/index.ts",
+    "check:tech": "tsx scripts/check-tech-storyboard.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push"
   },

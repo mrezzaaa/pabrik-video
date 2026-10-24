@@ -95,6 +95,8 @@ services:
       - UNLIMITEDTTS_SPEED=1.1
       - REMOTION_CONCURRENCY=2
       - REMOTION_FPS=30
+      - PIPELINE_STYLE=tech
+      - REMOTION_GL=swiftshader
     volumes:
       - assets_data:/app/public/assets
     depends_on:

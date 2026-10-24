@@ -1,70 +1,119 @@
-import { interpolate, Easing } from "remotion";
+import { Easing, interpolate } from "remotion";
+import { Keyframe, PartSpec, TechSceneSpec, Vec3 } from "./types";
 
-/**
- * Spesifikasi scene teknik 3D.
- * Ide utama: LLM TIDAK menulis kode 3D. LLM hanya memilih part dari library
- * (kind) dan mengisi parameter + timeline. Semua rendering deterministik.
- */
-
-export type Vec3 = [number, number, number];
-
-export type PartKind = "cylinder" | "tube" | "box" | "gear";
-
-export interface PartSpec {
-  id: string;
-  kind: PartKind;
-  /** posisi saat rakitan utuh */
-  position: Vec3;
-  /** parameter geometri, tergantung kind */
-  params: Record<string, number | string>;
-  /** arah & jarak tarik saat exploded view */
-  explodeDir: Vec3;
-  explodeDistance: number;
-  /** putar terus (rad per frame) pada sumbu Z, mis. gear / crank */
-  spinZ?: number;
-}
-
-export interface CalloutSpec {
-  partId: string;
-  text: string;
-  /** frame mulai & selesai tampil */
-  from: number;
-  to: number;
-  side: "L" | "R";
-}
-
-export interface Window {
-  from: number;
-  to: number;
-}
-
-export interface TechSceneSpec {
-  title: string;
-  themeColor: string;
-  durationInFrames: number;
-  parts: PartSpec[];
-  /** sapuan scanner: wireframe -> blueprint solid (bawah ke atas) */
-  sweep: Window;
-  /** exploded view */
-  explode: Window;
-  /** potongan melintang masuk (clipping plane bergerak sepanjang sumbu X) */
-  section: Window;
-  /** potongan menutup lagi (opsional) */
-  sectionOut?: Window;
-  /** label fase di HUD atas */
-  phases: Array<Window & { label: string }>;
-  callouts: CalloutSpec[];
-}
+export * from "./types";
 
 export const ease = Easing.inOut(Easing.cubic);
 
-export function progress(frame: number, w: Window): number {
-  return interpolate(frame, [w.from, w.to], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: ease,
-  });
+/** Nilai track keyframe di frame tertentu (easing antar keyframe). */
+export function track(frame: number, kfs: Keyframe[], fallback = 0): number {
+  if (kfs.length === 0) return fallback;
+  if (frame <= kfs[0].frame) return kfs[0].value;
+  for (let i = 1; i < kfs.length; i++) {
+    const a = kfs[i - 1];
+    const b = kfs[i];
+    if (frame <= b.frame) {
+      if (b.frame === a.frame) return b.value;
+      const t = (frame - a.frame) / (b.frame - a.frame);
+      return a.value + (b.value - a.value) * ease(t);
+    }
+  }
+  return kfs[kfs.length - 1].value;
 }
+
+/** Part yang sedang disorot + seberapa kuat (0..1), dengan fade in/out. */
+export function focusAt(
+  spec: TechSceneSpec,
+  frame: number
+): { partId: string | null; amount: number } {
+  let best: { partId: string | null; amount: number } = {
+    partId: null,
+    amount: 0,
+  };
+  for (const h of spec.highlights) {
+    const span = h.to - h.from;
+    const ramp = Math.max(1, Math.min(10, Math.floor(span / 3)));
+    const a = interpolate(
+      frame,
+      [h.from, h.from + ramp, h.to - ramp, h.to],
+      [0, 1, 1, 0],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+    );
+    if (a > best.amount) best = { partId: h.partId, amount: a };
+  }
+  return best;
+}
+
+/* ------------------------------ bounding box ------------------------------ */
+
+const n = (p: PartSpec, k: string, d: number) =>
+  typeof p.params[k] === "number" ? (p.params[k] as number) : d;
+
+/** Setengah-ukuran kasar (aksis-sejajar) sebuah part. */
+export function partHalfExtents(p: PartSpec): Vec3 {
+  switch (p.kind) {
+    case "cylinder":
+    case "cone": {
+      const r = Math.max(n(p, "r", 0), n(p, "rTop", 0), n(p, "rBottom", 0));
+      const h = n(p, "h", 1);
+      if (p.params.axis === "x") return [h / 2, r, r];
+      if (p.params.axis === "z") return [r, r, h / 2];
+      return [r, h / 2, r];
+    }
+    case "tube": {
+      const r = n(p, "rOuter", 1);
+      return [r, n(p, "h", 2) / 2, r];
+    }
+    case "box":
+      return [n(p, "w", 1) / 2, n(p, "h", 1) / 2, n(p, "d", 1) / 2];
+    case "gear": {
+      const r = n(p, "rOuter", 1.2);
+      return [r, r, n(p, "depth", 0.25) / 2];
+    }
+  }
+}
+
+export interface Bounds {
+  min: Vec3;
+  max: Vec3;
+}
+
+export function sceneBounds(parts: PartSpec[], exploded: boolean): Bounds {
+  const min: Vec3 = [Infinity, Infinity, Infinity];
+  const max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  for (const p of parts) {
+    const d = exploded ? p.explodeDistance : 0;
+    const e = partHalfExtents(p);
+    for (let i = 0; i < 3; i++) {
+      const c = p.position[i] + p.explodeDir[i] * d;
+      min[i] = Math.min(min[i], c - e[i]);
+      max[i] = Math.max(max[i], c + e[i]);
+    }
+  }
+  return { min, max };
+}
+
+const boundsCache = new WeakMap<
+  PartSpec[],
+  { a: Bounds; e: Bounds; all: Bounds }
+>();
+
+export function boundsOf(spec: TechSceneSpec) {
+  let b = boundsCache.get(spec.parts);
+  if (!b) {
+    const a = sceneBounds(spec.parts, false);
+    const e = sceneBounds(spec.parts, true);
+    const all: Bounds = {
+      min: [0, 1, 2].map((i) => Math.min(a.min[i], e.min[i])) as Vec3,
+      max: [0, 1, 2].map((i) => Math.max(a.max[i], e.max[i])) as Vec3,
+    };
+    b = { a, e, all };
+    boundsCache.set(spec.parts, b);
+  }
+  return b;
+}
+
+/* --------------------------------- gerak ---------------------------------- */
 
 /** Posisi part di frame tertentu (dipakai mesh DAN proyeksi callout). */
 export function partPosition(
@@ -72,122 +121,51 @@ export function partPosition(
   spec: TechSceneSpec,
   frame: number
 ): Vec3 {
-  const e = progress(frame, spec.explode);
+  const e = track(frame, spec.explode);
   const [x, y, z] = part.position;
   const [dx, dy, dz] = part.explodeDir;
   const d = part.explodeDistance * e;
-
-  // Gerak mesin (piston naik-turun) hanya saat rakitan masih utuh.
-  let bob = 0;
-  if (part.id === "piston" || part.id === "rod") {
-    bob = Math.sin(frame * 0.12) * 0.22 * (1 - e);
-  }
+  const bob = part.bob
+    ? Math.sin(frame * part.bob.speed) * part.bob.amp * (1 - e)
+    : 0;
   return [x + dx * d, y + dy * d + bob, z + dz * d];
 }
 
-/** Kamera orbit pelan; mundur saat exploded supaya semua part muat 9:16. */
-export function cameraAt(spec: TechSceneSpec, frame: number) {
-  const e = progress(frame, spec.explode);
-  const t = frame / spec.durationInFrames;
-  const az = 0.5 + t * 0.5;
-  const el = 0.32;
-  const dist = 17 + 11 * e;
-  const target: Vec3 = [0, 1.55 - 0.65 * e, 0];
-  const position: Vec3 = [
-    target[0] + dist * Math.sin(az) * Math.cos(el),
-    target[1] + dist * Math.sin(el),
-    target[2] + dist * Math.cos(az) * Math.cos(el),
-  ];
-  return { position, target, fov: 30 };
+const FOV = 30;
+const TAN = Math.tan((FOV / 2) * (Math.PI / 180));
+const ASPECT = 1080 / 1920;
+
+function framing(b: Bounds) {
+  const cy = (b.min[1] + b.max[1]) / 2;
+  const hv = (b.max[1] - b.min[1]) / 2;
+  const hr = Math.hypot(
+    Math.max(Math.abs(b.min[0]), Math.abs(b.max[0])),
+    Math.max(Math.abs(b.min[2]), Math.abs(b.max[2]))
+  );
+  const distV = (hv * 1.25) / TAN;
+  const distH = (hr * 1.2) / (TAN * ASPECT);
+  const dist = Math.max(distV, distH) * 1.18;
+  // geser model agak ke bawah supaya HUD judul tidak menimpa
+  const target = cy + 0.04 * (2 * dist * TAN);
+  return { dist, target };
 }
 
-/** Mesin 4-tak sederhana: contoh scene prototipe. */
-export const DEMO_SPEC: TechSceneSpec = {
-  title: "MESIN PEMBAKARAN",
-  themeColor: "#38BDF8",
-  durationInFrames: 360,
-  parts: [
-    {
-      id: "block",
-      kind: "tube",
-      position: [0, 1.2, 0],
-      params: { rOuter: 1.0, rInner: 0.82, h: 2.4 },
-      explodeDir: [0, 1, 0],
-      explodeDistance: 0,
-    },
-    {
-      id: "head",
-      kind: "cylinder",
-      position: [0, 2.65, 0],
-      params: { r: 1.05, h: 0.5 },
-      explodeDir: [0, 1, 0],
-      explodeDistance: 1.3,
-    },
-    {
-      id: "sparkplug",
-      kind: "cylinder",
-      position: [0, 3.25, 0],
-      params: { r: 0.13, h: 0.8 },
-      explodeDir: [0, 1, 0],
-      explodeDistance: 2.4,
-    },
-    {
-      id: "intake",
-      kind: "cylinder",
-      position: [1.2, 2.65, 0],
-      params: { r: 0.2, h: 1.0, axis: "x" },
-      explodeDir: [1, 0, 0],
-      explodeDistance: 1.7,
-    },
-    {
-      id: "piston",
-      kind: "cylinder",
-      position: [0, 1.4, 0],
-      params: { r: 0.78, h: 0.7 },
-      explodeDir: [0, -1, 0],
-      explodeDistance: 1.5,
-    },
-    {
-      id: "rod",
-      kind: "box",
-      position: [0, 0.1, 0],
-      params: { w: 0.2, h: 2.2, d: 0.32 },
-      explodeDir: [0, -1, 0],
-      explodeDistance: 2.7,
-    },
-    {
-      id: "crank",
-      kind: "cylinder",
-      position: [0, -1.3, 0],
-      params: { r: 0.95, h: 0.3, axis: "z" },
-      explodeDir: [0, -1, 0],
-      explodeDistance: 3.9,
-      spinZ: 0.12,
-    },
-    {
-      id: "flywheel",
-      kind: "gear",
-      position: [0, -1.3, 0.5],
-      params: { rOuter: 1.25, rRoot: 1.08, teeth: 18, depth: 0.25, hole: 0.3 },
-      explodeDir: [0, -1, 0],
-      explodeDistance: 3.9,
-      spinZ: 0.12,
-    },
-  ],
-  sweep: { from: 6, to: 80 },
-  section: { from: 90, to: 140 },
-  sectionOut: { from: 190, to: 215 },
-  explode: { from: 225, to: 290 },
-  phases: [
-    { from: 0, to: 90, label: "01 // WIREFRAME PASS" },
-    { from: 90, to: 220, label: "02 // CROSS-SECTION" },
-    { from: 220, to: 360, label: "03 // EXPLODED VIEW" },
-  ],
-  callouts: [
-    { partId: "piston", text: "PISTON", from: 125, to: 190, side: "L" },
-    { partId: "rod", text: "BATANG PENGHUBUNG", from: 145, to: 195, side: "R" },
-    { partId: "sparkplug", text: "BUSI", from: 250, to: 335, side: "R" },
-    { partId: "piston", text: "PISTON", from: 265, to: 345, side: "L" },
-    { partId: "flywheel", text: "RODA GILA", from: 285, to: 352, side: "L" },
-  ],
-};
+/** Kamera orbit pelan; auto-framing dari bounding box assembly. */
+export function cameraAt(spec: TechSceneSpec, frame: number) {
+  const bb = boundsOf(spec);
+  const fa = framing(bb.a);
+  const fe = framing(bb.e);
+  const e = track(frame, spec.explode);
+  const dist = fa.dist + (fe.dist - fa.dist) * e;
+  const targetY = fa.target + (fe.target - fa.target) * e;
+  const t = frame / Math.max(1, spec.durationInFrames);
+  const az = 0.5 + t * 0.5;
+  const el = 0.32;
+  const target: Vec3 = [0, targetY, 0];
+  const position: Vec3 = [
+    dist * Math.sin(az) * Math.cos(el),
+    targetY + dist * Math.sin(el),
+    dist * Math.cos(az) * Math.cos(el),
+  ];
+  return { position, target, fov: FOV };
+}

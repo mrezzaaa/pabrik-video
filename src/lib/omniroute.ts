@@ -1,6 +1,12 @@
 import OpenAI from "openai";
-import { MASTER_SYSTEM_PROMPT, QUERY_GENERATOR_PROMPT } from "./prompts";
+import { ZodError } from "zod";
+import {
+  MASTER_SYSTEM_PROMPT,
+  QUERY_GENERATOR_PROMPT,
+  buildTechDirectorPrompt,
+} from "./prompts";
 import { Storyboard, StoryboardSchema } from "./types";
+import { TechStoryboard, TechStoryboardSchema } from "./tech-storyboard";
 
 export class OmniRouteClient {
   private client: OpenAI;
@@ -161,6 +167,70 @@ export class OmniRouteClient {
 
     throw new Error(
       `Failed to generate valid Storyboard after ${maxRetries + 1} attempts: ${lastError?.message}`
+    );
+  }
+
+  /**
+   * STAGE 2 (gaya "tech"): LLM memilih assembly + menulis beat narasi & kondisi objek.
+   * Bila validasi gagal, pesan error zod dikirim balik ke LLM supaya ia memperbaiki
+   * jawabannya sendiri (bukan sekadar mengulang prompt yang sama).
+   */
+  async generateTechStoryboard(
+    topic: string,
+    knowledgeBase: string,
+    modelId?: string,
+    maxRetries = 2
+  ): Promise<TechStoryboard> {
+    const model = modelId || this.defaultModel;
+    const modelToUse =
+      !model || model === "auto" ? "groq/openai/gpt-oss-120b" : model;
+
+    const userPrompt = `TOPIC: ${topic}\n\nRESEARCH KNOWLEDGE BASE:\n${knowledgeBase}\n\nDIREKTIF DURASI:\n- 6 sampai 8 beat.\n- Narasi tiap beat 1-2 kalimat (sekitar 14-22 kata) sehingga tiap beat 5-8 detik dan total video 45-60 detik.\n\nPilih assembly dari katalog (atau NONE bila tidak cocok), lalu tulis JSON-nya sekarang.`;
+
+    const messages: Array<{
+      role: "system" | "user" | "assistant";
+      content: string;
+    }> = [
+      { role: "system", content: buildTechDirectorPrompt() },
+      { role: "user", content: userPrompt },
+    ];
+
+    let lastError = "";
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      let rawText = "";
+      try {
+        const completion = await this.client.chat.completions.create({
+          model: modelToUse,
+          messages,
+          temperature: 0.5,
+          max_tokens: 4096,
+        });
+        rawText = completion.choices[0]?.message?.content || "";
+        if (!rawText.trim()) throw new Error("Model returned empty completion content");
+
+        return TechStoryboardSchema.parse(this.cleanAndParseJson(rawText));
+      } catch (err: any) {
+        lastError =
+          err instanceof ZodError
+            ? err.issues
+                .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+                .join("; ")
+            : err.message;
+        console.warn(
+          `[OMNIROUTE] Tech storyboard attempt ${attempt} failed: ${lastError}`
+        );
+        if (rawText.trim()) {
+          messages.push({ role: "assistant", content: rawText });
+          messages.push({
+            role: "user",
+            content: `JSON tadi ditolak validator: ${lastError}\nPerbaiki dan kirim ulang HANYA JSON yang valid.`,
+          });
+        }
+      }
+    }
+
+    throw new Error(
+      `Failed to generate valid tech storyboard after ${maxRetries + 1} attempts: ${lastError}`
     );
   }
 }

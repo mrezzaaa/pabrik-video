@@ -3,14 +3,16 @@ import * as THREE from "three";
 import { ThreeCanvas } from "@remotion/three";
 import { useThree } from "@react-three/fiber";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import type { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import {
   CalloutSpec,
-  DEMO_SPEC,
   PartSpec,
   TechSceneSpec,
+  boundsOf,
   cameraAt,
+  focusAt,
   partPosition,
-  progress,
+  track,
 } from "./spec";
 import {
   TechPlanes,
@@ -27,11 +29,16 @@ const MONO = "'JetBrains Mono','SF Mono',Menlo,Consolas,monospace";
 
 /* --------------------------------- 3D part -------------------------------- */
 
+const BASE_EDGE = new THREE.Color("#7DD3FC");
+const WHITE = new THREE.Color("#FFFFFF");
+
 const Part: React.FC<{
   part: PartSpec;
   spec: TechSceneSpec;
   planes: TechPlanes;
-}> = ({ part, spec, planes }) => {
+  focusId: string | null;
+  focusAmount: number;
+}> = ({ part, spec, planes, focusId, focusAmount }) => {
   const frame = useCurrentFrame();
 
   const { fill, edges, wire } = useMemo(() => {
@@ -40,15 +47,22 @@ const Part: React.FC<{
     const above = [planes.keepAbove, planes.section];
     return {
       fill: new THREE.Mesh(geo, createXRayMaterial(spec.themeColor, below)),
-      edges: createEdgeLines(
-        geo,
-        "#7DD3FC",
-        below,
-        new THREE.Vector2(W, H)
-      ),
+      edges: createEdgeLines(geo, "#7DD3FC", below, new THREE.Vector2(W, H)),
       wire: new THREE.Mesh(geo, createWireMaterial(spec.themeColor, above)),
     };
   }, [part, planes, spec.themeColor]);
+
+  // Sorot satu part: part lain meredup, part terpilih menyala putih & lebih tebal.
+  const isFocus = focusId === part.id;
+  const dim = focusId ? (isFocus ? 1 : 1 - 0.78 * focusAmount) : 1;
+  const boost = isFocus ? focusAmount : 0;
+  const edgeMat = edges.material as LineMaterial;
+  edgeMat.opacity = 0.95 * dim;
+  edgeMat.color.copy(BASE_EDGE).lerp(WHITE, boost);
+  edgeMat.linewidth = 2.6 + 1.8 * boost;
+  (fill.material as THREE.ShaderMaterial).uniforms.uOpacity.value =
+    dim * (1 + 0.6 * boost);
+  (wire.material as THREE.MeshBasicMaterial).opacity = 0.4 * dim;
 
   const [x, y, z] = partPosition(part, spec, frame);
   const rotZ = (part.spinZ ?? 0) * frame;
@@ -71,19 +85,19 @@ const CameraRig: React.FC<{ spec: TechSceneSpec }> = ({ spec }) => {
   return null;
 };
 
-/** Cincin cahaya scanner yang naik dari bawah ke atas. */
-const SweepRing: React.FC<{ spec: TechSceneSpec; y: number }> = ({
-  spec,
-  y,
-}) => {
+/** Cincin cahaya scanner yang bergerak mengikuti sapuan wireframe <-> blueprint. */
+const SweepRing: React.FC<{
+  spec: TechSceneSpec;
+  y: number;
+  radius: number;
+}> = ({ spec, y, radius }) => {
   const frame = useCurrentFrame();
-  const p = progress(frame, spec.sweep);
-  const visible = frame >= spec.sweep.from && p < 1;
-  if (!visible) return null;
+  const reveal = track(frame, spec.reveal);
+  if (reveal <= 0.002 || reveal >= 0.998) return null;
   return (
     <group position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <mesh>
-        <ringGeometry args={[1.5, 1.58, 96]} />
+        <ringGeometry args={[radius, radius * 1.045, 96]} />
         <meshBasicMaterial
           color="#BAE6FD"
           transparent
@@ -94,7 +108,7 @@ const SweepRing: React.FC<{ spec: TechSceneSpec; y: number }> = ({
         />
       </mesh>
       <mesh>
-        <circleGeometry args={[1.58, 96]} />
+        <circleGeometry args={[radius * 1.045, 96]} />
         <meshBasicMaterial
           color={spec.themeColor}
           transparent
@@ -260,30 +274,39 @@ const Hud: React.FC<{ spec: TechSceneSpec }> = ({ spec }) => {
 
 export type TechSceneProps = { spec: TechSceneSpec };
 
-export const TechScene: React.FC<TechSceneProps> = ({ spec = DEMO_SPEC }) => {
+export const TechScene: React.FC<TechSceneProps> = ({ spec }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const planes = useMemo(() => createPlanes(), []);
+  const bAll = boundsOf(spec).all;
 
-  // Sweep: wireframe -> blueprint solid, bawah ke atas.
-  const pSweep = progress(frame, spec.sweep);
-  let sweepY = interpolate(pSweep, [0, 1], [-2.9, 4.2]);
-  if (frame < spec.sweep.from) sweepY = -99;
-  if (pSweep >= 1) sweepY = 99;
+  // Sapuan scanner: reveal 0 (semua wireframe) <-> 1 (semua blueprint), bawah ke atas.
+  const reveal = track(frame, spec.reveal);
+  const y0 = bAll.min[1] - 0.15;
+  const y1 = bAll.max[1] + 0.15;
+  let sweepY = y0 + (y1 - y0) * reveal;
+  if (reveal <= 0.002) sweepY = -99;
+  if (reveal >= 0.998) sweepY = 99;
   planes.keepBelow.constant = sweepY; // -y + c >= 0  => y <= c
   planes.keepAbove.constant = -sweepY; //  y - c >= 0 => y >= c
 
-  // Potongan melintang: bidang bergerak dari x=3.6 ke x=0.
-  let cut = 99;
-  if (frame >= spec.section.from) {
-    cut = 3.6 * (1 - progress(frame, spec.section));
-  }
-  if (spec.sectionOut && frame >= spec.sectionOut.from) {
-    const pOut = progress(frame, spec.sectionOut);
-    cut = pOut >= 1 ? 99 : 3.6 * pOut;
-  }
-  planes.section.constant = cut;
+  // Potongan melintang: bidang bergerak dari tepi kanan menuju x=0.
+  const sec = track(frame, spec.section);
+  const xEdge = bAll.max[0] + 0.2;
+  planes.section.constant = sec <= 0.002 ? 99 : xEdge * (1 - sec);
 
+  const focus = focusAt(spec, frame);
+  const bb = boundsOf(spec);
+  const radiusOf = (b: { min: number[]; max: number[] }) =>
+    Math.hypot(
+      Math.max(Math.abs(b.min[0]), Math.abs(b.max[0])),
+      Math.max(Math.abs(b.min[2]), Math.abs(b.max[2]))
+    );
+  const eNow = track(frame, spec.explode);
+  const ringRadius = Math.max(
+    1.2,
+    (radiusOf(bb.a) + (radiusOf(bb.e) - radiusOf(bb.a)) * eNow) * 1.05
+  );
   const first = cameraAt(spec, 0);
 
   return (
@@ -310,16 +333,23 @@ export const TechScene: React.FC<TechSceneProps> = ({ spec = DEMO_SPEC }) => {
       <ThreeCanvas
         width={width}
         height={height}
-        camera={{ fov: first.fov, near: 0.1, far: 100, position: first.position }}
+        camera={{ fov: first.fov, near: 0.1, far: 200, position: first.position }}
         onCreated={({ gl }) => {
           gl.localClippingEnabled = true;
         }}
       >
         <CameraRig spec={spec} />
         {spec.parts.map((p) => (
-          <Part key={p.id} part={p} spec={spec} planes={planes} />
+          <Part
+            key={p.id}
+            part={p}
+            spec={spec}
+            planes={planes}
+            focusId={focus.partId}
+            focusAmount={focus.amount}
+          />
         ))}
-        <SweepRing spec={spec} y={sweepY} />
+        <SweepRing spec={spec} y={sweepY} radius={ringRadius} />
       </ThreeCanvas>
       <Callouts spec={spec} />
       <Hud spec={spec} />

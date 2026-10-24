@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
-import { PartSpec } from "./spec";
+import { PartSpec } from "./types";
 
 /** Bidang clipping bersama; di-update tiap frame oleh TechScene. */
 export interface TechPlanes {
@@ -29,6 +29,7 @@ export function createXRayMaterial(color: string, planes: THREE.Plane[]) {
       uColor: { value: new THREE.Color(color) },
       uPower: { value: 2.4 },
       uBase: { value: 0.07 },
+      uOpacity: { value: 1 },
     },
     vertexShader: /* glsl */ `
       #include <common>
@@ -49,12 +50,13 @@ export function createXRayMaterial(color: string, planes: THREE.Plane[]) {
       uniform vec3 uColor;
       uniform float uPower;
       uniform float uBase;
+      uniform float uOpacity;
       varying vec3 vN;
       varying vec3 vV;
       void main() {
         #include <clipping_planes_fragment>
         float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), uPower);
-        float a = uBase + f * 0.85;
+        float a = (uBase + f * 0.85) * uOpacity;
         gl_FragColor = vec4(uColor * (0.55 + f * 1.4), a);
       }
     `,
@@ -109,6 +111,20 @@ export function buildGeometry(part: PartSpec): THREE.BufferGeometry {
       const r = num(part, "r", 1);
       const h = num(part, "h", 1);
       const g = new THREE.CylinderGeometry(r, r, h, 48, 1);
+      if (part.params.axis === "x") g.rotateZ(Math.PI / 2);
+      if (part.params.axis === "z") g.rotateX(Math.PI / 2);
+      return g;
+    }
+    case "cone": {
+      const h = num(part, "h", 1);
+      const g = new THREE.CylinderGeometry(
+        num(part, "rTop", 0.5),
+        num(part, "rBottom", 1),
+        h,
+        48,
+        1,
+        false
+      );
       if (part.params.axis === "x") g.rotateZ(Math.PI / 2);
       if (part.params.axis === "z") g.rotateX(Math.PI / 2);
       return g;
