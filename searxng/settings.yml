@@ -1,0 +1,30 @@
+# SearXNG configuration with JSON API enabled for General and Image search
+use_default_settings: true
+
+server:
+  secret_key: "lKTKYZok0rrG4FKdvAV4ae1Jfuegqen"
+  bind_address: "0.0.0.0"
+  port: 8080
+  base_url: false
+  image_proxy: true
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "id-ID"
+  formats:
+    - html
+    - json
+
+categories_as_tabs:
+  general:
+    - google
+    - duckduckgo
+    - bing
+    - brave
+  images:
+    - google images
+    - bing images
+    - duckduckgo images
+    - unsplash
+    - wikimedia

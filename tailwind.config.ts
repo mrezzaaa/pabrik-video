@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,46 +10,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        stage: "#090D16",
-        grid: "#1E293B",
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+        blueprint: {
+          bg: "#071324",
+          surface: "rgba(11, 29, 54, 0.8)",
+          border: "#0e3054",
+          grid: "rgba(56, 189, 248, 0.18)",
+          gridMajor: "rgba(56, 189, 248, 0.35)",
+          cyan: "#38BDF8",
+          white: "#F0F9FF",
+          amber: "#F59E0B",
+          emerald: "#10B981",
+          crimson: "#EF4444",
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "JetBrains Mono", "monospace"],
+        mono: ["var(--font-jetbrains)", "Courier New", "monospace"],
+      },
+      backgroundImage: {
+        "blueprint-grid": `
+          linear-gradient(to right, rgba(56, 189, 248, 0.18) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(56, 189, 248, 0.18) 1px, transparent 1px)
+        `,
+      },
+      backgroundSize: {
+        "grid-20": "20px 20px",
       },
     },
   },

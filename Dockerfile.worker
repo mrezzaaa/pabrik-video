@@ -1,0 +1,36 @@
+FROM node:20-bookworm
+WORKDIR /app
+
+# Install system dependencies for Playwright, Chromium, and FFmpeg
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    openssl \
+    ca-certificates \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    fonts-liberation \
+    libgl1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
+RUN npm ci || npm install
+RUN npx playwright install chromium
+RUN npx prisma generate
+
+COPY . .
+
+CMD ["npx", "tsx", "src/queues/video-worker.ts"]

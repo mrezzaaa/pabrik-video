@@ -1,16 +1,16 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "PABRIK VIDEO // Automated Kitabedah.id Video Factory",
-  description:
-    "Multi-Agent Isometric 3D Explanatory Video Factory powered by Next.js 16, BullMQ FlowProducer, Omniroute LLM, UnlimitedTTS (Ethan 1.1x), and Remotion 60fps.",
-};
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
+export const metadata: Metadata = {
+  title: "PABRIK-VIDEO // CAD SCHEMATIC CONTROL BAY",
+  description: "Autonomous Short-Form Video Manufacturing Platform",
 };
 
 export default function RootLayout({
@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className="dark">
-      <body className="min-h-screen bg-[#090D16] text-slate-100 antialiased selection:bg-sky-500/30 selection:text-sky-200">
+    <html lang="id" className={`${jetbrainsMono.variable}`}>
+      <body className="min-h-screen bg-[#071324] text-[#F0F9FF] antialiased selection:bg-[#38BDF8] selection:text-[#071324]">
         {children}
       </body>
     </html>

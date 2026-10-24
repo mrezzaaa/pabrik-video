@@ -1,15 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true,
-  serverExternalPackages: [
-    "@remotion/bundler",
-    "@remotion/renderer",
-    "esbuild",
-    "bullmq",
-    "ioredis",
-  ],
-  transpilePackages: ["three", "@remotion/three", "@react-three/fiber", "@react-three/drei"],
-  allowedDevOrigins: ['algas-dev.taild765a1.ts.net']
+  serverExternalPackages: ["@remotion/renderer", "@remotion/bundler", "fluent-ffmpeg", "playwright"],
+  output: "standalone",
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
 };
+
 export default nextConfig;
