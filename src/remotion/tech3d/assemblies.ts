@@ -190,10 +190,70 @@ const liIonCell: AssemblyDef = {
   ],
 };
 
+const tumbler: AssemblyDef = {
+  id: "tumbler",
+  title: "Tumbler isolasi vakum (termos modern)",
+  fits:
+    "tumbler, termos, kenapa tumbler bisa tahan panas atau dingin seharian, isolasi vakum, perpindahan panas konduksi konveksi radiasi, dinding ganda stainless steel",
+  parts: [
+    {
+      id: "outer_wall",
+      nameId: "Dinding luar stainless",
+      role: "lapisan baja luar yang melindungi ruang vakum dan nyaman dipegang tangan",
+      kind: "tube",
+      position: [0, 0, 0],
+      params: { rOuter: 1.0, rInner: 0.95, h: 4.8 },
+      explodeDir: [0, 0, 0],
+      explodeDistance: 0,
+    },
+    {
+      id: "vacuum_gap",
+      nameId: "Ruang hampa udara (vakum)",
+      role: "rongga tanpa molekul udara yang menghentikan konduksi dan konveksi panas total",
+      kind: "tube",
+      position: [0, 0, 0],
+      params: { rOuter: 0.95, rInner: 0.88, h: 4.4 },
+      explodeDir: [0, 0, 0],
+      explodeDistance: 0,
+    },
+    {
+      id: "inner_wall",
+      nameId: "Tabung dalam",
+      role: "menampung minuman, dilapisi tembaga/perak untuk memantulkan radiasi panas",
+      kind: "tube",
+      position: [0, 0, 0],
+      params: { rOuter: 0.88, rInner: 0.82, h: 4.2 },
+      explodeDir: [0, -1, 0],
+      explodeDistance: 1.2,
+    },
+    {
+      id: "silicone_gasket",
+      nameId: "Segel silikon",
+      role: "karet kedap udara yang mencegah kebocoran uap panas lewat celah ulir",
+      kind: "tube",
+      position: [0, 2.3, 0],
+      params: { rOuter: 0.92, rInner: 0.78, h: 0.2 },
+      explodeDir: [0, 1, 0],
+      explodeDistance: 1.5,
+    },
+    {
+      id: "lid",
+      nameId: "Tutup insulator",
+      role: "tutup berongga plastik insulatif tebal untuk memblokir kehilangan panas ke atas",
+      kind: "cylinder",
+      position: [0, 2.6, 0],
+      params: { r: 0.98, h: 0.5 },
+      explodeDir: [0, 1, 0],
+      explodeDistance: 2.6,
+    },
+  ],
+};
+
 export const ASSEMBLIES: Record<string, AssemblyDef> = {
   [pistonEngine.id]: pistonEngine,
   [turbofan.id]: turbofan,
   [liIonCell.id]: liIonCell,
+  [tumbler.id]: tumbler,
 };
 
 export const ASSEMBLY_IDS = Object.keys(ASSEMBLIES);
