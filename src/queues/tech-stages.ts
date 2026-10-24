@@ -6,7 +6,7 @@ import { ttsEngine } from "../lib/tts-ethan";
 import { remotionRenderer } from "../lib/renderer";
 import { logTelemetry } from "../lib/job-log";
 import { computeWordTimestamps } from "../lib/subtitle-sync";
-import { ASSEMBLY_IDS } from "../remotion/tech3d/assemblies";
+import { getCatalog, saveAssembly } from "../lib/assembly-store";
 import {
   TechStoryboard,
   TechVideoProps,
@@ -40,6 +40,10 @@ export async function runTechStages(input: TechStagesInput): Promise<void> {
   const hasTechStoryboard =
     !!storyboard && Array.isArray(storyboard.beats) && storyboard.beats.length > 0;
 
+  // Katalog = assembly bawaan kode + assembly hasil rancangan job sebelumnya.
+  const catalog = getCatalog();
+  const catalogIds = Object.keys(catalog);
+
   if (!hasTechStoryboard) {
     await prisma.videoJob.update({
       where: { id: jobId },
@@ -54,24 +58,65 @@ export async function runTechStages(input: TechStagesInput): Promise<void> {
     await logTelemetry(
       jobId,
       "02_LLM_DIRECTOR",
-      `Director (mode TECH-3D): memilih assembly dari katalog [${ASSEMBLY_IDS.join(", ")}] dan menulis beat narasi...`
+      `Director (mode TECH-3D): memilih assembly dari katalog [${catalogIds.join(", ")}] dan menulis beat narasi...`
     );
 
-    const generated = await omniroute.generateTechStoryboard(
+    let generated = await omniroute.generateTechStoryboard(
       topic,
       knowledgeBase,
-      modelId
+      modelId,
+      { catalog }
     );
 
     if (generated.assemblyId === "NONE") {
-      throw new Error(
-        `Topik "${topic}" belum cocok dengan library assembly yang tersedia (${ASSEMBLY_IDS.join(", ")}). ` +
-          `Alasan director: ${generated.fitReason || "-"}. ` +
-          `Tambahkan assembly baru di src/remotion/tech3d/assemblies.ts, atau pilih topik lain.`
+      if (process.env.AUTO_ASSEMBLY === "0") {
+        throw new Error(
+          `Topik "${topic}" belum cocok dengan library assembly yang tersedia (${catalogIds.join(", ")}). ` +
+            `Alasan director: ${generated.fitReason || "-"}. ` +
+            `Tambahkan assembly baru di src/remotion/tech3d/assemblies.ts, atau aktifkan AUTO_ASSEMBLY.`
+        );
+      }
+
+      await logTelemetry(
+        jobId,
+        "02_LLM_DIRECTOR",
+        `Tidak ada assembly yang cocok (${generated.fitReason || "-"}). Merancang assembly baru dari library part...`,
+        "WARN"
+      );
+
+      const designed = await omniroute.generateAssembly(
+        topic,
+        knowledgeBase,
+        generated.fitReason || "",
+        catalogIds,
+        modelId
+      );
+      const file = saveAssembly(designed.assembly);
+      catalog[designed.assembly.id] = designed.assembly;
+      await logTelemetry(
+        jobId,
+        "02_LLM_DIRECTOR",
+        `Assembly baru "${designed.assembly.id}" (${designed.assembly.parts.length} part) disimpan untuk dipakai ulang: ${file}`,
+        "INFO",
+        {
+          assemblyId: designed.assembly.id,
+          parts: designed.assembly.parts.map((p) => p.id),
+          warnings: designed.warnings,
+        }
+      );
+      for (const w of designed.warnings) {
+        await logTelemetry(jobId, "02_LLM_DIRECTOR", `Normalizer: ${w}`, "WARN");
+      }
+
+      generated = await omniroute.generateTechStoryboard(
+        topic,
+        knowledgeBase,
+        modelId,
+        { catalog, forceAssemblyId: designed.assembly.id }
       );
     }
 
-    storyboard = generated;
+    storyboard = { ...generated, assembly: catalog[generated.assemblyId] };
     await prisma.videoJob.update({
       where: { id: jobId },
       data: { storyboard: storyboard as any, progress: 45 },
@@ -180,6 +225,7 @@ export async function runTechStages(input: TechStagesInput): Promise<void> {
     videoTitle: sb.videoTitle,
     themeColor: sb.themeColor || "#38BDF8",
     assemblyId: sb.assemblyId,
+    assembly: sb.assembly ?? catalog[sb.assemblyId],
     totalDurationInFrames: totalVideoFrames,
     fps: FPS,
     width: 1080,

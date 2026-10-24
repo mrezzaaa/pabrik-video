@@ -1,4 +1,5 @@
-import { describeCatalogForPrompt } from "../remotion/tech3d/assemblies";
+import { ASSEMBLIES, describeCatalogForPrompt } from "../remotion/tech3d/assemblies";
+import type { AssemblyDef } from "../remotion/tech3d/types";
 
 export const MASTER_SYSTEM_PROMPT = `You are an expert Indonesian short-form documentary scriptwriter and motion graphics director.
 Transform the provided research data into a high-retention 45-60 second vertical video script (9:16 Shorts/Reels) paired with a Hybrid Visual Storyboard, live Top Telemetry Deck, and Real Engineering X-Ray Wireframe callouts.
@@ -103,7 +104,14 @@ Respond ONLY with a JSON array of 3 strings:
  * Prompt director gaya "gambar teknik 3D" (ala Real Engineering, versi Shorts).
  * Katalog assembly disuntikkan dinamis supaya prompt selalu sinkron dengan kode.
  */
-export function buildTechDirectorPrompt(): string {
+export function buildTechDirectorPrompt(
+  catalog: Record<string, AssemblyDef> = ASSEMBLIES,
+  opts: { forceAssemblyId?: string } = {}
+): string {
+  const force = opts.forceAssemblyId;
+  const catalogRule = force
+    ? `Untuk video ini WAJIB memakai assemblyId "${force}" (baru dirancang khusus untuk topik ini). DILARANG membalas "NONE".`
+    : `Jika topik TIDAK cocok dengan assembly mana pun, JANGAN memaksakan. Balas: {"assemblyId": "NONE", "fitReason": "alasan singkat kenapa tidak cocok", "videoTitle": "", "beats": []}`;
   return `Kamu sutradara video explainer teknik berbahasa Indonesia untuk Shorts/Reels 9:16, bergaya Real Engineering: tenang, jelas, penuh rasa ingin tahu, divisualkan dengan gambar teknik 3D.
 
 ### KONSEP VISUAL (PENTING)
@@ -119,9 +127,9 @@ Kondisi yang bisa diatur per beat (state):
 - callouts: maksimal 2 label bergaris penunjuk, text maksimal 24 karakter, HURUF BESAR.
 
 ### KATALOG ASSEMBLY (HANYA boleh memakai id dari sini)
-${describeCatalogForPrompt()}
+${describeCatalogForPrompt(force ? { [force]: catalog[force] } : catalog)}
 
-Jika topik TIDAK cocok dengan assembly mana pun, JANGAN memaksakan. Balas: {"assemblyId": "NONE", "fitReason": "alasan singkat kenapa tidak cocok", "videoTitle": "", "beats": []}
+${catalogRule}
 
 ### BUSUR CERITA (6-8 beat, total 45-60 detik)
 1. Beat 1 HOOK: langsung anomali atau fakta mengejutkan dalam 3 detik pertama. Tanpa basa-basi.
@@ -154,4 +162,52 @@ Balas HANYA JSON mentah yang valid, tanpa teks lain, persis struktur ini:
     }
   ]
 }`;
+}
+
+/**
+ * Prompt perancang assembly: dipakai ketika tidak ada assembly di katalog yang cocok.
+ * LLM hanya mengisi data JSON dari library part; normalizer yang menjaga ukuran & layout.
+ */
+export function buildAssemblyDesignerPrompt(): string {
+  return `Kamu perancang model 3D teknik untuk video explainer. Tugasmu: merancang SATU "assembly" (objek yang tersusun dari beberapa komponen) yang paling menjelaskan topik dari sutradara, memakai library part di bawah. Kamu TIDAK menulis kode; kamu hanya mengisi JSON.
+
+### LIBRARY PART (satuan bebas, skala dinormalisasi otomatis)
+- "cylinder": {"r", "h", "axis"?}  silinder penuh. axis "x" atau "z" untuk merebahkan; default tegak (sumbu Y).
+- "tube": {"rOuter", "rInner", "h"}  tabung berongga (dinding, cangkang, selongsong). Selalu tegak.
+- "box": {"w", "h", "d"}  balok (pelat, batang, blok).
+- "gear": {"rOuter", "rRoot", "teeth", "depth", "hole"}  roda gigi / kipas / rotor. Sumbunya Z (menghadap kamera).
+- "cone": {"rTop", "rBottom", "h", "axis"?}  kerucut, nosel, corong.
+
+### KOORDINAT
+Sumbu Y = atas. Objek berdiri tegak, berpusat di x=0 dan z=0. "y" = tinggi TITIK TENGAH part. Idealnya tinggi total sekitar 6 dan jari-jari terluar maksimal sekitar 2 (kalau meleset, sistem menskalakan otomatis).
+
+### ATURAN DESAIN
+1. 5 sampai 10 part. Pilih komponen yang menjelaskan CARA KERJA topik, bukan semua detail kecil.
+2. Tiap part: "id" (snake_case ASCII), "nameId" (nama Indonesia), "role" (fungsi dalam 1 kalimat yang akurat; ini dibaca sutradara untuk menulis narasi).
+3. Komponen dan fungsinya HARUS berdasarkan RESEARCH KNOWLEDGE BASE dan dunia nyata. Jangan mengarang komponen.
+4. Selongsong/cangkang yang membungkus part lain: pakai "tube" berdinding tipis dengan "explode": "NONE" (jangkar yang diam saat dibongkar). Part di dalamnya harus berjari-jari LEBIH KECIL dari rInner supaya terlihat saat objek dipotong.
+5. "explode" menentukan arah part ditarik saat tampilan bongkar: "NONE", "UP", "DOWN", "RIGHT", "LEFT". Jarak dihitung otomatis. Sebarkan arahnya; jangan semua ke arah yang sama bila bisa.
+6. "spin": true hanya untuk part yang berputar, dan hanya untuk kind "gear" atau cylinder dengan axis "z". "bob": true untuk part yang bergerak naik-turun.
+7. Jangan menaruh dua part pada posisi dan ukuran yang persis sama.
+
+### FORMAT (balas JSON mentah saja, tanpa teks lain)
+{
+  "id": "nama_objek_snake_case",
+  "title": "Nama objek",
+  "fits": "daftar topik yang cocok dengan assembly ini, dipisah koma",
+  "parts": [
+    {"id": "...", "nameId": "...", "role": "...", "kind": "tube", "params": {"rOuter": 1.0, "rInner": 0.95, "h": 3}, "x": 0, "y": 0, "z": 0, "explode": "NONE", "spin": false, "bob": false}
+  ]
+}
+
+### CONTOH (objek lain, hanya untuk memperlihatkan format)
+{"id":"french_press","title":"French press","fits":"cara kerja french press, seduh kopi",
+ "parts":[
+  {"id":"carafe","nameId":"Gelas penampung","role":"menampung air panas dan bubuk kopi selama diseduh","kind":"tube","params":{"rOuter":1.0,"rInner":0.95,"h":3.2},"y":0,"explode":"NONE"},
+  {"id":"coffee","nameId":"Kopi dan air","role":"bubuk kopi yang terendam air panas hingga zatnya larut","kind":"cylinder","params":{"r":0.9,"h":2.2},"y":-0.4,"explode":"DOWN"},
+  {"id":"filter","nameId":"Saringan logam","role":"menahan ampas saat batang ditekan turun","kind":"cylinder","params":{"r":0.92,"h":0.08},"y":0.4,"explode":"UP"},
+  {"id":"rod","nameId":"Batang penekan","role":"menekan saringan turun sehingga ampas terpisah dari kopi","kind":"cylinder","params":{"r":0.07,"h":2.6},"y":1.7,"explode":"UP"},
+  {"id":"lid","nameId":"Tutup","role":"menjaga panas dan menjadi tumpuan batang","kind":"cylinder","params":{"r":1.02,"h":0.18},"y":1.7,"explode":"UP"},
+  {"id":"knob","nameId":"Knob","role":"pegangan untuk menekan batang","kind":"cylinder","params":{"r":0.22,"h":0.25},"y":3.1,"explode":"UP"}
+ ]}`;
 }

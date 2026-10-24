@@ -1,10 +1,7 @@
 import { z } from "zod";
-import {
-  ASSEMBLIES,
-  ASSEMBLY_IDS,
-  findPart,
-} from "../remotion/tech3d/assemblies";
+import { ASSEMBLIES, findPart } from "../remotion/tech3d/assemblies";
 import type {
+  AssemblyDef,
   CalloutSpec,
   Highlight,
   Keyframe,
@@ -45,6 +42,8 @@ export interface TechStoryboard {
   /** id di katalog, atau "NONE" bila topik tidak cocok dengan assembly mana pun */
   assemblyId: string;
   fitReason?: string;
+  /** definisi assembly lengkap (diisi worker) supaya job mandiri, termasuk assembly hasil rancangan LLM */
+  assembly?: AssemblyDef;
   beats: TechBeat[];
 }
 
@@ -52,6 +51,8 @@ export type TechVideoProps = {
   videoTitle: string;
   themeColor: string;
   assemblyId: string;
+  /** bila ada, dipakai menggantikan lookup katalog bawaan */
+  assembly?: AssemblyDef;
   totalDurationInFrames: number;
   fps: number;
   width: number;
@@ -116,11 +117,28 @@ const RawStoryboardSchema = z.object({
 export const MIN_BEATS = 5;
 export const MAX_BEATS = 12;
 
-export const TechStoryboardSchema = RawStoryboardSchema.transform(
-  (raw, ctx): TechStoryboard => {
+export interface TechSchemaOptions {
+  /** wajib memakai assembly ini (dan NONE dilarang) */
+  forceAssemblyId?: string;
+}
+
+export function makeTechStoryboardSchema(
+  catalog: Record<string, AssemblyDef>,
+  opts: TechSchemaOptions = {}
+) {
+  const ids = Object.keys(catalog);
+  return RawStoryboardSchema.transform((raw, ctx): TechStoryboard => {
     const idLc = raw.assemblyId.trim().toLowerCase();
 
     if (idLc === "none") {
+      if (opts.forceAssemblyId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["assemblyId"],
+          message: `assemblyId tidak boleh "NONE"; wajib "${opts.forceAssemblyId}".`,
+        });
+        return z.NEVER;
+      }
       return {
         videoTitle: raw.videoTitle,
         themeColor: raw.themeColor,
@@ -130,19 +148,21 @@ export const TechStoryboardSchema = RawStoryboardSchema.transform(
       };
     }
 
-    const assembly = ASSEMBLIES[idLc];
-    if (!assembly) {
+    const assembly = catalog[idLc];
+    if (!assembly || (opts.forceAssemblyId && idLc !== opts.forceAssemblyId)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["assemblyId"],
-        message: `assemblyId "${raw.assemblyId}" tidak ada di katalog. Pilih salah satu: ${ASSEMBLY_IDS.join(", ")} atau "NONE".`,
+        message: opts.forceAssemblyId
+          ? `assemblyId wajib "${opts.forceAssemblyId}".`
+          : `assemblyId "${raw.assemblyId}" tidak ada di katalog. Pilih salah satu: ${ids.join(", ")} atau "NONE".`,
       });
       return z.NEVER;
     }
 
     if (raw.beats.length < MIN_BEATS || raw.beats.length > MAX_BEATS) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["beats"],
         message: `Jumlah beat harus ${MIN_BEATS}-${MAX_BEATS}, bukan ${raw.beats.length}.`,
       });
@@ -193,8 +213,11 @@ export const TechStoryboardSchema = RawStoryboardSchema.transform(
       fitReason: raw.fitReason,
       beats,
     };
-  }
-);
+  });
+}
+
+/** Skema dengan katalog bawaan kode (dipakai tes & kompatibilitas). */
+export const TechStoryboardSchema = makeTechStoryboardSchema(ASSEMBLIES);
 
 /* -------------------------------------------------------------------------- */
 /*  Compiler: beat -> keyframe track untuk TechScene                           */
@@ -232,7 +255,7 @@ function push(track: Keyframe[], frame: number, value: number) {
 }
 
 export function compileBeatsToSpec(props: TechVideoProps): TechSceneSpec {
-  const assembly = ASSEMBLIES[props.assemblyId];
+  const assembly = props.assembly ?? ASSEMBLIES[props.assemblyId];
   if (!assembly) {
     throw new Error(
       `compileBeatsToSpec: assembly "${props.assemblyId}" tidak ada di katalog`

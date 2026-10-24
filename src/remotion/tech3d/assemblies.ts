@@ -270,8 +270,10 @@ export function findPart(a: AssemblyDef, raw: string): AssemblyPart | undefined 
 }
 
 /** Teks katalog untuk disuntikkan ke prompt director. */
-export function describeCatalogForPrompt(): string {
-  return Object.values(ASSEMBLIES)
+export function describeCatalogForPrompt(
+  catalog: Record<string, AssemblyDef> = ASSEMBLIES
+): string {
+  return Object.values(catalog)
     .map((a) => {
       const parts = a.parts
         .map((p) => `    - ${p.id} = ${p.nameId}: ${p.role}`)

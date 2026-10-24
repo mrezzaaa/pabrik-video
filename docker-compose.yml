@@ -96,6 +96,7 @@ services:
       - REMOTION_CONCURRENCY=2
       - REMOTION_FPS=30
       - PIPELINE_STYLE=tech
+      - AUTO_ASSEMBLY=1
       - REMOTION_GL=swangle
     volumes:
       - assets_data:/app/public/assets
