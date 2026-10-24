@@ -73,38 +73,82 @@ const BLUEPRINT_SCHEMA_TEMPLATE = `{
     {
       "phaseIndex": 0,
       "phaseType": "EVERYDAY_CONTRAST_HOOK",
-      "title": "<Act 1 Title>",
+      "title": "<Short Dynamic Topic-Specific Title, e.g. Rangka X or Cepat Dingin?>",
       "everydayContrastOrHook": "<Contrast between normal vs special state>",
       "simpleExplanation": "<Simple explanation>",
-      "targetDurationSeconds": 7,
-      "focusComponentIds": ["comp_1", "comp_2"]
+      "cameraDirection": {
+        "shotType": "WIDE_SHOT",
+        "focusComponentIds": ["comp_1"],
+        "focusPosition3D": [0, 0, 0],
+        "zoomMultiplier": 1.0,
+        "explodeFactor": 0
+      },
+      "objectState": {
+        "visibleComponentIds": ["comp_1"],
+        "cutawayEnabled": false,
+        "exploded": false
+      },
+      "targetDurationSeconds": 8
     },
     {
       "phaseIndex": 1,
       "phaseType": "CORE_MECHANISM_CUTAWAY",
-      "title": "<Act 2 Title>",
+      "title": "<Core Mechanism Specific Title, e.g. Dinding Ganda or Motor Brushless>",
       "everydayContrastOrHook": "<Core cutaway mechanism>",
       "simpleExplanation": "<Simple explanation>",
-      "targetDurationSeconds": 12,
-      "focusComponentIds": ["comp_2", "comp_3"]
+      "cameraDirection": {
+        "shotType": "CUTAWAY_50",
+        "focusComponentIds": ["comp_1", "comp_2"],
+        "focusPosition3D": [0, 0.2, 0],
+        "zoomMultiplier": 1.4,
+        "explodeFactor": 0.2
+      },
+      "objectState": {
+        "visibleComponentIds": ["comp_1", "comp_2", "comp_3"],
+        "cutawayEnabled": true,
+        "exploded": false
+      },
+      "targetDurationSeconds": 10
     },
     {
       "phaseIndex": 2,
       "phaseType": "COMPONENT_ZOOM_INS",
-      "title": "<Act 3 Title>",
+      "title": "<Component Zoom Specific Title, e.g. Ruang Hampa or Sensor Gyro>",
       "everydayContrastOrHook": "<Specific internal part zoom-in>",
       "simpleExplanation": "<Simple explanation>",
-      "targetDurationSeconds": 10,
-      "focusComponentIds": ["comp_3", "comp_4"]
+      "cameraDirection": {
+        "shotType": "EXPLODED_VIEW",
+        "focusComponentIds": ["comp_3"],
+        "focusPosition3D": [0, -0.4, 0],
+        "zoomMultiplier": 1.8,
+        "explodeFactor": 0.8
+      },
+      "objectState": {
+        "visibleComponentIds": ["comp_2", "comp_3", "comp_4"],
+        "cutawayEnabled": true,
+        "exploded": true
+      },
+      "targetDurationSeconds": 10
     },
     {
       "phaseIndex": 3,
       "phaseType": "PRACTICAL_TAKEAWAY_LOOP",
-      "title": "<Act 4 Title>",
+      "title": "<Takeaway Specific Title, e.g. Tutup Rapat or Kalibrasi Arah>",
       "everydayContrastOrHook": "<Practical takeaway & checklist>",
       "simpleExplanation": "<Simple explanation>",
-      "targetDurationSeconds": 9,
-      "focusComponentIds": ["comp_1", "comp_2", "comp_3", "comp_4"]
+      "cameraDirection": {
+        "shotType": "CLOSE_UP",
+        "focusComponentIds": ["comp_4"],
+        "focusPosition3D": [0, 1.2, 0],
+        "zoomMultiplier": 2.2,
+        "explodeFactor": 0
+      },
+      "objectState": {
+        "visibleComponentIds": ["comp_1", "comp_2", "comp_3", "comp_4"],
+        "cutawayEnabled": false,
+        "exploded": false
+      },
+      "targetDurationSeconds": 9
     }
   ]
 }`;
@@ -154,11 +198,11 @@ export async function runDeconstructorAgent(topic: string): Promise<{
   const { research, modelUsed: researchModel } = await runResearchAgent(topic);
 
   // Step 2: Dynamically load the anatomy skill instructions
-  const anatomySkill = await loadAgentSkill(".agents/skill/anatomy");
+  const anatomySkill = await loadAgentSkill(".agents/skills/anatomy");
 
   const systemPrompt = `${LAYMAN_DECONSTRUCTOR_SYSTEM_PROMPT}
 
---- AGENT SKILL PLAYBOOK (.agents/skill/anatomy) ---
+--- AGENT SKILL PLAYBOOK (.agents/skills/anatomy) ---
 ${anatomySkill}
 ---------------------------------------------------`;
 

@@ -177,7 +177,7 @@ export async function runVisualChoreographerAgent(params: {
     svgContent: anatomyResult.visualScene.svgContent,
     nodes: anatomyResult.visualScene.nodes.map((n, idx) => ({
       nodeId: n.nodeId,
-      componentId: n.nodeId,
+      componentId: blueprint.components[idx]?.id || n.nodeId,
       name: blueprint.components[idx]?.name || `Part ${idx + 1}`,
       geometryType: "svg-part" as const,
       svgPath: n.svgPath,
@@ -201,39 +201,67 @@ export async function runVisualChoreographerAgent(params: {
     })),
   };
 
-  // Build Camera Keyframes per beat
+  // Build Camera Keyframes per beat dynamically from LLM blueprint
   const baseCamPos = visualScene.cameraPreset?.basePosition ?? [8, 6.5, 8];
   const baseZoom = visualScene.cameraPreset?.baseZoom ?? 170;
-
-  // Focus target for Act 3 (Component Zoom-In)
-  const c3TargetComp = blueprint.components[2] ?? blueprint.components[1];
-  const c3Focus: [number, number, number] = c3TargetComp?.zoomTarget?.focusPosition3D ?? [0, 0.4, 0];
-  const c3Multiplier = c3TargetComp?.zoomTarget?.zoomMultiplier ?? 1.55;
-
-  const cameraPresets: {
-    focusTarget3D: [number, number, number];
-    scale: number;
-  }[] = [
-    { focusTarget3D: [0, 0, 0], scale: 1.0 },
-    { focusTarget3D: [0, -0.15, 0], scale: 1.15 },
-    { focusTarget3D: c3Focus, scale: Math.min(2.0, Math.max(1.35, c3Multiplier)) },
-    { focusTarget3D: [0, 0.1, 0], scale: 1.02 },
-  ];
 
   const phases: PhaseTimelineBlock[] = [];
   const pillCallouts: FramePillCallout[] = [];
   const sfxOverlays: FrameSfxOverlay[] = [];
 
-  for (let i = 0; i < 4; i++) {
+  const segmentCount = Math.min(script.segments.length, tts.segments.length);
+
+  for (let i = 0; i < segmentCount; i++) {
     const scriptSeg = script.segments[i];
     const ttsSeg = tts.segments[i];
     const bpPhase = blueprint.phases[i];
-    const camPreset = cameraPresets[i] ?? cameraPresets[0];
+
+    const camDir = bpPhase?.cameraDirection;
+    const objState = bpPhase?.objectState;
+
+    // Dynamic shot type & camera values from LLM, with progressive fallback
+    const defaultShotType =
+      i === 0
+        ? "WIDE_SHOT"
+        : i === 1
+        ? "CUTAWAY_50"
+        : i === 2
+        ? "EXPLODED_VIEW"
+        : "CLOSE_UP";
+    const shotType = camDir?.shotType || defaultShotType;
+
+    const scale =
+      camDir?.zoomMultiplier ??
+      (shotType === "CLOSE_UP" || shotType === "EXTREME_CLOSE_UP"
+        ? 2.2
+        : shotType === "EXPLODED_VIEW"
+        ? 1.8
+        : shotType === "CUTAWAY_50"
+        ? 1.4
+        : 1.0);
+    const explodeFactor =
+      camDir?.explodeFactor ??
+      (objState?.exploded || shotType === "EXPLODED_VIEW" ? 0.8 : 0);
+    const focusTarget3D = camDir?.focusPosition3D ?? [0, 0, 0];
+    const camX =
+      shotType === "CLOSE_UP" || shotType === "EXTREME_CLOSE_UP" ? 80 : 0;
+    const camY =
+      shotType === "CLOSE_UP" || shotType === "EXTREME_CLOSE_UP" ? -40 : 0;
+
+    const activeComponentIds =
+      objState?.visibleComponentIds && objState.visibleComponentIds.length > 0
+        ? objState.visibleComponentIds
+        : bpPhase?.focusComponentIds ??
+          visualScene.nodes.map((n) => n.componentId);
+
+    const cutaway =
+      objState?.cutawayEnabled ??
+      (shotType === "CUTAWAY_50" || shotType === "EXPLODED_VIEW");
 
     phases.push({
       segmentIndex: i,
       phaseType: scriptSeg.phaseType,
-      chapterTitle: scriptSeg.chapterTitle,
+      chapterTitle: scriptSeg.chapterTitle || bpPhase?.title || `Phase ${i + 1}`,
       narrationText: scriptSeg.narrationText,
       audioUrl: ttsSeg.audioUrl,
       startFrame: ttsSeg.startFrame,
@@ -243,17 +271,17 @@ export async function runVisualChoreographerAgent(params: {
       camera: {
         startFrame: ttsSeg.startFrame,
         endFrame: ttsSeg.endFrame,
-        focusTarget3D: camPreset.focusTarget3D,
-        x: 0,
-        y: 0,
-        scale: camPreset.scale,
+        focusTarget3D,
+        x: camX,
+        y: camY,
+        scale,
+        explodeFactor,
       },
       primaryMetric: scriptSeg.primaryMetric,
       statusBadge: scriptSeg.statusBadge,
       secondaryMetric: scriptSeg.secondaryMetric,
-      activeComponentIds:
-        bpPhase?.focusComponentIds ??
-        visualScene.nodes.map((n) => n.componentId),
+      activeComponentIds,
+      cutaway,
       showChecklistCard: scriptSeg.showChecklistCard ?? i === 3,
     });
 
@@ -272,8 +300,8 @@ export async function runVisualChoreographerAgent(params: {
       const rawAnchor = project3DTo2D(
         nodePos3D,
         baseCamPos,
-        camPreset.focusTarget3D,
-        baseZoom * camPreset.scale,
+        focusTarget3D,
+        baseZoom * scale,
         width,
         height
       );

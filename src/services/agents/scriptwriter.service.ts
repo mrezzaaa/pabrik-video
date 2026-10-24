@@ -71,11 +71,11 @@ export async function runScriptwriterAgent(
   modelUsed: string;
 }> {
   // Dynamically load the anatomy skill instructions
-  const anatomySkill = await loadAgentSkill(".agents/skill/anatomy");
+  const anatomySkill = await loadAgentSkill(".agents/skills/anatomy");
 
   const systemPrompt = `${LAYMAN_SCRIPTWRITER_SYSTEM_PROMPT}
 
---- AGENT SKILL PLAYBOOK (.agents/skill/anatomy) ---
+--- AGENT SKILL PLAYBOOK (.agents/skills/anatomy) ---
 ${anatomySkill}
 ---------------------------------------------------`;
 

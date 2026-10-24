@@ -79,14 +79,41 @@ export const DeconstructedComponentSchema = z.object({
   }),
 });
 
+export const ShotTypeSchema = z
+  .enum([
+    "WIDE_SHOT",
+    "CUTAWAY_50",
+    "EXPLODED_VIEW",
+    "CLOSE_UP",
+    "EXTREME_CLOSE_UP",
+    "TOP_DOWN",
+  ])
+  .catch("WIDE_SHOT");
+
+export const CameraDirectionSchema = z.object({
+  shotType: ShotTypeSchema.describe("Pilih shot yang paling cocok untuk menjelaskan komponen di phase ini"),
+  focusComponentIds: z.array(z.string()).catch([]).describe("Komponen yang di-focus di phase ini, ambil dari components[].id"),
+  focusPosition3D: Vec3TupleSchema.describe("Titik 3D yang di-zoom, isi dari komponen focus"),
+  zoomMultiplier: z.coerce.number().min(0.8).max(3.0).catch(1.0).describe("1.0=wide, 1.4=cutaway, 1.8=exploded, 2.2=close-up, 2.4=extreme close-up"),
+  explodeFactor: z.coerce.number().min(0).max(1).catch(0).describe("0=rakit, 0.5=sedikit renggang, 1=meledak total terpisah"),
+});
+
+export const ObjectStateSchema = z.object({
+  visibleComponentIds: z.array(z.string()).catch([]).describe("Di phase ini komponen apa aja yang keliatan. Phase awal cuma 1-2, phase akhir semua"),
+  cutawayEnabled: z.boolean().catch(false).describe("true kalau perlu potong 50% biar keliatan dalam"),
+  exploded: z.boolean().catch(false).describe("true kalau shotType EXPLODED_VIEW"),
+});
+
 export const DeconstructedPhaseSchema = z.object({
-  phaseIndex: z.number().int().min(0).max(3),
+  phaseIndex: z.coerce.number().int().min(0),
   phaseType: PhaseTypeSchema,
-  title: z.string().min(1),
-  everydayContrastOrHook: z.string().min(1),
-  simpleExplanation: z.string().min(1),
-  targetDurationSeconds: z.coerce.number().min(5).max(16).catch(8),
-  focusComponentIds: z.array(z.string()),
+  title: z.string().describe("JUDUL DINAMIS 2-4 KATA SPESIFIK TOPIK. Contoh tumbler: 'Ruang Hampa', drone: 'Rangka X', kucing: 'Ekor Kemudi'. DILARANG output 'Solusi Vakum' kalau topik bukan tumbler"),
+  simpleExplanation: z.string(),
+  everydayContrastOrHook: z.string().optional(),
+  cameraDirection: CameraDirectionSchema,
+  objectState: ObjectStateSchema,
+  targetDurationSeconds: z.coerce.number().min(4).max(16).catch(8),
+  focusComponentIds: z.array(z.string()).optional(),
 });
 
 export const DeconstructionBlueprintSchema = z.object({
@@ -101,7 +128,7 @@ export const DeconstructionBlueprintSchema = z.object({
   practicalChecklistTitle: z.string().catch("CEK SEBELUM BELI / PAKAI:"),
   practicalChecklistItems: z.array(z.string()).min(3).max(3),
   components: z.array(DeconstructedComponentSchema).min(3), // INI YANG JADI SUMBER KEBENARAN
-  phases: z.array(DeconstructedPhaseSchema).length(4),
+  phases: z.array(DeconstructedPhaseSchema).min(4),
 });
 
 export type DeconstructionBlueprint = z.infer<typeof DeconstructionBlueprintSchema>;
@@ -338,7 +365,8 @@ export const CameraZoomKeyframeSchema = z.object({
   focusTarget3D: Vec3TupleSchema.default([0, 0, 0]),
   x: z.number().catch(0),
   y: z.number().catch(0),
-  scale: z.number().min(0.9).max(2.4).catch(1.0),
+  scale: z.number().catch(1.0),
+  explodeFactor: z.number().catch(0).optional(),
 });
 
 export const FramePillCalloutSchema = z.object({
@@ -379,7 +407,9 @@ export const PhaseTimelineBlockSchema = z.object({
   primaryMetric: ScriptSegmentSchema.shape.primaryMetric,
   statusBadge: ScriptSegmentSchema.shape.statusBadge,
   secondaryMetric: z.string(),
-  activeComponentIds: z.array(z.string()),
+  activeComponentIds: z.array(z.string()).default([]),
+  cutaway: z.boolean().catch(false).optional(),
+  visualScene: IsoSceneGraphSchema.optional(),
   showChecklistCard: z.boolean().default(false),
 });
 

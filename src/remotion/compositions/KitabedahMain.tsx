@@ -1,10 +1,11 @@
 import React from "react";
-import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
+import { AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, interpolate } from "remotion";
 import { COLORS } from "../constants";
 import { TelemetryBar } from "../components/TelemetryBar";
 import { PopupLabel } from "../components/PopupLabel";
 import { Caption } from "../components/Caption";
 import { IsometricStage } from "../components/IsometricStage";
+import { AnatomyFigureRenderer } from "../components/AnatomyFigureRenderer";
 import type {
   VideoBlueprintScene,
   IsoSceneGraph,
@@ -160,15 +161,150 @@ const SceneComponent: React.FC<SceneComponentProps> = ({ scene, visualScene }) =
 };
 
 export const KitabedahMain: React.FC<KitabedahMainProps> = (props) => {
-  // Resolve scenes either directly from props.scenes or mapped from props.phases
-  const activeScenes: VideoBlueprintScene[] =
-    props.scenes && props.scenes.length > 0
-      ? props.scenes
-      : props.phases && props.phases.length > 0
-        ? convertPhasesToScenes(props.phases, props.pillCallouts, props.visualScene)
-        : [];
+  const frame = useCurrentFrame();
 
-  // Cumulative scene sequencing (prevents frame-0 overlapping stacking)
+  // If phases are provided (default pipeline format), use continuous dynamic camera interpolation
+  if (props.phases && props.phases.length > 0) {
+    const phases = props.phases;
+    const current =
+      phases.find((p) => frame >= p.startFrame && frame < p.endFrame) ||
+      phases[phases.length - 1] ||
+      phases[0];
+    const currentIndex = phases.indexOf(current);
+    const next = phases[currentIndex + 1] || current;
+
+    // Interpolasi zoom & explode & pan biar gak loncat
+    const scale = interpolate(
+      frame,
+      [current.startFrame, Math.max(current.startFrame + 1, current.endFrame)],
+      [
+        current.camera?.scale ?? 1.0,
+        next?.camera?.scale ?? current.camera?.scale ?? 1.0,
+      ],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+    );
+    const explode = interpolate(
+      frame,
+      [current.startFrame, Math.max(current.startFrame + 1, current.endFrame)],
+      [
+        current.camera?.explodeFactor ?? 0,
+        next?.camera?.explodeFactor ?? current.camera?.explodeFactor ?? 0,
+      ],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+    );
+    const x = interpolate(
+      frame,
+      [current.startFrame, Math.max(current.startFrame + 1, current.endFrame)],
+      [current.camera?.x ?? 0, next?.camera?.x ?? current.camera?.x ?? 0],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+    );
+
+    // Render cuma komponen yang visible di phase itu (biar object ganti-ganti)
+    const allNodes = props.visualScene?.nodes || [];
+    const visibleNodes =
+      current.activeComponentIds && current.activeComponentIds.length > 0
+        ? allNodes.filter(
+            (n) =>
+              current.activeComponentIds.includes(n.componentId) ||
+              current.activeComponentIds.includes(n.nodeId)
+          )
+        : allNodes;
+    const activeNodes = visibleNodes.length > 0 ? visibleNodes : allNodes;
+
+    // Active popup labels for current frame
+    const activePills = (props.pillCallouts || []).filter(
+      (c) => frame >= c.startFrame && frame <= c.endFrame
+    );
+
+    return (
+      <AbsoluteFill
+        style={{
+          backgroundColor: COLORS.bg,
+          fontFamily:
+            "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          overflow: "hidden",
+        }}
+      >
+        {/* 1. Dynamic 4-Tone Isometric Anatomy Figure Stage with camera interpolation */}
+        <AnatomyFigureRenderer
+          scale={scale}
+          x={x}
+          explodeFactor={explode}
+          nodes={activeNodes}
+          cutaway={current.cutaway}
+          svgContent={
+            current.visualScene?.svgContent || props.visualScene?.svgContent
+          }
+          svgComponentPath={
+            current.visualScene?.svgComponentPath ||
+            props.visualScene?.svgComponentPath
+          }
+          title={props.visualScene?.subjectTitle || current.chapterTitle}
+        />
+
+        {/* 2. Dynamic Telemetry Bar at Top */}
+        <TelemetryBar
+          channels={[
+            {
+              label: "UTAMA",
+              unit: current.primaryMetric.unit,
+              start: current.primaryMetric.startValue,
+              end: current.primaryMetric.endValue,
+            },
+          ]}
+          badge={{
+            text: current.statusBadge.text,
+            color: current.statusBadge.variant === "red" ? "red" : "green",
+          }}
+          durationInFrames={current.durationInFrames}
+          title={current.chapterTitle.replace(/<highlight>|<\/highlight>/g, "")}
+        />
+
+        {/* 3. Staggered Dynamic Popup Labels */}
+        <PopupLabel
+          labels={activePills.map((pill) => ({
+            text: pill.text,
+            x: pill.anchor.x > 1.0 ? pill.anchor.x / 1080 : pill.anchor.x,
+            y: pill.anchor.y > 1.0 ? pill.anchor.y / 1920 : pill.anchor.y,
+          }))}
+        />
+
+        {/* 4. Word-by-Word Karaoke Subtitles with #FFE500 Highlights */}
+        <Caption
+          text={current.narrationText}
+          highlights={
+            current.chapterTitle.match(/<highlight>(.*?)<\/highlight>/i)?.[1]
+              ? [current.chapterTitle.match(/<highlight>(.*?)<\/highlight>/i)![1]]
+              : []
+          }
+          words={(current.wordTimings || []).map((w) => ({
+            text: w.word,
+            startFrame: Math.max(0, w.startFrame - current.startFrame),
+            endFrame: Math.max(0, w.endFrame - current.startFrame),
+          }))}
+          durationInFrames={current.durationInFrames}
+        />
+
+        {/* 5. Synchronized Audio Segment Sequences */}
+        {phases.map((p, idx) => {
+          const audioSrc = resolveAudioSrc(p.audioUrl);
+          if (!audioSrc) return null;
+          return (
+            <Sequence
+              key={`audio_${p.segmentIndex ?? idx}`}
+              from={p.startFrame}
+              durationInFrames={p.durationInFrames}
+            >
+              <Audio src={audioSrc} volume={1.0} />
+            </Sequence>
+          );
+        })}
+      </AbsoluteFill>
+    );
+  }
+
+  // Fallback: Resolve scenes either directly from props.scenes
+  const activeScenes: VideoBlueprintScene[] = props.scenes || [];
   let accumulatedFrom = 0;
 
   return (

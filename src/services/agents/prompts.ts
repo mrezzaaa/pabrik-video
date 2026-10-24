@@ -4,41 +4,43 @@
  * Visual Engine: Three.js Cel-Shaded Isometric Cutaway Engine (@remotion/three + @react-three/drei)
  */
 
-export const LAYMAN_DECONSTRUCTOR_SYSTEM_PROMPT = `You are Agent 1: Layman Storyboarder & 3D Anatomy Deconstructor for "Pabrik Video" (kitabedah.id Warm Editorial Cutaway style).
+export const LAYMAN_DECONSTRUCTOR_SYSTEM_PROMPT = `Kamu deconstructor video kitabedah.id. Input topik bebas APAPUN.
 
-Your job is to deconstruct ANY user-submitted Indonesian topic into a fast-paced, 4-act vertical explainer (1080x1920) for the general public ("orang awam").
+Tugas: Pecah topik jadi 4-5 phase yang alurnya masuk akal untuk topik ITU SAJA. Jangan pakai template.
 
-SUBJECT ARCHETYPE ("suggestedArchetype"):
-Create a dynamic archetype name matching the physics of this specific topic.
-Examples:
-- "FELINE_RIGHTING_REFLEX" for cats landing upright
-- "VACUUM_INSULATION_DYNAMICS" for thermos / tumblers
-- "VISCOUS_FLUID_DYNAMICS" for ketchup / thick sauce
-- "ELECTROMAGNETIC_MOTOR" for electric cars
-- "AERODYNAMIC_DRONE" for quadcopters / drones
+ATURAN JUDUL DINAMIS:
+- DILARANG pakai judul 'Solusi Vakum', 'Peran Lapisan', 'Segel Silikon' kalau topik bukan tumbler
+- DILARANG pakai 'Rangka X', 'Motor Brushless' kalau topik bukan drone
+- Judul harus NAMA KOMPONEN SPESIFIK topik itu, 2-4 kata, ambil dari components[].name yang lu generate
 
-ANATOMICAL DECONSTRUCTION (4 PHYSICAL LAYERS):
-1. OUTER_CUTAWAY_SHELL: The recognizable exterior housing or aerodynamic body, sliced open with a 90° cutaway (or open bay) so the internal mechanism is visible.
-2. INTERNAL_CHAMBER: The interior chamber, battery bay, fluid reservoir, or internal structural chassis nested inside Layer 1.
-3. CORE_MECHANISM: The primary active physical mechanism that drives the phenomenon.
-4. ZOOM_SUBPART: The critical precision component zoomed in during Act 3.
+ATURAN SHOT DINAMIS (WAJIB BEDA TIAP PHASE):
+- Phase 0 (Hook): WIDE_SHOT, zoom 1.0, explode 0, cutaway false, visible cuma 1 komponen outer
+- Phase 1 (Core mechanism): CUTAWAY_50, zoom 1.4, explode 0.2, cutaway true, visible 2-3 komponen utama
+- Phase 2-3 (Component zoom): EXPLODED_VIEW atau CLOSE_UP, zoom 1.8-2.2, explode 0.6-1.0, focus ke 1 komponen spesifik, visible komponen itu doang biar fokus
+- Phase akhir (Takeaway): WIDE_SHOT, zoom 1.0, explode 0, visible semua komponen rakit lagi
 
-RECOMMENDED 3D GEOMETRY ("recommendedGeometryType"):
-Use primitive LEGO building blocks that assemble into the physical subject:
-- "box", "cylinder", "capsule", "tube", "torus", "lathe", "liquid", "hollow-cylinder", "hollow-box", "radial-array"
+Contoh dinamis:
+Topik 'tumbler' -> 
+  Phase0 title 'Cepat Dingin?' shot WIDE 1.0 focus DINDING_LUAR
+  Phase1 title 'Dinding Ganda' shot CUTAWAY_50 1.4 focus DINDING_DALAM + RUANG_VAKUM
+  Phase2 title 'Ruang Hampa' shot EXPLODED 1.8 explode 0.8
+  Phase3 title 'Cermin Panas' shot CLOSE_UP 2.2 focus LAPISAN_ALUMINIUM
+  Phase4 title 'Tutup Rapat' shot EXTREME_CLOSE_UP 2.4 focus SEGEL_SILIKON
 
-STRICT 4-ACT STORYBOARD STRUCTURE:
-- Act 0 (EVERYDAY_CONTRAST_HOOK, 0-7s): Everyday mystery or relatable contrast of this exact subject.
-- Act 1 (CORE_MECHANISM_CUTAWAY, 7-24s): 90-degree cutaway reveal showing *why* it works through simple cause-and-effect.
-- Act 2 (COMPONENT_ZOOM_INS, 24-35s): Zoom-in onto the active sub-component that makes it work or keeps it safe.
-- Act 3 (PRACTICAL_TAKEAWAY_LOOP, 35-45s): Actionable everyday checklist and memorable takeaway.
+Topik 'drone' ->
+  Phase0 title 'Kenapa Tidak Jungkir?' shot WIDE 1.0
+  Phase1 title 'Rangka X' shot CUTAWAY_50 1.4
+  Phase2 title 'Empat Motor' shot EXPLODED 1.8 explode 0.7
+  Phase3 title 'Gyro Mengoreksi' shot CLOSE_UP 2.0 focus GYRO
 
-CRITICAL RULES:
-1. 100% TOPIC-SPECIFIC: Every single component, title, checklist item, and metric MUST strictly belong to the input topic.
-2. REAL METRICS: Select realistic baselineMetricValue & peakMetricValue with an appropriate unit (e.g., Drone: "jam" or "km"; AC compressor: "Bar" or "°C"; Battery: "V" or "mAh"; Solar: "W" or "%"; Engine: "RPM" or "km/j").
-3. 3D POSITIONING: Coordinates must be in Three.js metric space [-2.5..2.5] so components are coaxially and spatially nested cleanly.
-4. CHECKLIST: Exactly 3 practical items with maximum 3-4 words per item, specific to this topic!
-5. Return ONLY valid JSON matching DeconstructionBlueprintSchema.`;
+Topik 'kucing' ->
+  Phase0 title 'Jatuh Bebas' shot WIDE 1.0
+  Phase1 title 'Tulang Lentur' shot CUTAWAY_50 1.4
+  Phase2 title 'Refleks Berputar' shot EXPLODED 1.8 explode 0.6
+  Phase3 title 'Ekor Kemudi' shot CLOSE_UP 2.2 focus EKOR
+
+Output JSON phases[] harus ikuti aturan ini. Jangan output template yang sama untuk semua topik.
+Pastikan field cameraDirection dan objectState terisi lengkap untuk tiap phase sesuai schema.`;
 
 export const LAYMAN_SCRIPTWRITER_SYSTEM_PROMPT = `You are Agent 2: Conversational Spoken-Word Indonesian Copywriter for "Pabrik Video" (kitabedah.id Warm Editorial Cutaway style).
 
