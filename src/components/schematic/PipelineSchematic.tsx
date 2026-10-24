@@ -14,7 +14,7 @@ interface PipelineSchematicProps {
 const STAGES = [
   { id: "01_SEARXNG_RECON", label: "01_SEARXNG_RECON", desc: "Fact Extraction" },
   { id: "02_LLM_DIRECTOR", label: "02_LLM_DIRECTOR", desc: "Storyboard Scripting" },
-  { id: "03_ETHAN_TTS_SYNC", label: "03_ETHAN_TTS_SYNC", desc: "UnlimitedTTS 1.1x" },
+  { id: "03_ETHAN_TTS_SYNC", label: "03_ETHAN_TTS_SYNC", desc: "VoiceStudio Clone" },
   { id: "04_HYBRID_ASSET_DL", label: "04_HYBRID_ASSET_DL", desc: "Optical Assets" },
   { id: "05_REMOTION_RENDER", label: "05_REMOTION_RENDER", desc: "Remotion Engine" },
 ];

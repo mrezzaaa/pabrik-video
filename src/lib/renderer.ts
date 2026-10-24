@@ -84,10 +84,16 @@ export class RemotionRendererService {
     // Use a dedicated high port (3123) for Remotion's internal HTTP server to avoid Vite collision on 3000
     const remotionPort = 3123;
 
-    // Komposisi 3D memakai WebGL; di container tanpa GPU butuh renderer software.
+    // Komposisi 3D memakai WebGL; di Linux/Docker tanpa hardware GPU gunakan software rasterizer "swangle"
+    const glRenderer = (process.env.REMOTION_GL || "swangle") as
+      | "swangle"
+      | "swiftshader"
+      | "angle"
+      | "egl";
+
     const chromiumOptions =
       compositionId === "TechVideo"
-        ? { gl: (process.env.REMOTION_GL || "swiftshader") as "swiftshader" }
+        ? { gl: glRenderer }
         : undefined;
 
     const composition = await selectComposition({

@@ -173,7 +173,7 @@ export async function runTechStages(input: TechStagesInput): Promise<void> {
   await logTelemetry(
     jobId,
     "05_REMOTION_RENDER",
-    `Render TECH-3D (WebGL, gl=${process.env.REMOTION_GL || "swiftshader"}) untuk ${totalVideoFrames} frame @ ${FPS}FPS...`
+    `Render TECH-3D (WebGL, gl=${process.env.REMOTION_GL || "swangle"}) untuk ${totalVideoFrames} frame @ ${FPS}FPS...`
   );
 
   const videoProps: TechVideoProps = {

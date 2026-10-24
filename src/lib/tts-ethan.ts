@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { chromium, Browser, BrowserContext } from "playwright";
 import ffmpeg from "fluent-ffmpeg";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -10,18 +9,19 @@ const execAsync = promisify(exec);
 export interface TTSResult {
   filePath: string;
   durationMs: number;
-  engineUsed: "unlimitedtts-ethan" | "edge-tts-neural";
+  engineUsed: "voicestudio-clone" | "edge-tts-neural";
 }
 
 export class TTSEngine {
-  private voice: string;
-  private speed: string;
-  private browserInstance: Browser | null = null;
-  private contextInstance: BrowserContext | null = null;
+  private voiceStudioBaseUrl: string;
+  private voiceId: string;
+  private voiceName: string;
 
   constructor() {
-    this.voice = process.env.UNLIMITEDTTS_VOICE || "Ethan";
-    this.speed = process.env.UNLIMITEDTTS_SPEED || "1.1";
+    this.voiceStudioBaseUrl =
+      process.env.VOICESTUDIO_BASE_URL || "http://localhost:3900/v1";
+    this.voiceId = process.env.VOICE_DEFAULT_ID || "aad77d68";
+    this.voiceName = process.env.VOICESTUDIO_VOICE_NAME || "reza";
   }
 
   /**
@@ -40,7 +40,7 @@ export class TTSEngine {
   }
 
   /**
-   * Convert WAV to standard MP3 with 1.1x tempo and 44.1kHz stereo
+   * Convert audio to standard MP3 with 1.1x tempo and 44.1kHz stereo
    */
   async postProcessAudio(inputPath: string, outputPath: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
@@ -70,121 +70,73 @@ export class TTSEngine {
   }
 
   /**
-   * Primary: UnlimitedTTS Natural AI Voice (Ethan - Indonesian __ai_supertonic_voice__:M3)
-   * Automated via Headless Playwright using client-side Supertonic ONNX runtime
+   * Primary: VoiceStudio Cloned Voice (/v1/audio/speech)
+   * Uses cloned voice ID configured in .env.local
    */
-  async generateUnlimitedTTSEthan(
+  async generateVoiceStudio(
     text: string,
     outputMp3Path: string
   ): Promise<boolean> {
-    let browser: Browser | null = null;
-    const tempWav = outputMp3Path.replace(/\.mp3$/, "-temp.wav");
+    const tempRaw = outputMp3Path.replace(/\.mp3$/, "-vs-raw.mp3");
 
     try {
-      console.log(`[TTS] Synthesizing via UnlimitedTTS Natural Voice (Ethan)...`);
-      browser = await chromium.launch({
-        headless: true,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-        ],
+      console.log(
+        `[TTS] Synthesizing via VoiceStudio Cloned Voice (${this.voiceName} - ${this.voiceId})...`
+      );
+
+      const endpoint = `${this.voiceStudioBaseUrl.replace(/\/+$/, "")}/audio/speech`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer local",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "tts-1",
+          voice: this.voiceId,
+          input: text,
+        }),
       });
 
-      const page = await browser.newPage();
-
-      // Intercept audio blob created by Supertonic player in UnlimitedTTS
-      await page.addInitScript(() => {
-        const origCreateObjectURL = URL.createObjectURL;
-        (window as any)._capturedAudioBlob = null;
-        URL.createObjectURL = function (blob: Blob) {
-          if (blob && (blob.type?.includes("audio") || blob.size > 1000)) {
-            (window as any)._capturedAudioBlob = blob;
-          }
-          return origCreateObjectURL.apply(this, arguments as any);
-        };
-      });
-
-      await page.goto("https://unlimitedtts.com", {
-        waitUntil: "networkidle",
-        timeout: 25000,
-      });
-
-      // Switch to Natural / AI Mode
-      await page.click("#engine-ai-btn");
-      await page.waitForTimeout(400);
-
-      // Confirm preflight download modal
-      const preflightBtn = await page.$("#ai-preflight-continue");
-      if (preflightBtn) {
-        await preflightBtn.click();
-        await page.waitForTimeout(400);
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        throw new Error(
+          `VoiceStudio returned status ${response.status}: ${errorText}`
+        );
       }
 
-      // Configure Indonesian language and Ethan voice (Supertonic M3)
-      const selects = await page.$$("select");
-      if (selects.length >= 4) {
-        await selects[1].selectOption("id");
-        await page.waitForTimeout(300);
-        await selects[3].selectOption("__ai_supertonic_voice__:M3");
-        await page.waitForTimeout(300);
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      if (buffer.length < 1000) {
+        throw new Error("VoiceStudio audio buffer is suspiciously small");
       }
 
-      // Trigger client-side Natural AI Speech preview
-      await page.evaluate(async (narrationText) => {
-        const win = window as any;
-        if (typeof win.playAiPreview === "function") {
-          await win.playAiPreview(narrationText, "id", { voiceStyleJson: null });
-        } else {
-          throw new Error("window.playAiPreview not available");
-        }
-      }, text);
+      fs.writeFileSync(tempRaw, buffer);
 
-      // Retrieve audio blob
-      const base64Data = await page.evaluate(async () => {
-        const blob: Blob | null = (window as any)._capturedAudioBlob;
-        if (!blob) return null;
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const res = (reader.result as string).split(",")[1];
-            resolve(res);
-          };
-          reader.readAsDataURL(blob);
-        });
-      });
+      // Post-process with standard tempo and 44.1kHz formatting
+      await this.postProcessAudio(tempRaw, outputMp3Path);
 
-      if (!base64Data) {
-        throw new Error("Failed to capture audio blob from UnlimitedTTS");
-      }
-
-      const audioBuffer = Buffer.from(base64Data, "base64");
-      fs.writeFileSync(tempWav, audioBuffer);
-
-      // Post-process tempo and normalize to standard MP3
-      await this.postProcessAudio(tempWav, outputMp3Path);
-
-      console.log(`[TTS] Successfully synthesized Ethan narration: ${outputMp3Path}`);
+      console.log(
+        `[TTS] Successfully synthesized VoiceStudio cloned voice: ${outputMp3Path}`
+      );
       return true;
     } catch (err) {
-      console.warn("[TTS] UnlimitedTTS Ethan synthesis encountered an issue:", err);
-      if (fs.existsSync(tempWav)) {
+      console.warn(
+        `[TTS] VoiceStudio synthesis encountered an issue:`,
+        err
+      );
+      if (fs.existsSync(tempRaw)) {
         try {
-          fs.unlinkSync(tempWav);
+          fs.unlinkSync(tempRaw);
         } catch (_) {}
       }
       return false;
-    } finally {
-      if (browser) {
-        await browser.close().catch(() => {});
-      }
     }
   }
 
   /**
    * Resilient Fallback: Microsoft Edge Neural TTS (Indonesian Male: id-ID-ArdiNeural)
-   * High-definition Neural Indonesian Male voice matching Ethan profile.
    */
   async generateEdgeTTSFallback(
     text: string,
@@ -193,8 +145,10 @@ export class TTSEngine {
     const tempRaw = outputMp3Path.replace(/\.mp3$/, "-raw.mp3");
 
     try {
-      console.log(`[TTS] Using Edge Neural Male voice (id-ID-ArdiNeural) for: "${text.slice(0, 30)}..."`);
-      
+      console.log(
+        `[TTS] Using Edge Neural Male voice fallback (id-ID-ArdiNeural) for: "${text.slice(0, 30)}..."`
+      );
+
       // Clean text to avoid shell escaping issues
       const escapedText = text.replace(/"/g, '\\"');
       const cmd = `edge-tts --voice "id-ID-ArdiNeural" --rate="+10%" --text "${escapedText}" --write-media "${tempRaw}"`;
@@ -221,8 +175,8 @@ export class TTSEngine {
 
   /**
    * Main synthesis orchestrator
-   * 1. UnlimitedTTS (Indonesian Ethan - Natural AI)
-   * 2. Edge-TTS Neural Male (id-ID-ArdiNeural)
+   * 1. VoiceStudio Cloned Voice (Local)
+   * 2. Fallback: Edge-TTS Neural Male (id-ID-ArdiNeural)
    */
   async synthesizeNarration(
     text: string,
@@ -233,22 +187,36 @@ export class TTSEngine {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    // 1. Try UnlimitedTTS Ethan
-    const ethanSuccess = await this.generateUnlimitedTTSEthan(text, outputFilePath);
-    if (ethanSuccess && fs.existsSync(outputFilePath) && fs.statSync(outputFilePath).size > 2000) {
+    // 1. Try VoiceStudio cloned voice
+    const voiceStudioSuccess = await this.generateVoiceStudio(
+      text,
+      outputFilePath
+    );
+    if (
+      voiceStudioSuccess &&
+      fs.existsSync(outputFilePath) &&
+      fs.statSync(outputFilePath).size > 2000
+    ) {
       const durationMs = await this.getAudioDurationMs(outputFilePath);
       return {
         filePath: outputFilePath,
         durationMs,
-        engineUsed: "unlimitedtts-ethan",
+        engineUsed: "voicestudio-clone",
       };
     }
 
     // 2. Fallback to Microsoft Edge Neural Male voice (id-ID-ArdiNeural)
-    console.log(`[TTS] UnlimitedTTS Ethan unavailable; engaging Edge Neural Male Voice...`);
-    const fallbackOk = await this.generateEdgeTTSFallback(text, outputFilePath);
+    console.log(
+      `[TTS] VoiceStudio unavailable; engaging Edge Neural Male Voice...`
+    );
+    const fallbackOk = await this.generateEdgeTTSFallback(
+      text,
+      outputFilePath
+    );
     if (!fallbackOk || !fs.existsSync(outputFilePath)) {
-      throw new Error(`Failed to synthesize speech for: "${text}" across all engines.`);
+      throw new Error(
+        `Failed to synthesize speech for: "${text}" across all engines.`
+      );
     }
 
     const durationMs = await this.getAudioDurationMs(outputFilePath);
@@ -261,3 +229,4 @@ export class TTSEngine {
 }
 
 export const ttsEngine = new TTSEngine();
+

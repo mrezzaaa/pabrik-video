@@ -90,13 +90,13 @@ services:
       - OMNIROUTE_BASE_URL=http://host.docker.internal:20128/v1
       - OMNIROUTE_API_KEY=sk-omniroute-pabrik-local
       - SEARXNG_URL=http://searxng:8080
-      - UNLIMITEDTTS_LANGUAGE=id-ID
-      - UNLIMITEDTTS_VOICE=Ethan
-      - UNLIMITEDTTS_SPEED=1.1
+      - VOICE_DEFAULT_ID=aad77d68
+      - VOICESTUDIO_BASE_URL=http://host.docker.internal:3900/v1
+      - VOICESTUDIO_VOICE_NAME=reza
       - REMOTION_CONCURRENCY=2
       - REMOTION_FPS=30
       - PIPELINE_STYLE=tech
-      - REMOTION_GL=swiftshader
+      - REMOTION_GL=swangle
     volumes:
       - assets_data:/app/public/assets
     depends_on:

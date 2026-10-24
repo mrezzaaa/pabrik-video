@@ -91,10 +91,10 @@ export const ModelRouter: React.FC<ModelRouterProps> = ({ onSubmit, isLoading })
         <div className="flex items-center space-x-2">
           <ShieldCheck size={14} className="text-[#10B981]" />
           <span className="text-[#94A3B8]">TTS ENGINE:</span>
-          <span className="text-[#38BDF8] font-bold">UnlimitedTTS // id-ID</span>
+          <span className="text-[#38BDF8] font-bold">VoiceStudio // Local Cloned</span>
         </div>
         <div className="flex items-center space-x-3 text-slate-400">
-          <span>VOICE: <strong className="text-white">Ethan</strong></span>
+          <span>VOICE: <strong className="text-white">reza (aad77d68)</strong></span>
           <span>SPEED: <strong className="text-[#38BDF8]">1.1x</strong></span>
         </div>
       </div>
