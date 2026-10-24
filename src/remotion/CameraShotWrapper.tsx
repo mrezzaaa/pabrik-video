@@ -1,11 +1,13 @@
 import React from "react";
 import { interpolate, useCurrentFrame } from "remotion";
-import { CameraShot } from "../lib/types";
+import { CameraShot, Callout } from "../lib/types";
+import { XRayWireframeScanner } from "./XRayWireframeScanner";
 
 interface CameraShotWrapperProps {
   shot: CameraShot;
   durationInFrames: number;
   themeColor: string;
+  callouts?: Callout[];
   children: React.ReactNode;
 }
 
@@ -13,11 +15,38 @@ export const CameraShotWrapper: React.FC<CameraShotWrapperProps> = ({
   shot,
   durationInFrames,
   themeColor,
+  callouts = [],
   children,
 }) => {
   const frame = useCurrentFrame();
 
   switch (shot) {
+    case "XRAY_WIREFRAME_SCAN": {
+      return (
+        <XRayWireframeScanner
+          durationInFrames={durationInFrames}
+          callouts={callouts}
+          themeColor={themeColor}
+          mode="XRAY_WIREFRAME_SCAN"
+        >
+          {children}
+        </XRayWireframeScanner>
+      );
+    }
+
+    case "BLUEPRINT_CAD_CALLOUT": {
+      return (
+        <XRayWireframeScanner
+          durationInFrames={durationInFrames}
+          callouts={callouts}
+          themeColor={themeColor}
+          mode="BLUEPRINT_CAD_CALLOUT"
+        >
+          {children}
+        </XRayWireframeScanner>
+      );
+    }
+
     case "KEN_BURNS_ZOOM_IN": {
       const scale = interpolate(frame, [0, durationInFrames], [1.0, 1.28], {
         extrapolateRight: "clamp",
@@ -104,54 +133,35 @@ export const CameraShotWrapper: React.FC<CameraShotWrapperProps> = ({
         [4, 0, -4],
         { extrapolateRight: "clamp" }
       );
-      const scale = interpolate(
-        frame,
-        [0, durationInFrames / 2, durationInFrames],
-        [0.96, 1.02, 0.98],
-        { extrapolateRight: "clamp" }
-      );
+      const scale = interpolate(frame, [0, durationInFrames], [1.02, 1.12], {
+        extrapolateRight: "clamp",
+      });
 
       return (
         <div
           style={{
             width: "100%",
             height: "100%",
-            position: "relative",
-            perspective: 1200,
-            overflow: "hidden",
+            perspective: 1000,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            overflow: "hidden",
           }}
         >
-          {/* Background Blurred Clone */}
           <div
             style={{
-              position: "absolute",
-              inset: -30,
-              filter: "blur(30px) brightness(0.35)",
-              transform: "scale(1.15)",
-              zIndex: 1,
-            }}
-          >
-            {children}
-          </div>
-
-          {/* Framed 3D Tilt Card */}
-          <div
-            style={{
+              width: "100%",
+              height: "100%",
+              transform: `scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+              transformStyle: "preserve-3d",
+              willChange: "transform",
+              boxShadow: `0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px ${themeColor}20`,
+              border: `1px solid rgba(56, 189, 248, 0.35)`,
               position: "relative",
-              width: "86%",
-              height: "78%",
-              zIndex: 2,
-              transform: `perspective(1200px) rotateY(${rotateY}deg) rotateX(${rotateX}deg) scale(${scale})`,
-              border: `2px solid ${themeColor}`,
-              boxShadow: `0 25px 60px rgba(0,0,0,0.8), 0 0 40px ${themeColor}40`,
-              overflow: "hidden",
-              borderRadius: 4,
             }}
           >
-            {/* Corner Crosshairs */}
+            {/* Tech Corner Markers */}
             <div
               style={{
                 position: "absolute",
@@ -262,6 +272,15 @@ export const CameraShotWrapper: React.FC<CameraShotWrapperProps> = ({
     }
 
     default:
-      return <div style={{ width: "100%", height: "100%" }}>{children}</div>;
+      return (
+        <XRayWireframeScanner
+          durationInFrames={durationInFrames}
+          callouts={callouts}
+          themeColor={themeColor}
+          mode="XRAY_WIREFRAME_SCAN"
+        >
+          {children}
+        </XRayWireframeScanner>
+      );
   }
 };

@@ -2,16 +2,20 @@ import { z } from "zod";
 
 export const CameraShotEnum = z.preprocess((val) => {
   const str = String(val).toUpperCase();
+  if (str.includes("XRAY") || str.includes("SCAN")) return "XRAY_WIREFRAME_SCAN";
+  if (str.includes("BLUEPRINT") || str.includes("CALLOUT")) return "BLUEPRINT_CAD_CALLOUT";
   if (str.includes("TILT")) return "3D_TILT_CARD";
   if (str.includes("PAN")) return "PAN_LEFT_TO_RIGHT";
   if (str.includes("OUT")) return "KEN_BURNS_ZOOM_OUT";
   if (str.includes("PARALLAX") || str.includes("DEPTH")) return "PARALLAX_DEPTH";
-  return "KEN_BURNS_ZOOM_IN";
+  return "XRAY_WIREFRAME_SCAN";
 }, z.enum([
+  "XRAY_WIREFRAME_SCAN",
+  "BLUEPRINT_CAD_CALLOUT",
+  "3D_TILT_CARD",
   "KEN_BURNS_ZOOM_IN",
   "KEN_BURNS_ZOOM_OUT",
   "PAN_LEFT_TO_RIGHT",
-  "3D_TILT_CARD",
   "PARALLAX_DEPTH",
 ]));
 
@@ -59,11 +63,21 @@ export const GraphicOverlaySchema = z.object({
 
 export type GraphicOverlay = z.infer<typeof GraphicOverlaySchema>;
 
+export const CalloutSchema = z.object({
+  label: z.string(),
+  detail: z.string(),
+  x: z.number().min(0).max(100).default(50),
+  y: z.number().min(0).max(100).default(50),
+});
+
+export type Callout = z.infer<typeof CalloutSchema>;
+
 export const MainVisualSchema = z.object({
   sourceType: SourceTypeEnum.default("SEARXNG_IMAGE"),
   searchQuery: z.string().default("technology"),
   cameraShot: CameraShotEnum,
   overlayHeadline: z.string().max(40).default("OVERVIEW"),
+  callouts: z.array(CalloutSchema).default([]),
   localAssetUrl: z.string().optional(),
 });
 

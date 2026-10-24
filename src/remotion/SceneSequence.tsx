@@ -54,6 +54,7 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
           shot={scene.mainVisual.cameraShot}
           durationInFrames={cutawayFrame}
           themeColor={themeColor}
+          callouts={scene.mainVisual.callouts}
         >
           {mainSrc.endsWith(".mp4") ? (
             <Video

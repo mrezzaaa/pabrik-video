@@ -19,8 +19,12 @@ const defaultProps: VideoProps = {
       mainVisual: {
         sourceType: "SEARXNG_IMAGE",
         searchQuery: "jet engine turbofan cutaway",
-        cameraShot: "3D_TILT_CARD",
+        cameraShot: "XRAY_WIREFRAME_SCAN",
         overlayHeadline: "TURBOFAN CORE",
+        callouts: [
+          { label: "KOMPRESOR TINGGI", detail: "Tekanan 40:1", x: 38, y: 44 },
+          { label: "TURBIN TEKANAN TINGGI", detail: "Suhu 1700°C", x: 68, y: 62 },
+        ],
       },
       cutaway: {
         enabled: true,
