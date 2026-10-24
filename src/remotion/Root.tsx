@@ -2,6 +2,8 @@ import React from "react";
 import { Composition } from "remotion";
 import { MainVideo } from "./MainVideo";
 import { VideoProps } from "../lib/types";
+import { TechScene } from "./tech3d/TechScene";
+import { DEMO_SPEC } from "./tech3d/spec";
 
 const defaultProps: VideoProps = {
   videoTitle: "Blueprint Demo",
@@ -60,14 +62,25 @@ const defaultProps: VideoProps = {
 
 export const RemotionRoot: React.FC = () => {
   return (
-    <Composition
-      id="MainVideo"
-      component={MainVideo}
-      durationInFrames={300}
-      fps={30}
-      width={1080}
-      height={1920}
-      defaultProps={defaultProps}
-    />
+    <>
+      <Composition
+        id="MainVideo"
+        component={MainVideo}
+        durationInFrames={300}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={defaultProps}
+      />
+      <Composition
+        id="TechDemo"
+        component={TechScene}
+        durationInFrames={DEMO_SPEC.durationInFrames}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{ spec: DEMO_SPEC }}
+      />
+    </>
   );
 };
