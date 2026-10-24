@@ -56,17 +56,42 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
           themeColor={themeColor}
           callouts={scene.mainVisual.callouts}
         >
-          {mainSrc.endsWith(".mp4") ? (
-            <Video
-              src={mainSrc}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              muted
-            />
+          {mainSrc ? (
+            mainSrc.endsWith(".mp4") ? (
+              <Video
+                src={mainSrc}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                muted
+              />
+            ) : (
+              <Img
+                src={mainSrc}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            )
           ) : (
-            <Img
-              src={mainSrc}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                background: "linear-gradient(135deg, #071324 0%, #0B1D36 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 24,
+                  fontWeight: 800,
+                  color: "rgba(56, 189, 248, 0.4)",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.2em",
+                }}
+              >
+                AWAITING_VISUAL_ASSET
+              </div>
+            </div>
           )}
         </CameraShotWrapper>
       ) : (
@@ -75,17 +100,42 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
           durationInFrames={durationInFrames - cutawayFrame}
           themeColor={themeColor}
         >
-          {isCutawayVideo ? (
-            <Video
-              src={cutawaySrc}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              muted
-            />
+          {cutawaySrc ? (
+            isCutawayVideo ? (
+              <Video
+                src={cutawaySrc}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                muted
+              />
+            ) : (
+              <Img
+                src={cutawaySrc}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            )
           ) : (
-            <Img
-              src={cutawaySrc}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                background: "linear-gradient(135deg, #071324 0%, #0B1D36 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 24,
+                  fontWeight: 800,
+                  color: "rgba(56, 189, 248, 0.4)",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.2em",
+                }}
+              >
+                AWAITING_CUTAWAY_ASSET
+              </div>
+            </div>
           )}
         </CameraShotWrapper>
       )}
