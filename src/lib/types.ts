@@ -27,16 +27,27 @@ export const GraphicOverlayTypeEnum = z.enum([
 
 export type GraphicOverlayType = z.infer<typeof GraphicOverlayTypeEnum>;
 
-export const TransitionTypeEnum = z.enum([
+export const TransitionTypeEnum = z.preprocess((val) => {
+  const str = String(val).toUpperCase();
+  if (str.includes("FLASH")) return "FLASH_CUT";
+  if (str.includes("WHIP") || str.includes("PAN")) return "WHIP_PAN";
+  if (str.includes("GLITCH")) return "GLITCH_CUT";
+  return "HARD_CUT";
+}, z.enum([
   "HARD_CUT",
   "FLASH_CUT",
   "WHIP_PAN",
   "GLITCH_CUT",
-]);
+]));
 
 export type TransitionType = z.infer<typeof TransitionTypeEnum>;
 
-export const SourceTypeEnum = z.enum(["SEARXNG_IMAGE", "PEXELS_VIDEO"]);
+export const SourceTypeEnum = z.preprocess((val) => {
+  const str = String(val).toUpperCase();
+  if (str.includes("PEXELS") || str.includes("VIDEO")) return "PEXELS_VIDEO";
+  return "SEARXNG_IMAGE";
+}, z.enum(["SEARXNG_IMAGE", "PEXELS_VIDEO"]));
+
 export type SourceType = z.infer<typeof SourceTypeEnum>;
 
 export const GraphicOverlaySchema = z.object({
@@ -50,9 +61,9 @@ export type GraphicOverlay = z.infer<typeof GraphicOverlaySchema>;
 
 export const MainVisualSchema = z.object({
   sourceType: SourceTypeEnum.default("SEARXNG_IMAGE"),
-  searchQuery: z.string(),
+  searchQuery: z.string().default("technology"),
   cameraShot: CameraShotEnum,
-  overlayHeadline: z.string().max(30),
+  overlayHeadline: z.string().max(40).default("OVERVIEW"),
   localAssetUrl: z.string().optional(),
 });
 
@@ -60,9 +71,12 @@ export type MainVisual = z.infer<typeof MainVisualSchema>;
 
 export const CutawaySchema = z.object({
   enabled: z.boolean().default(true),
-  triggerAtProgress: z.number().min(0.2).max(0.8).default(0.5),
+  triggerAtProgress: z.preprocess((val) => {
+    const num = Number(val);
+    return isNaN(num) || num < 0.1 || num > 0.9 ? 0.5 : num;
+  }, z.number().default(0.5)),
   sourceType: SourceTypeEnum.default("SEARXNG_IMAGE"),
-  searchQuery: z.string(),
+  searchQuery: z.string().default("action b-roll"),
   cameraShot: CameraShotEnum.default("KEN_BURNS_ZOOM_IN"),
   graphicOverlay: GraphicOverlaySchema.optional(),
   localAssetUrl: z.string().optional(),
@@ -96,7 +110,7 @@ export type StoryboardScene = z.infer<typeof StoryboardSceneSchema>;
 export const StoryboardSchema = z.object({
   videoTitle: z.string(),
   themeColor: z.string().default("#38BDF8"),
-  scenes: z.array(StoryboardSceneSchema).min(1),
+  scenes: z.array(StoryboardSceneSchema).min(6, "Storyboard must have at least 6 to 10 scenes to meet 30-60 second target duration"),
 });
 
 export type Storyboard = z.infer<typeof StoryboardSchema>;

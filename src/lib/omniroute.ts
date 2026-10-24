@@ -128,7 +128,7 @@ export class OmniRouteClient {
     let lastError: Error | null = null;
     for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
       try {
-        const userPrompt = `TOPIC: ${topic}\n\nRESEARCH KNOWLEDGE BASE:\n${knowledgeBase}\n\nGenerate the complete 45-60 second storyboard JSON now. Make sure scene 1 hooks immediately and every scene has valid mainVisual and cutaway configurations.`;
+        const userPrompt = `TOPIC: ${topic}\n\nRESEARCH KNOWLEDGE BASE:\n${knowledgeBase}\n\nSTRICT DURATION DIRECTIVE:\n- The video MUST have EXACTLY 7 to 9 scenes.\n- Each scene narration must be 2 to 3 engaging spoken sentences (around 15-20 words) so each scene takes 5-7 seconds.\n- Total video duration MUST reach 45 to 60 seconds (NOT a short 2-scene summary!).\n\nGenerate the complete 7-to-9 scene storyboard JSON now with full mainVisual and cutaway for each scene.`;
 
         const modelToUse = !model || model === "auto" ? "groq/openai/gpt-oss-120b" : model;
         const completion = await this.client.chat.completions.create({
@@ -138,6 +138,7 @@ export class OmniRouteClient {
             { role: "user", content: userPrompt },
           ],
           temperature: 0.5,
+          max_tokens: 4096,
         });
 
         const rawText = completion.choices[0]?.message?.content || "";

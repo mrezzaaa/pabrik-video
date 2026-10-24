@@ -10,7 +10,7 @@ interface ModelRouterProps {
 
 export const ModelRouter: React.FC<ModelRouterProps> = ({ onSubmit, isLoading }) => {
   const [topic, setTopic] = useState("");
-  const [modelId, setModelId] = useState("auto");
+  const [modelId, setModelId] = useState("groq/openai/gpt-oss-120b");
   const [customModel, setCustomModel] = useState("");
   const [pexelsApiKey, setPexelsApiKey] = useState("");
 
@@ -49,11 +49,9 @@ export const ModelRouter: React.FC<ModelRouterProps> = ({ onSubmit, isLoading })
             onChange={(e) => setModelId(e.target.value)}
             className="w-full bg-[#071324] border border-[#38BDF8]/40 focus:border-[#38BDF8] text-[#F0F9FF] text-xs p-2 outline-none rounded-none font-mono"
           >
+            <option value="groq/openai/gpt-oss-120b">groq/openai/gpt-oss-120b (Recommended)</option>
+            <option value="groq/openai/gpt-oss-20b">groq/openai/gpt-oss-20b (Fast)</option>
             <option value="auto">auto (OmniRoute Auto-Select)</option>
-            <option value="gpt-4o">gpt-4o (High-Precision Director)</option>
-            <option value="gpt-4o-mini">gpt-4o-mini (Fast Assembly)</option>
-            <option value="claude-3-5-sonnet">claude-3-5-sonnet</option>
-            <option value="gemini-1.5-pro">gemini-1.5-pro</option>
             <option value="custom">Custom Model ID...</option>
           </select>
         </div>

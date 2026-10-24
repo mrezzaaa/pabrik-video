@@ -23,13 +23,12 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
   const cutawayFrame = Math.floor(durationInFrames * triggerProgress);
   const isCutawayActive = scene.cutaway?.enabled && frame >= cutawayFrame;
 
-  // Resolve media src
-  const mainSrc = scene.mainVisual.localAssetUrl
-    ? staticFile(scene.mainVisual.localAssetUrl)
-    : "";
-  const cutawaySrc = scene.cutaway?.localAssetUrl
-    ? staticFile(scene.cutaway.localAssetUrl)
-    : mainSrc;
+  // Resolve media src: normalize relative to public/
+  const cleanMain = (scene.mainVisual.localAssetUrl || "").replace(/^\/+/, "").replace(/^public\/+/, "");
+  const cleanCutaway = (scene.cutaway?.localAssetUrl || "").replace(/^\/+/, "").replace(/^public\/+/, "");
+
+  const mainSrc = cleanMain ? staticFile(cleanMain) : "";
+  const cutawaySrc = cleanCutaway ? staticFile(cleanCutaway) : mainSrc;
 
   const isCutawayVideo =
     scene.cutaway?.sourceType === "PEXELS_VIDEO" &&
@@ -166,7 +165,13 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
       />
 
       {/* Audio Narration */}
-      {scene.audioUrl && <Audio src={staticFile(scene.audioUrl)} />}
+      {scene.audioUrl && (
+        <Audio
+          src={staticFile(
+            scene.audioUrl.replace(/^\/+/, "").replace(/^public\/+/, "")
+          )}
+        />
+      )}
     </div>
   );
 };

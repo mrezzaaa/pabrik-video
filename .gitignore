@@ -33,7 +33,4 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 
 # 3D assets & heavy model files
-public/assets/models/*.glb
-public/assets/models/*.gltf
-*.glb
-*.gltf
+/public/assets/*

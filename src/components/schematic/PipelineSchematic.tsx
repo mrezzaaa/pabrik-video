@@ -1,12 +1,14 @@
 "use client";
 
-import React from "react";
-import { CheckCircle2, Clock, Loader2, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { CheckCircle2, Clock, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 
 interface PipelineSchematicProps {
+  jobId?: string | null;
   currentStage?: string | null;
   progress: number;
   status: string;
+  onRetrySuccess?: () => void;
 }
 
 const STAGES = [
@@ -18,23 +20,48 @@ const STAGES = [
 ];
 
 export const PipelineSchematic: React.FC<PipelineSchematicProps> = ({
+  jobId,
   currentStage,
   progress,
   status,
+  onRetrySuccess,
 }) => {
+  const [isRetrying, setIsRetrying] = useState(false);
   const currentStageIndex = STAGES.findIndex((s) => s.id === currentStage);
+
+  const handleRetryFailedStage = async () => {
+    if (!jobId || isRetrying) return;
+    setIsRetrying(true);
+    try {
+      const res = await fetch(`/api/jobs/${jobId}/retry`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        if (onRetrySuccess) onRetrySuccess();
+      } else {
+        const err = await res.json();
+        alert(`Gagal melanjutkan pipeline: ${err.error || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      alert(`Error retry: ${e.message}`);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   return (
     <div className="space-y-3 font-mono">
-      {/* Progress Bar */}
+      {/* Progress Bar & Retry Action */}
       <div className="space-y-1">
-        <div className="flex justify-between text-[11px] text-[#38BDF8]">
+        <div className="flex justify-between items-center text-[11px] text-[#38BDF8]">
           <span>PIPELINE LOAD PROGRESS:</span>
           <span className="font-bold">{progress}%</span>
         </div>
         <div className="w-full h-2 bg-[#071324] border border-[#38BDF8]/30 overflow-hidden relative">
           <div
-            className="h-full bg-[#38BDF8] transition-all duration-300 relative"
+            className={`h-full transition-all duration-300 relative ${
+              status === "FAILED" ? "bg-[#EF4444]" : "bg-[#38BDF8]"
+            }`}
             style={{ width: `${progress}%` }}
           >
             <div className="absolute inset-0 bg-white/20 animate-pulse" />
@@ -42,8 +69,28 @@ export const PipelineSchematic: React.FC<PipelineSchematicProps> = ({
         </div>
       </div>
 
+      {/* Retry Button if Stage Failed */}
+      {status === "FAILED" && jobId && (
+        <div className="p-2.5 bg-red-950/40 border border-red-500/50 rounded flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-red-400 text-xs">
+            <AlertCircle size={14} className="shrink-0 animate-pulse" />
+            <span className="text-[11px]">
+              Pipeline terhenti di stage: <strong>{currentStage || "UNKNOWN"}</strong>
+            </span>
+          </div>
+          <button
+            onClick={handleRetryFailedStage}
+            disabled={isRetrying}
+            className="flex items-center space-x-1.5 px-3 py-1 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-[11px] font-bold rounded tracking-wider shadow transition-all disabled:opacity-50"
+          >
+            <RotateCcw size={12} className={isRetrying ? "animate-spin" : ""} />
+            <span>{isRetrying ? "RESUMING..." : "RETRY STAGE"}</span>
+          </button>
+        </div>
+      )}
+
       {/* DAG Stages */}
-      <div className="space-y-2 pt-2">
+      <div className="space-y-2 pt-1">
         {STAGES.map((stage, idx) => {
           let stageStatus: "pending" | "active" | "completed" | "failed" = "pending";
 

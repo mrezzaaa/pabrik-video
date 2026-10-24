@@ -9,12 +9,48 @@ export class RemotionRendererService {
 
   private async getBundleLocation(): Promise<string> {
     if (!this.bundleLocationPromise) {
-      this.bundleLocationPromise = bundle({
-        entryPoint: path.join(process.cwd(), "src", "remotion", "index.ts"),
-        webpackOverride: (config) => config,
-      });
+      this.bundleLocationPromise = (async () => {
+        const publicSource = path.join(process.cwd(), "public");
+        const bundleLoc = await bundle({
+          entryPoint: path.join(process.cwd(), "src", "remotion", "index.ts"),
+          publicDir: publicSource,
+          webpackOverride: (config) => config,
+        });
+
+        // Ensure bundle's public directory is a live symlink to project's public folder
+        // Remotion bundler copies publicDir at bundle start time, so dynamic assets downloaded
+        // in Stage 3 & 4 for subsequent jobs wouldn't exist in the bundle unless symlinked.
+        try {
+          const bundlePublicDir = path.join(bundleLoc, "public");
+          if (fs.existsSync(bundlePublicDir)) {
+            const stat = fs.lstatSync(bundlePublicDir);
+            if (!stat.isSymbolicLink()) {
+              fs.rmSync(bundlePublicDir, { recursive: true, force: true });
+              fs.symlinkSync(publicSource, bundlePublicDir, "dir");
+            }
+          } else {
+            fs.symlinkSync(publicSource, bundlePublicDir, "dir");
+          }
+        } catch (symlinkErr) {
+          console.warn("[REMOTION] Warning: Could not create live public symlink:", symlinkErr);
+        }
+
+        return bundleLoc;
+      })();
     }
-    return this.bundleLocationPromise;
+
+    const bundleLoc = await this.bundleLocationPromise;
+    // Keep bundle public folder fresh for every render
+    try {
+      const publicSource = path.join(process.cwd(), "public");
+      const bundlePublicDir = path.join(bundleLoc, "public");
+      if (!fs.existsSync(bundlePublicDir) || !fs.lstatSync(bundlePublicDir).isSymbolicLink()) {
+        fs.rmSync(bundlePublicDir, { recursive: true, force: true });
+        fs.symlinkSync(publicSource, bundlePublicDir, "dir");
+      }
+    } catch (_) {}
+
+    return bundleLoc;
   }
 
   /**
@@ -43,10 +79,14 @@ export class RemotionRendererService {
     const outputPath = path.join(outputDir, outputFileName);
     const outputUrl = `/assets/${jobId}/renders/${outputFileName}`;
 
+    // Use a dedicated high port (3123) for Remotion's internal HTTP server to avoid Vite collision on 3000
+    const remotionPort = 3123;
+
     const composition = await selectComposition({
       serveUrl: bundleLocation,
       id: "MainVideo",
       inputProps: videoProps,
+      port: remotionPort,
     });
 
     const concurrency = parseInt(process.env.REMOTION_CONCURRENCY || "2", 10);
@@ -58,6 +98,7 @@ export class RemotionRendererService {
       },
       serveUrl: bundleLocation,
       codec: "h264",
+      port: remotionPort,
       outputLocation: outputPath,
       inputProps: videoProps,
       concurrency,

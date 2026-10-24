@@ -132,6 +132,7 @@ export default function DashboardPage() {
             spec="DAG: 5 STAGES"
           >
             <PipelineSchematic
+              jobId={activeJobId}
               currentStage={activeJob?.currentStage}
               progress={activeJob?.progress || 0}
               status={activeJob?.status || "STANDBY"}
