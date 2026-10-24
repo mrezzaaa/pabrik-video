@@ -92,9 +92,33 @@ export const WordTimestampSchema = z.object({
 
 export type WordTimestamp = z.infer<typeof WordTimestampSchema>;
 
+export const ChartTypeEnum = z.preprocess((val) => {
+  const str = String(val).toUpperCase();
+  if (str.includes("BAR")) return "BAR_SURGE";
+  if (str.includes("GAUGE") || str.includes("METER")) return "GAUGE_METER";
+  return "LINE_SPIKE";
+}, z.enum(["LINE_SPIKE", "BAR_SURGE", "GAUGE_METER"]));
+
+export type ChartType = z.infer<typeof ChartTypeEnum>;
+
+export const TelemetrySchema = z.object({
+  objectName: z.string().default("KOMPONEN UTAMA"),
+  categoryTag: z.string().default("SUBSYS // CORE_TELEMETRY"),
+  label: z.string().default("PARAMETER TERUKUR"),
+  startValue: z.number().default(0),
+  endValue: z.number().default(100),
+  unit: z.string().default(""),
+  trendLabel: z.string().default("● NOMINAL"),
+  chartType: ChartTypeEnum.default("LINE_SPIKE"),
+  dataPoints: z.array(z.number()).default([20, 35, 50, 65, 80, 100]),
+});
+
+export type TelemetryData = z.infer<typeof TelemetrySchema>;
+
 export const StoryboardSceneSchema = z.object({
   sceneId: z.number(),
   narration: z.string(),
+  telemetry: TelemetrySchema.optional(),
   mainVisual: MainVisualSchema,
   cutaway: CutawaySchema,
   transitionToNext: TransitionTypeEnum.default("FLASH_CUT"),

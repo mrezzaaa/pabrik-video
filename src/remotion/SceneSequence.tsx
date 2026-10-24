@@ -2,8 +2,8 @@ import React from "react";
 import { Audio, Img, Video, staticFile, useCurrentFrame } from "remotion";
 import { StoryboardScene } from "../lib/types";
 import { CameraShotWrapper } from "./CameraShotWrapper";
-import { GraphicOverlayComponent } from "./GraphicOverlay";
 import { SubtitleTrack } from "./SubtitleTrack";
+import { TopTelemetryDeck } from "./TopTelemetryDeck";
 import { TransitionOverlay } from "./TransitionOverlay";
 
 interface SceneSequenceProps {
@@ -24,8 +24,12 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
   const isCutawayActive = scene.cutaway?.enabled && frame >= cutawayFrame;
 
   // Resolve media src: normalize relative to public/
-  const cleanMain = (scene.mainVisual.localAssetUrl || "").replace(/^\/+/, "").replace(/^public\/+/, "");
-  const cleanCutaway = (scene.cutaway?.localAssetUrl || "").replace(/^\/+/, "").replace(/^public\/+/, "");
+  const cleanMain = (scene.mainVisual.localAssetUrl || "")
+    .replace(/^\/+/, "")
+    .replace(/^public\/+/, "");
+  const cleanCutaway = (scene.cutaway?.localAssetUrl || "")
+    .replace(/^\/+/, "")
+    .replace(/^public\/+/, "");
 
   const mainSrc = cleanMain ? staticFile(cleanMain) : "";
   const cutawaySrc = cleanCutaway ? staticFile(cleanCutaway) : mainSrc;
@@ -66,7 +70,7 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
         </CameraShotWrapper>
       ) : (
         <CameraShotWrapper
-          shot={scene.cutaway.cameraShot || "KEN_BURNS_ZOOM_IN"}
+          shot={scene.cutaway?.cameraShot || "KEN_BURNS_ZOOM_IN"}
           durationInFrames={durationInFrames - cutawayFrame}
           themeColor={themeColor}
         >
@@ -99,49 +103,14 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
         }}
       />
 
-      {/* Top HUD Telemetry Header */}
-      <div
-        style={{
-          position: "absolute",
-          top: 60,
-          left: 48,
-          right: 48,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontFamily: "monospace",
-          fontSize: 18,
-          color: themeColor,
-          zIndex: 20,
-          textShadow: "0 2px 8px rgba(0,0,0,0.8)",
-        }}
-      >
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <span
-            style={{
-              padding: "4px 10px",
-              backgroundColor: "rgba(7, 19, 36, 0.8)",
-              border: `1px solid ${themeColor}`,
-            }}
-          >
-            SEC_{String(scene.sceneId).padStart(2, "0")}
-          </span>
-          <span style={{ color: "#F0F9FF" }}>
-            {scene.mainVisual.overlayHeadline}
-          </span>
-        </div>
-        <div
-          style={{
-            padding: "4px 8px",
-            backgroundColor: "rgba(7, 19, 36, 0.8)",
-            border: "1px solid rgba(56, 189, 248, 0.3)",
-            fontSize: 14,
-            color: "#94A3B8",
-          }}
-        >
-          CAD: 1080x1920 @ 30FPS
-        </div>
-      </div>
+      {/* Full-Width Top Telemetry & Animated Chart Deck */}
+      <TopTelemetryDeck
+        sceneId={scene.sceneId}
+        durationInFrames={durationInFrames}
+        telemetry={scene.telemetry}
+        headline={scene.mainVisual.overlayHeadline}
+        themeColor={themeColor}
+      />
 
       {/* Cutaway Transition FX */}
       <TransitionOverlay
@@ -150,15 +119,7 @@ export const SceneSequence: React.FC<SceneSequenceProps> = ({
         durationFrames={4}
       />
 
-      {/* Dynamic Graphic Overlay */}
-      {isCutawayActive && (
-        <GraphicOverlayComponent
-          overlay={scene.cutaway.graphicOverlay}
-          themeColor={themeColor}
-        />
-      )}
-
-      {/* Dynamic Hormozi Subtitles */}
+      {/* High-Contrast Technical Subtitles */}
       <SubtitleTrack
         wordTimestamps={scene.wordTimestamps}
         themeColor={themeColor}
