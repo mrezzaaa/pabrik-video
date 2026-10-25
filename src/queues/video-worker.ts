@@ -12,7 +12,6 @@ import { remotionRenderer } from "../lib/renderer";
 import { Storyboard, VideoProps } from "../lib/types";
 import { logTelemetry } from "../lib/job-log";
 import { computeWordTimestamps } from "../lib/subtitle-sync";
-import { runTechStages } from "./tech-stages";
 import { runKitabedahStages } from "./kitabedah-stages";
 import { ASSEMBLIES } from "../remotion/tech3d/assemblies";
 
@@ -55,12 +54,10 @@ export function isCuratedMechanicalTopic(topic: string): boolean {
 
 /**
  * Gaya video:
- * - "auto" (DEFAULT): Jika topik cocok dengan mesin mekanik 3D terkurasi, gunakan 3D CAD.
- *   Selain itu, otomatis gunakan Dynamic Hybrid Visuals (SearXNG + Pexels + HUD).
- * - "tech": Paksa gambar teknik 3D. Jika tidak ada assembly yang cocok, fallback ke visual dinamis.
- * - "dynamic" / "classic": Selalu gunakan foto/video SearXNG/Pexels + HUD + Ken Burns.
+ * - "kitabedah" / "auto" (DEFAULT): Universal 3D X-Ray Hologram pipeline (Kitabedah).
+ * - "dynamic" / "classic": Foto/video SearXNG/Pexels + HUD + Ken Burns.
  */
-const PIPELINE_STYLE = (process.env.PIPELINE_STYLE || "auto").toLowerCase();
+const PIPELINE_STYLE = (process.env.PIPELINE_STYLE || "kitabedah").toLowerCase();
 
 export const videoWorker = new Worker<VideoJobData>(
   VIDEO_PIPELINE_QUEUE_NAME,
@@ -137,12 +134,11 @@ export const videoWorker = new Worker<VideoJobData>(
         );
       }
 
-      // Gaya 3D vs Dynamic Hybrid Visuals
-      const isCurated3D = isCuratedMechanicalTopic(topic);
-      const shouldAttemptTech =
-        PIPELINE_STYLE === "tech" || PIPELINE_STYLE === "kitabedah" || (PIPELINE_STYLE === "auto" && isCurated3D);
+      // Universal Kitabedah 3D X-Ray Hologram vs Dynamic Hybrid Visuals
+      const shouldUseKitabedah =
+        PIPELINE_STYLE !== "dynamic" && PIPELINE_STYLE !== "classic";
 
-      if (shouldAttemptTech) {
+      if (shouldUseKitabedah) {
         await logTelemetry(
           jobId,
           "02_LLM_DIRECTOR",
@@ -160,23 +156,11 @@ export const videoWorker = new Worker<VideoJobData>(
           return;
         }
 
-        // Secondary fallback to tech-stages
-        const techSuccess = await runTechStages({
-          jobId,
-          topic,
-          modelId,
-          knowledgeBase,
-          existingStoryboard: existingJob?.storyboard,
-          startTime,
-        });
-        if (techSuccess) {
-          return;
-        }
         await logTelemetry(
           jobId,
           "02_LLM_DIRECTOR",
-          `Topic does not fit 3D assembly. Transitioning to Dynamic Hybrid Visual pipeline (SearXNG + Pexels).`,
-          "INFO"
+          `Kitabedah pipeline had an issue. Transitioning to Dynamic Hybrid Visual pipeline (SearXNG + Pexels).`,
+          "WARN"
         );
       } else {
         await logTelemetry(
