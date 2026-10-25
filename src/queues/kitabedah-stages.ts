@@ -112,6 +112,8 @@ export async function runKitabedahStages(
         speed: 1.1,
       });
 
+      phase.audioUrl = `/assets/${jobId}/audio/${audioFileName}`;
+      phase.narration = beat.narration;
       phase.durationInFrames = tts.durationInFrames;
       phase.duration = tts.durationMs / 1000;
       totalTimelineFrames += tts.durationInFrames;

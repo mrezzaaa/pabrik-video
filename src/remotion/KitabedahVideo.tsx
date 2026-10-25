@@ -106,6 +106,11 @@ export const KitabedahVideo: React.FC<KitabedahVideoProps> = ({
           from={from}
           durationInFrames={durationInFrames}
         >
+          {/* Phase Voice Narration Audio */}
+          {phase.audioUrl ? (
+            <Audio src={staticFile(cleanPath(phase.audioUrl))} volume={1.0} />
+          ) : null}
+
           {/* Top Hologram Header */}
           <div
             style={{
@@ -245,12 +250,25 @@ export const KitabedahVideo: React.FC<KitabedahVideoProps> = ({
               {phase.label && (
                 <div
                   style={{
-                    fontSize: 14,
-                    color: "rgba(186, 230, 253, 0.85)",
-                    marginTop: 6,
+                    fontSize: 13,
+                    color: "rgba(186, 230, 253, 0.75)",
+                    marginTop: 4,
                   }}
                 >
                   {phase.label}
+                </div>
+              )}
+              {phase.narration && (
+                <div
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 1.45,
+                    color: "rgba(224, 242, 254, 0.95)",
+                    marginTop: 8,
+                    fontWeight: 500,
+                  }}
+                >
+                  "{phase.narration}"
                 </div>
               )}
             </div>

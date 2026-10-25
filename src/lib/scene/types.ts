@@ -54,6 +54,8 @@ export interface VideoBlueprintPhase {
   label?: string;
   duration?: number;
   durationInFrames?: number;
+  audioUrl?: string;
+  narration?: string;
   activeComponentIds?: string[];
   cameraDirection?: {
     shotType?: "WIDE" | "MEDIUM" | "CLOSE" | "MACRO" | "XRAY_SIDE";
