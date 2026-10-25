@@ -84,17 +84,23 @@ export class RemotionRendererService {
     // Use a dedicated high port (3123) for Remotion's internal HTTP server to avoid Vite collision on 3000
     const remotionPort = 3123;
 
-    // Komposisi 3D memakai WebGL; di Linux/Docker tanpa hardware GPU gunakan software rasterizer "swangle"
-    const glRenderer = (process.env.REMOTION_GL || "swangle") as
+    // Komposisi 3D memakai WebGL:
+    // - Di macOS (Apple Silicon / Intel): gunakan "angle" untuk akselerasi hardware GPU via Metal API
+    // - Di Linux/Docker tanpa hardware GPU: fallback ke software rasterizer "swangle" (SwiftShader CPU)
+    const defaultGl = process.platform === "darwin" ? "angle" : "swangle";
+    const glRenderer = (process.env.REMOTION_GL || defaultGl) as
       | "swangle"
       | "swiftshader"
       | "angle"
       | "egl";
 
-    const chromiumOptions =
-      compositionId === "TechVideo"
-        ? { gl: glRenderer }
-        : undefined;
+    const chromiumOptions = {
+      gl: glRenderer,
+    };
+
+    console.log(
+      `[REMOTION] Starting render pipeline: composition=${compositionId}, gl=${glRenderer} (GPU accelerated: ${glRenderer === "angle"}), platform=${process.platform}`
+    );
 
     const composition = await selectComposition({
       serveUrl: bundleLocation,
@@ -104,7 +110,12 @@ export class RemotionRendererService {
       chromiumOptions,
     });
 
-    const concurrency = parseInt(process.env.REMOTION_CONCURRENCY || "2", 10);
+    const cpuCount = typeof require !== "undefined" ? require("os").cpus().length : 4;
+    const defaultConcurrency = process.platform === "darwin" ? Math.min(4, Math.max(2, Math.floor(cpuCount / 2))) : 2;
+    const concurrency = parseInt(
+      process.env.REMOTION_CONCURRENCY || String(defaultConcurrency),
+      10
+    );
 
     await renderMedia({
       composition: {

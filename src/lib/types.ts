@@ -164,3 +164,21 @@ export const VideoPropsSchema = z.object({
 });
 
 export type VideoProps = z.infer<typeof VideoPropsSchema>;
+
+export interface StreamChunkPacket {
+  type: "STREAM_START" | "FRAME_SYNC" | "AUDIO_CHUNK" | "STREAM_END" | "STREAM_ERROR";
+  jobId: string;
+  chunkIndex: number;
+  timestampMs: number;
+  durationMs?: number;
+  narrationChunk?: string;
+  audioBase64?: string;
+  imageBase64?: string;
+  telemetry?: TelemetryData;
+  callouts?: Callout[];
+  cameraShot?: CameraShot;
+  overlayHeadline?: string;
+  isComputingEntity?: boolean;
+  domain?: string;
+  error?: string;
+}

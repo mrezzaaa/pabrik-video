@@ -13,12 +13,53 @@ import { Storyboard, VideoProps } from "../lib/types";
 import { logTelemetry } from "../lib/job-log";
 import { computeWordTimestamps } from "../lib/subtitle-sync";
 import { runTechStages } from "./tech-stages";
+import { ASSEMBLIES } from "../remotion/tech3d/assemblies";
+
+const CURATED_MECHANICAL_TERMS = [
+  "piston",
+  "turbofan",
+  "jet engine",
+  "mesin jet",
+  "4-tak",
+  "4 tak",
+  "motor bakar",
+  "poros engkol",
+  "baterai lithium",
+  "li-ion",
+  "18650",
+  "termos air",
+  "botol vakum",
+];
 
 /**
- * Gaya video: "tech" (gambar teknik 3D ala Real Engineering, default di branch ini)
- * atau "classic" (foto + Ken Burns + HUD). Atur lewat env PIPELINE_STYLE.
+ * Cek apakah topik secara spesifik cocok dengan salah satu mesin mekanikal 3D terkurasi
+ * (piston_engine, turbofan, li_ion_cell, tumbler). Topik umum lainnya (hujan, cuaca, biologi,
+ * komputasi, sains, sejarah, listrik, dll.) diarahkan ke Dynamic Hybrid Visual Pipeline.
  */
-const PIPELINE_STYLE = (process.env.PIPELINE_STYLE || "tech").toLowerCase();
+export function isCuratedMechanicalTopic(topic: string): boolean {
+  const t = topic.toLowerCase();
+  if (CURATED_MECHANICAL_TERMS.some((term) => t.includes(term))) {
+    return true;
+  }
+  for (const assembly of Object.values(ASSEMBLIES)) {
+    const keywords = assembly.fits.split(",").map((k) => k.trim().toLowerCase());
+    for (const kw of keywords) {
+      if (kw.length >= 5 && t.includes(kw)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Gaya video:
+ * - "auto" (DEFAULT): Jika topik cocok dengan mesin mekanik 3D terkurasi, gunakan 3D CAD.
+ *   Selain itu, otomatis gunakan Dynamic Hybrid Visuals (SearXNG + Pexels + HUD).
+ * - "tech": Paksa gambar teknik 3D. Jika tidak ada assembly yang cocok, fallback ke visual dinamis.
+ * - "dynamic" / "classic": Selalu gunakan foto/video SearXNG/Pexels + HUD + Ken Burns.
+ */
+const PIPELINE_STYLE = (process.env.PIPELINE_STYLE || "auto").toLowerCase();
 
 export const videoWorker = new Worker<VideoJobData>(
   VIDEO_PIPELINE_QUEUE_NAME,
@@ -95,9 +136,18 @@ export const videoWorker = new Worker<VideoJobData>(
         );
       }
 
-      // Gaya "tech": stage 2, 3, 5 dijalankan oleh pipeline 3D (stage 4 dilewati).
-      if (PIPELINE_STYLE === "tech") {
-        await runTechStages({
+      // Gaya 3D vs Dynamic Hybrid Visuals
+      const isCurated3D = isCuratedMechanicalTopic(topic);
+      const shouldAttemptTech =
+        PIPELINE_STYLE === "tech" || (PIPELINE_STYLE === "auto" && isCurated3D);
+
+      if (shouldAttemptTech) {
+        await logTelemetry(
+          jobId,
+          "02_LLM_DIRECTOR",
+          `Routing to 3D Technical Assembly pipeline (Topic matched curated 3D model: ${isCurated3D}).`
+        );
+        const techSuccess = await runTechStages({
           jobId,
           topic,
           modelId,
@@ -105,7 +155,21 @@ export const videoWorker = new Worker<VideoJobData>(
           existingStoryboard: existingJob?.storyboard,
           startTime,
         });
-        return;
+        if (techSuccess) {
+          return;
+        }
+        await logTelemetry(
+          jobId,
+          "02_LLM_DIRECTOR",
+          `Topic does not fit 3D mechanical assembly. Transitioning to Dynamic Hybrid Visual pipeline (SearXNG + Pexels).`,
+          "INFO"
+        );
+      } else {
+        await logTelemetry(
+          jobId,
+          "02_LLM_DIRECTOR",
+          `Using Dynamic Hybrid Visual pipeline for topic: "${topic}" (Harvesting real images & footage).`
+        );
       }
 
       // ----------------------------------------------------------------------

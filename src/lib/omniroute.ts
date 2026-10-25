@@ -27,7 +27,7 @@ export class OmniRouteClient {
     const key = apiKey || process.env.OMNIROUTE_API_KEY || "dummy-key";
 
     this.defaultModel =
-      defaultModel || process.env.OMNIROUTE_MODEL || "groq/openai/gpt-oss-120b";
+      defaultModel || process.env.OMNIROUTE_MODEL || "ddgw/gpt-5.4-mini";
 
     this.client = new OpenAI({
       baseURL: url,
@@ -98,7 +98,7 @@ export class OmniRouteClient {
     modelId?: string
   ): Promise<string[]> {
     const rawModel = modelId || this.defaultModel;
-    const model = !rawModel || rawModel === "auto" ? "groq/openai/gpt-oss-120b" : rawModel;
+    const model = !rawModel || rawModel === "auto" ? "ddgw/gpt-5.4-mini" : rawModel;
 
     try {
       const completion = await this.client.chat.completions.create({
@@ -139,18 +139,25 @@ export class OmniRouteClient {
     const model = modelId || this.defaultModel;
 
     let lastError: Error | null = null;
+    const candidateModels = [
+      !model || model === "auto" ? "ddgw/gpt-5.4-mini" : model,
+      "groq/openai/gpt-oss-120b",
+      "ddgw/gpt-5.4-mini",
+    ];
+
     for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
       try {
-        const userPrompt = `TOPIC: ${topic}\n\nRESEARCH KNOWLEDGE BASE:\n${knowledgeBase}\n\nSTRICT DURATION DIRECTIVE:\n- The video MUST have EXACTLY 7 to 9 scenes.\n- Each scene narration must be 2 to 3 engaging spoken sentences (around 15-20 words) so each scene takes 5-7 seconds.\n- Total video duration MUST reach 45 to 60 seconds (NOT a short 2-scene summary!).\n\nGenerate the complete 7-to-9 scene storyboard JSON now with full mainVisual and cutaway for each scene.`;
+        const compactKnowledge = knowledgeBase ? knowledgeBase.slice(0, 2500) : "";
+        const userPrompt = `TOPIC: ${topic}\n\nRESEARCH KNOWLEDGE BASE:\n${compactKnowledge}\n\nSTRICT DURATION DIRECTIVE:\n- The video MUST have EXACTLY 6 to 8 scenes.\n- Each scene narration must be 1 to 2 engaging spoken sentences (around 15-20 words) so each scene takes 5-7 seconds.\n- Total video duration MUST reach 45 to 60 seconds.\n\nGenerate the complete 6-to-8 scene storyboard JSON now with full mainVisual and cutaway for each scene.`;
 
-        const modelToUse = !model || model === "auto" ? "groq/openai/gpt-oss-120b" : model;
+        const modelToUse = candidateModels[Math.min(attempt - 1, candidateModels.length - 1)];
         const completion = await this.client.chat.completions.create({
           model: modelToUse,
           messages: [
             { role: "system", content: MASTER_SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
           ],
-          temperature: 0.5,
+          temperature: 0.3,
           max_tokens: 4096,
         });
 
@@ -207,7 +214,7 @@ export class OmniRouteClient {
     });
     const model = modelId || this.defaultModel;
     const modelToUse =
-      !model || model === "auto" ? "groq/openai/gpt-oss-120b" : model;
+      !model || model === "auto" ? "ddgw/gpt-5.4-mini" : model;
 
     const userPrompt = `TOPIC: ${topic}\n\nRESEARCH KNOWLEDGE BASE:\n${knowledgeBase}\n\nDIREKTIF DURASI:\n- 6 sampai 8 beat.\n- Narasi tiap beat 1-2 kalimat (sekitar 14-22 kata) sehingga tiap beat 5-8 detik dan total video 45-60 detik.\n\n${
       opts.forceAssemblyId
@@ -277,7 +284,7 @@ export class OmniRouteClient {
   ): Promise<GeneratedAssemblyResult> {
     const model = modelId || this.defaultModel;
     const modelToUse =
-      !model || model === "auto" ? "groq/openai/gpt-oss-120b" : model;
+      !model || model === "auto" ? "ddgw/gpt-5.4-mini" : model;
 
     const messages: Array<{
       role: "system" | "user" | "assistant";

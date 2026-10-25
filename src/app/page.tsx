@@ -55,14 +55,21 @@ export default function DashboardPage() {
   const handleJobSubmit = async (
     topic: string,
     modelId: string,
-    pexelsApiKey: string
+    pexelsApiKey: string,
+    mode: "stream" | "batch" = "stream"
   ) => {
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/jobs", {
+      const endpoint = mode === "stream" ? "/api/jobs/stream" : "/api/jobs";
+      const payload =
+        mode === "stream"
+          ? { topic, modelId }
+          : { topic, modelId, pexelsApiKey };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, modelId, pexelsApiKey }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -121,7 +128,7 @@ export default function DashboardPage() {
           >
             <ModelRouter
               onSubmit={handleJobSubmit}
-              isLoading={isSubmitting || activeJob?.status === "PENDING" || (activeJob && !["COMPLETED", "FAILED"].includes(activeJob.status))}
+              isLoading={isSubmitting}
             />
           </SchematicPanel>
 
@@ -164,9 +171,15 @@ export default function DashboardPage() {
             className="h-full"
           >
             <RenderBay
+              jobId={activeJobId}
               videoUrl={activeJob?.renderOutputUrl}
               status={activeJob?.status || "STANDBY"}
               topic={activeJob?.topic}
+              onStreamComplete={() => {
+                setActiveJob((prev: any) =>
+                  prev ? { ...prev, status: "COMPLETED", progress: 100 } : null
+                );
+              }}
             />
           </SchematicPanel>
         </div>

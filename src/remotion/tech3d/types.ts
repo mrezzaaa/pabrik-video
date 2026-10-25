@@ -5,7 +5,14 @@
 
 export type Vec3 = [number, number, number];
 
-export type PartKind = "cylinder" | "tube" | "box" | "gear" | "cone";
+export type PartKind =
+  | "cylinder"
+  | "tube"
+  | "box"
+  | "gear"
+  | "cone"
+  | "sphere"
+  | "torus";
 
 export interface PartSpec {
   id: string;

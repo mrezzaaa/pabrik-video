@@ -186,5 +186,14 @@ export function buildGeometry(part: PartSpec): THREE.BufferGeometry {
       g.translate(0, 0, -depth / 2);
       return g;
     }
+    case "sphere": {
+      const r = num(part, "r", 0.5);
+      return new THREE.SphereGeometry(r, 32, 24);
+    }
+    case "torus": {
+      const r = num(part, "r", 1);
+      const tube = num(part, "tube", 0.2);
+      return new THREE.TorusGeometry(r, tube, 24, 48);
+    }
   }
 }

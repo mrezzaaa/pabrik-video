@@ -26,6 +26,15 @@ export function partHalfExtents(p: PartSpec): Vec3 {
       const r = n(p, "rOuter", 1.2);
       return [r, r, n(p, "depth", 0.25) / 2];
     }
+    case "sphere": {
+      const r = n(p, "r", 0.5);
+      return [r, r, r];
+    }
+    case "torus": {
+      const r = n(p, "r", 1);
+      const tube = n(p, "tube", 0.2);
+      return [r + tube, r + tube, tube];
+    }
   }
 }
 

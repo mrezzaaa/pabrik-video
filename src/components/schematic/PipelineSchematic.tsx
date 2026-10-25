@@ -51,11 +51,24 @@ export const PipelineSchematic: React.FC<PipelineSchematicProps> = ({
 
   return (
     <div className="space-y-3 font-mono">
+      {/* Streaming Active Telemetry Banner */}
+      {status === "STREAMING" && (
+        <div className="p-2.5 bg-emerald-950/40 border border-emerald-500/50 flex items-center justify-between text-xs text-emerald-400">
+          <div className="flex items-center space-x-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="font-bold">REAL-TIME STREAM ENGINE ACTIVE</span>
+          </div>
+          <span className="text-[10px] text-slate-300">
+            PARALLEL: VOICESTUDIO + FAST VISUALS &lt;150ms
+          </span>
+        </div>
+      )}
+
       {/* Progress Bar & Retry Action */}
       <div className="space-y-1">
         <div className="flex justify-between items-center text-[11px] text-[#38BDF8]">
           <span>PIPELINE LOAD PROGRESS:</span>
-          <span className="font-bold">{progress}%</span>
+          <span className="font-bold">{status === "STREAMING" ? "100% (LIVE FEED)" : `${progress}%`}</span>
         </div>
         <div className="w-full h-2 bg-[#071324] border border-[#38BDF8]/30 overflow-hidden relative">
           <div

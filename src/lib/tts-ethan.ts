@@ -136,6 +136,56 @@ export class TTSEngine {
   }
 
   /**
+   * Real-time Memory Stream: VoiceStudio Cloned Voice (/v1/audio/speech)
+   * Streams raw audio bytes directly into memory buffer without temporary files.
+   */
+  async streamVoiceStudioAudioChunk(
+    text: string,
+    onChunk?: (chunk: Uint8Array) => void
+  ): Promise<Buffer> {
+    const endpoint = `${this.voiceStudioBaseUrl.replace(/\/+$/, "")}/audio/speech`;
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer local",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "tts-1",
+        voice: this.voiceId,
+        input: text,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(`VoiceStudio stream failed with status ${response.status}: ${errorText}`);
+    }
+
+    if (!response.body) {
+      const arrayBuffer = await response.arrayBuffer();
+      const buf = Buffer.from(arrayBuffer);
+      if (onChunk) onChunk(new Uint8Array(buf));
+      return buf;
+    }
+
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value && value.length > 0) {
+        chunks.push(value);
+        if (onChunk) onChunk(value);
+      }
+    }
+
+    return Buffer.concat(chunks);
+  }
+
+  /**
    * Resilient Fallback: Microsoft Edge Neural TTS (Indonesian Male: id-ID-ArdiNeural)
    */
   async generateEdgeTTSFallback(

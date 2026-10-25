@@ -112,6 +112,25 @@ services:
     networks:
       - pabrik-network
 
+  stream-engine:
+    build:
+      context: ./stream-engine
+      dockerfile: Dockerfile
+    container_name: pabrik-stream-engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - VOICESTUDIO_BASE_URL=http://host.docker.internal:3900/v1
+      - VOICE_DEFAULT_ID=aad77d68
+      - VOICESTUDIO_VOICE_NAME=reza
+      - OMNIROUTE_BASE_URL=http://host.docker.internal:20128/v1
+      - OMNIROUTE_API_KEY=sk-omniroute-pabrik-local
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - pabrik-network
+
 volumes:
   postgres_data:
   redis_data:

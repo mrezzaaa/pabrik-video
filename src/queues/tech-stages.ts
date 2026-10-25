@@ -32,17 +32,20 @@ export interface TechStagesInput {
  * Stage 2, 3, dan 5 untuk gaya "gambar teknik 3D".
  * Stage 4 (download foto/B-roll) tidak dipakai: visualnya digenerate dari katalog assembly.
  */
-export async function runTechStages(input: TechStagesInput): Promise<void> {
+export async function runTechStages(input: TechStagesInput): Promise<boolean> {
   const { jobId, topic, modelId, knowledgeBase, startTime } = input;
 
   /* ------------------------- STAGE 2: LLM director ------------------------ */
   let storyboard = input.existingStoryboard as TechStoryboard | null;
-  const hasTechStoryboard =
-    !!storyboard && Array.isArray(storyboard.beats) && storyboard.beats.length > 0;
-
-  // Katalog = assembly bawaan kode + assembly hasil rancangan job sebelumnya.
+  // Pastikan assemblyId valid dan ada di katalog (mencegah reusing assembly yang sudah dihapus)
   const catalog = getCatalog();
   const catalogIds = Object.keys(catalog);
+  const hasTechStoryboard =
+    !!storyboard &&
+    Array.isArray(storyboard.beats) &&
+    storyboard.beats.length > 0 &&
+    storyboard.assemblyId &&
+    catalog[storyboard.assemblyId];
 
   if (!hasTechStoryboard) {
     await prisma.videoJob.update({
@@ -70,11 +73,13 @@ export async function runTechStages(input: TechStagesInput): Promise<void> {
 
     if (generated.assemblyId === "NONE") {
       if (process.env.AUTO_ASSEMBLY === "0") {
-        throw new Error(
-          `Topik "${topic}" belum cocok dengan library assembly yang tersedia (${catalogIds.join(", ")}). ` +
-            `Alasan director: ${generated.fitReason || "-"}. ` +
-            `Tambahkan assembly baru di src/remotion/tech3d/assemblies.ts, atau aktifkan AUTO_ASSEMBLY.`
+        await logTelemetry(
+          jobId,
+          "02_LLM_DIRECTOR",
+          `Topik "${topic}" tidak cocok dengan katalog assembly fisik 3D (${catalogIds.join(", ")}). Mengalihkan ke Dynamic Hybrid Visual pipeline...`,
+          "INFO"
         );
+        return false;
       }
 
       await logTelemetry(
@@ -264,4 +269,5 @@ export async function runTechStages(input: TechStagesInput): Promise<void> {
     "INFO",
     { outputUrl: render.outputUrl, totalDurationMs: Date.now() - startTime }
   );
+  return true;
 }

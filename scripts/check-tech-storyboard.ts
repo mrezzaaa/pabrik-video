@@ -240,7 +240,7 @@ t("input rusak ditolak dengan pesan yang bisa dipakai LLM untuk memperbaiki", ()
   const base = (parts: unknown[]) => ({ id: "x", parts });
   const okPart = (i: number) => ({ id: `p${i}`, kind: "cylinder", params: { r: 1, h: 1 }, y: i });
   assert.throws(() => normalizeGeneratedAssembly(base([okPart(0), okPart(1), okPart(2)])), /4-12/);
-  assert.throws(() => normalizeGeneratedAssembly(base([{ ...okPart(0), kind: "sphere" }, okPart(1), okPart(2), okPart(3)])), /sphere.*didukung/);
+  assert.throws(() => normalizeGeneratedAssembly(base([{ ...okPart(0), kind: "pyramid" }, okPart(1), okPart(2), okPart(3)])), /pyramid.*didukung/);
   assert.throws(() => normalizeGeneratedAssembly(base([{ id: "t", kind: "tube", params: { rOuter: 1, h: 2 }, y: 0 }, okPart(1), okPart(2), okPart(3)])), /rInner.*wajib/);
   assert.throws(() => normalizeGeneratedAssembly(base([okPart(0), { ...okPart(0) }, okPart(2), okPart(3)])), /dobel/);
   assert.throws(() => normalizeGeneratedAssembly({ id: "x" }));

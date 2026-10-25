@@ -14,7 +14,15 @@ import type {
  * rawan salah dihitung di sini: batas ukuran, skala objek, jarak exploded tanpa tumpang tindih.
  */
 
-export const GEN_KINDS: PartKind[] = ["cylinder", "tube", "box", "gear", "cone"];
+export const GEN_KINDS: PartKind[] = [
+  "cylinder",
+  "tube",
+  "box",
+  "gear",
+  "cone",
+  "sphere",
+  "torus",
+];
 export const MIN_PARTS = 4;
 export const MAX_PARTS = 12;
 
@@ -47,6 +55,13 @@ const PARAM_SPECS: Record<PartKind, Record<string, NumSpec>> = {
     rTop: { min: 0.02, max: 2.3 },
     rBottom: { min: 0.02, max: 2.3 },
     h: { min: 0.05, max: 6 },
+  },
+  sphere: {
+    r: { min: 0.03, max: 2.3 },
+  },
+  torus: {
+    r: { min: 0.1, max: 2.3 },
+    tube: { min: 0.02, max: 0.8, def: 0.15 },
   },
 };
 

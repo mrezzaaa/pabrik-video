@@ -29,3 +29,25 @@ export async function GET(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const data = await request.json();
+
+    const updatedJob = await prisma.videoJob.update({
+      where: { id },
+      data,
+    });
+
+    return NextResponse.json({ job: updatedJob });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || "Failed to update job" },
+      { status: 500 }
+    );
+  }
+}
