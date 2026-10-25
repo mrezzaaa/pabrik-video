@@ -132,7 +132,7 @@ export const SAMPLE_KITABEDAH_PROPS: KitabedahVideoProps = {
         activeComponentIds: ["road_deck", "pillar_center", "pillar_front", "pillar_rear"],
         cameraDirection: {
           shotType: "MEDIUM",
-          zoomMultiplier: 1.35,
+          zoomMultiplier: 1.0,
           explodeFactor: 0.2,
         },
         telemetryChannels: [
@@ -151,7 +151,7 @@ export const SAMPLE_KITABEDAH_PROPS: KitabedahVideoProps = {
         activeComponentIds: ["road_deck", "pillar_center", "pillar_front", "pillar_rear", "terrain_grid"],
         cameraDirection: {
           shotType: "CLOSE",
-          zoomMultiplier: 1.8,
+          zoomMultiplier: 1.0,
           explodeFactor: 0.0,
         },
         telemetryChannels: [

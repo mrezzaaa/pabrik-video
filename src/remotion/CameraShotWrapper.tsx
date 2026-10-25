@@ -221,10 +221,6 @@ export const CameraShotWrapper: React.FC<CameraShotWrapperProps> = ({
     }
 
     case "PARALLAX_DEPTH": {
-      const zoom = interpolate(frame, [0, durationInFrames], [1.02, 1.18], {
-        extrapolateRight: "clamp",
-      });
-
       return (
         <div
           style={{
@@ -238,7 +234,7 @@ export const CameraShotWrapper: React.FC<CameraShotWrapperProps> = ({
             style={{
               width: "100%",
               height: "100%",
-              transform: `scale(${zoom})`,
+              transform: "scale(1.0)",
               transformOrigin: "center center",
             }}
           >
