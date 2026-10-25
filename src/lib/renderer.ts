@@ -59,9 +59,9 @@ export class RemotionRendererService {
    */
   async renderVideo(
     jobId: string,
-    videoProps: VideoProps | TechVideoProps,
+    videoProps: any,
     onProgress?: (progress: number) => void,
-    compositionId: "MainVideo" | "TechVideo" = "MainVideo"
+    compositionId: "MainVideo" | "TechVideo" | "Kitabedah" = "Kitabedah"
   ): Promise<{ outputPath: string; outputUrl: string; durationMs: number }> {
     const startTime = Date.now();
     const bundleLocation = await this.getBundleLocation();

@@ -4,14 +4,16 @@ import { MainVideo } from "./MainVideo";
 import { VideoProps } from "../lib/types";
 import { TechVideo } from "./TechVideo";
 import { SAMPLE_PISTON_PROPS, TechVideoProps } from "../lib/tech-storyboard";
+import { KitabedahVideo, KitabedahVideoProps } from "./KitabedahVideo";
+import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "./constants";
 
 const defaultProps: VideoProps = {
   videoTitle: "Blueprint Demo",
   themeColor: "#38BDF8",
   totalDurationInFrames: 300,
-  fps: 30,
-  width: 1080,
-  height: 1920,
+  fps: VIDEO_FPS,
+  width: VIDEO_WIDTH,
+  height: VIDEO_HEIGHT,
   scenes: [
     {
       sceneId: 1,
@@ -42,43 +44,155 @@ const defaultProps: VideoProps = {
         },
       },
       transitionToNext: "FLASH_CUT",
-      wordTimestamps: [
-        { word: "Ini", startMs: 0, endMs: 300 },
-        { word: "cara", startMs: 300, endMs: 650 },
-        { word: "kerja", startMs: 650, endMs: 1100 },
-        { word: "mesin", startMs: 1100, endMs: 1600 },
-        { word: "jet", startMs: 1600, endMs: 2000 },
-        { word: "turbofan", startMs: 2000, endMs: 2700 },
-        { word: "di", startMs: 2700, endMs: 2900 },
-        { word: "ketinggian", startMs: 2900, endMs: 3700 },
-        { word: "tiga", startMs: 3700, endMs: 4100 },
-        { word: "puluh", startMs: 4100, endMs: 4400 },
-        { word: "ribu", startMs: 4400, endMs: 4700 },
-        { word: "kaki.", startMs: 4700, endMs: 5000 },
-      ],
     },
   ],
+};
+
+export const SAMPLE_KITABEDAH_PROPS: KitabedahVideoProps = {
+  visualStyle: "xray",
+  blueprint: {
+    videoTitle: "JALAN TOL ELEVATED",
+    subjectArchetype: "TOLL_ROAD",
+    visualStyle: "xray",
+    components: [
+      {
+        id: "road_deck",
+        name: "Deck Jalan Tol",
+        geometryType: "road",
+        params: { length: 16, width: 2.6, thickness: 0.18, lanes: 4, hasCars: true },
+        style: "xray-blue",
+        position3D: [0, 1.2, 0],
+        behavior: "static",
+      },
+      {
+        id: "pillar_center",
+        name: "Pilar Utama Penopang",
+        geometryType: "pillar",
+        params: { height: 4.2, radius: 0.38, capWidth: 2.8 },
+        style: "xray-blue",
+        position3D: [0, -1.0, 0],
+        behavior: "static",
+      },
+      {
+        id: "pillar_front",
+        name: "Pilar Bentang Depan",
+        geometryType: "pillar",
+        params: { height: 4.2, radius: 0.38, capWidth: 2.8 },
+        style: "xray-blue",
+        position3D: [0, -1.0, 5.5],
+        behavior: "static",
+      },
+      {
+        id: "pillar_rear",
+        name: "Pilar Bentang Belakang",
+        geometryType: "pillar",
+        params: { height: 4.2, radius: 0.38, capWidth: 2.8 },
+        style: "xray-blue",
+        position3D: [0, -1.0, -5.5],
+        behavior: "static",
+      },
+      {
+        id: "terrain_grid",
+        name: "Kontur Alam Wireframe",
+        geometryType: "plane",
+        params: { isTerrain: true },
+        style: "wireframe-green",
+        position3D: [0, -3.2, 0],
+        behavior: "static",
+      },
+    ],
+    phases: [
+      {
+        phaseId: 1,
+        title: "Pondasi Pilar Beton",
+        label: "Substruktur Penahan Gempa",
+        duration: 5,
+        activeComponentIds: ["pillar_center", "pillar_front", "pillar_rear", "terrain_grid"],
+        cameraDirection: {
+          shotType: "WIDE",
+          zoomMultiplier: 1.0,
+          explodeFactor: 0.0,
+        },
+        telemetryChannels: [
+          { name: "BEBAN DUKUNG", value: "4,500", unit: "TON" },
+          { name: "KEDALAMAN BORE PILE", value: "28", unit: "M" },
+        ],
+      },
+      {
+        phaseId: 2,
+        title: "Konstruksi Girder Tol",
+        label: "Bentang Beton Prategang",
+        duration: 5,
+        activeComponentIds: ["road_deck", "pillar_center", "pillar_front", "pillar_rear"],
+        cameraDirection: {
+          shotType: "MEDIUM",
+          zoomMultiplier: 1.35,
+          explodeFactor: 0.2,
+        },
+        telemetryChannels: [
+          { name: "SPAN GIRDER", value: "40", unit: "M" },
+          { name: "MUTU BETON", value: "fc 50", unit: "MPa" },
+        ],
+      },
+      {
+        phaseId: 3,
+        title: "Alur Kendaraan X-Ray",
+        label: "Simulasi Arus Beban Puncak",
+        duration: 5,
+        activeComponentIds: ["road_deck", "pillar_center", "pillar_front", "pillar_rear", "terrain_grid"],
+        cameraDirection: {
+          shotType: "CLOSE",
+          zoomMultiplier: 1.8,
+          explodeFactor: 0.0,
+        },
+        telemetryChannels: [
+          { name: "KAPASITAS JALAN", value: "2,400", unit: "KEND/JAM" },
+          { name: "STATUS ARUS", value: "LANCAR", unit: "" },
+        ],
+      },
+    ],
+  },
 };
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
+        id="Kitabedah"
+        component={KitabedahVideo}
+        durationInFrames={450} // 15 detik default @ 30fps
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+        defaultProps={SAMPLE_KITABEDAH_PROPS}
+        calculateMetadata={({ props }: { props: any }) => {
+          let total = 0;
+          if (props?.blueprint?.phases) {
+            props.blueprint.phases.forEach((p: any) => {
+              total += p.durationInFrames || Math.round((p.duration || 5) * VIDEO_FPS);
+            });
+          }
+          return {
+            durationInFrames: Math.max(1, total || 450),
+          };
+        }}
+      />
+      <Composition
         id="MainVideo"
         component={MainVideo}
         durationInFrames={300}
-        fps={30}
-        width={1080}
-        height={1920}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
         defaultProps={defaultProps}
       />
       <Composition
         id="TechVideo"
         component={TechVideo}
         durationInFrames={SAMPLE_PISTON_PROPS.totalDurationInFrames}
-        fps={30}
-        width={1080}
-        height={1920}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
         defaultProps={SAMPLE_PISTON_PROPS as TechVideoProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, props.totalDurationInFrames),

@@ -61,7 +61,7 @@ export function generateSceneGraph(blueprint: VideoBlueprint): SceneNode[] {
   }
 
   return blueprint.components.map((c) => {
-    const geometry = normalizeGeometryType(c.geometry);
+    const geometry = normalizeGeometryType(c.geometry || "");
     const behavior = normalizeBehaviorType(c.behavior || "static");
 
     const pos = Array.isArray(c.position) && c.position.length >= 3
@@ -83,3 +83,5 @@ export function generateSceneGraph(blueprint: VideoBlueprint): SceneNode[] {
     };
   });
 }
+
+export * from "./generator/sceneGenerator";

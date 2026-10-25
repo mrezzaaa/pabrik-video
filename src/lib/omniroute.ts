@@ -41,7 +41,7 @@ export class OmniRouteClient {
   /**
    * Robust JSON parser and repair for LLM completions
    */
-  private cleanAndParseJson(raw: string): any {
+  public cleanAndParseJson(raw: string): any {
     let clean = raw.trim();
 
     // Remove markdown code blocks if present
@@ -88,6 +88,25 @@ export class OmniRouteClient {
       repaired = repaired.replace(/,\s*([\]}])/g, "$1");
       return JSON.parse(repaired);
     }
+  }
+
+  /**
+   * Helper to execute chat completions with default fast model
+   */
+  async getChatCompletion(
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+    modelId?: string,
+    temperature = 0.4
+  ): Promise<string> {
+    const rawModel = modelId || this.defaultModel;
+    const model = !rawModel || rawModel === "auto" ? "ddgw/gpt-5.4-mini" : rawModel;
+    const completion = await this.client.chat.completions.create({
+      model,
+      messages,
+      temperature,
+      max_tokens: 4096,
+    });
+    return completion.choices[0]?.message?.content || "";
   }
 
   /**

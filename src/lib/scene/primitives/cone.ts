@@ -1,85 +1,87 @@
 import * as THREE from "three";
-import { createBlueprintMaterial } from "../materials";
+import {
+  xrayBlueMaterial,
+  xrayBlueDarkMaterial,
+  xrayBlueLightMaterial,
+  xrayOrangeMaterial,
+  createWireframeOverlay,
+} from "../materials/xray.material";
 
 export interface ConeProps {
-  radius?: number;
   radiusTop?: number;
   radiusBottom?: number;
+  radius?: number;
   height?: number;
-  layers?: number;
   segments?: number;
   axis?: "x" | "y" | "z";
+  layers?: number;
+  style?: string;
   color?: string;
   wireframe?: boolean;
 }
 
 /**
- * Creates a proper 3D Cone / Truncated Staged Cone (e.g., Jet compressor stages, nozzles):
- * - Supports stepped compressor layers if layers > 1
- * - Pivot at (0, 0, 0)
+ * Creates a 3D Cone / Nozzle primitive with X-ray transparency & wireframe overlay
  */
 export function createCone({
-  radius = 1,
   radiusTop = 0.5,
-  radiusBottom,
-  height = 2,
-  layers = 1,
-  segments = 48,
+  radiusBottom = 1.0,
+  radius,
+  height = 1.8,
+  segments = 36,
   axis = "y",
-  color,
-  wireframe = false,
+  layers = 1,
+  style = "xray-blue",
 }: ConeProps = {}): THREE.Group {
   const group = new THREE.Group();
   group.name = "PrimitiveCone";
 
-  const rBot = radiusBottom ?? radius;
-  const mat = createBlueprintMaterial(color, wireframe);
-  const wireMat = createBlueprintMaterial(color, true);
+  const rTop = radiusTop ?? 0;
+  const rBottom = radius ?? radiusBottom;
+
+  let mat: THREE.Material = xrayBlueMaterial;
+  let wireColor = 0x00d4ff;
+
+  if (style === "xray-orange") {
+    mat = xrayOrangeMaterial;
+    wireColor = 0xff4500;
+  } else if (style === "xray-blue-dark") {
+    mat = xrayBlueDarkMaterial;
+    wireColor = 0x0088cc;
+  } else if (style === "xray-blue-light") {
+    mat = xrayBlueLightMaterial;
+    wireColor = 0x66e0ff;
+  }
 
   if (layers > 1) {
-    // Multi-layer staged compressor discs / steps
-    const layerH = height / layers;
+    const layerHeight = height / layers;
     for (let i = 0; i < layers; i++) {
-      const t0 = i / layers;
-      const t1 = (i + 1) / layers;
-      const r0 = rBot + (radiusTop - rBot) * t0;
-      const r1 = rBot + (radiusTop - rBot) * t1;
-      const yMid = -height / 2 + (i + 0.5) * layerH;
+      const frac0 = i / layers;
+      const frac1 = (i + 1) / layers;
+      const r0 = rBottom - (rBottom - rTop) * frac0;
+      const r1 = rBottom - (rBottom - rTop) * frac1;
 
-      const layerGeo = new THREE.CylinderGeometry(
-        r1,
-        r0,
-        layerH * 0.92,
-        segments
-      );
-      if (axis === "x") layerGeo.rotateZ(Math.PI / 2);
+      const layerGeo = new THREE.CylinderGeometry(r1, r0, layerHeight * 0.94, segments);
       if (axis === "z") layerGeo.rotateX(Math.PI / 2);
+      if (axis === "x") layerGeo.rotateZ(Math.PI / 2);
 
-      const discMesh = new THREE.Mesh(layerGeo, mat);
-      if (axis === "y") discMesh.position.y = yMid;
-      else if (axis === "x") discMesh.position.x = yMid;
-      else discMesh.position.z = yMid;
+      const layerMesh = new THREE.Mesh(layerGeo, mat);
+      const yOffset = -height / 2 + layerHeight * (i + 0.5);
+      if (axis === "y") layerMesh.position.y = yOffset;
+      else if (axis === "z") layerMesh.position.z = yOffset;
+      else layerMesh.position.x = yOffset;
 
-      const wireMesh = new THREE.Mesh(layerGeo.clone(), wireMat);
-      discMesh.add(wireMesh);
-      group.add(discMesh);
+      group.add(layerMesh);
+      group.add(createWireframeOverlay(layerGeo, wireColor));
     }
   } else {
-    const geo = new THREE.CylinderGeometry(
-      radiusTop,
-      rBot,
-      height,
-      segments,
-      2,
-      false
-    );
-    if (axis === "x") geo.rotateZ(Math.PI / 2);
+    const geo = new THREE.CylinderGeometry(rTop, rBottom, height, segments);
     if (axis === "z") geo.rotateX(Math.PI / 2);
+    if (axis === "x") geo.rotateZ(Math.PI / 2);
 
     const mesh = new THREE.Mesh(geo, mat);
-    const wire = new THREE.Mesh(geo.clone(), wireMat);
     group.add(mesh);
-    group.add(wire);
+    group.add(createWireframeOverlay(geo, wireColor));
   }
 
   return group;

@@ -3,166 +3,159 @@
 import React, { useMemo } from "react";
 import * as THREE from "three";
 import { ThreeCanvas } from "@remotion/three";
-import { VideoBlueprint, SceneNode } from "../types";
-import { generateSceneGraph } from "../generator";
-import { primitives } from "../primitives";
-import { useRotateBehavior } from "../behaviors/rotate.behavior";
-import { useExplodeBehavior } from "../behaviors/explode.behavior";
-import { BLUEPRINT_CYAN } from "../materials";
+import { useCurrentFrame, useVideoConfig } from "remotion";
+import { VideoBlueprint, VideoBlueprintPhase } from "../types";
+import { generateScene } from "../generator/sceneGenerator";
+import { CameraRig, ShotType } from "./CameraRig";
+import { calculateRotation } from "../behaviors/rotate";
+import { calculateExplode } from "../behaviors/explode";
+import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "../../../remotion/constants";
 
 export interface KitabedahSceneProps {
   blueprint: VideoBlueprint;
-  phase?: {
-    phaseId?: number | string;
-    label?: string;
-    fromFrame?: number;
-    toFrame?: number;
-    activeComponentIds: string[];
-  };
-  frame: number;
-  fps?: number;
-  style?: React.CSSProperties;
+  phase?: VideoBlueprintPhase;
   width?: number;
   height?: number;
+  style?: React.CSSProperties;
 }
 
 /**
- * Single Node 3D Primitive component rendered inside ThreeCanvas:
- * Evaluates behavior (rotate, explode, static) and attaches mesh to ThreeJS tree.
+ * Animated scene component evaluating rotations and explosions frame-by-frame
  */
-const DynamicNode3D: React.FC<{
-  node: SceneNode;
-  frame: number;
-  fps: number;
-  themeColor: string;
-}> = ({ node, frame, fps, themeColor }) => {
-  const meshGroup = useMemo(() => {
-    const creator = primitives[node.geometry] || primitives.cylinder;
-    return creator({ ...node.params, color: themeColor });
-  }, [node.geometry, node.params, themeColor]);
+const AnimatedSceneTree: React.FC<{
+  blueprint: VideoBlueprint;
+  phase?: VideoBlueprintPhase;
+}> = ({ blueprint, phase }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
-  // Compute behaviors dynamically without scale distortion
-  const { posOffset, rotEuler } = useMemo(() => {
-    let px = node.position[0];
-    let py = node.position[1];
-    let pz = node.position[2];
-    let rx = 0;
-    let ry = 0;
-    let rz = 0;
+  // Generate static ThreeJS group once per blueprint
+  const sceneGroup = useMemo(() => {
+    return generateScene(blueprint);
+  }, [blueprint]);
 
-    if (node.behavior === "rotate") {
-      const rot = useRotateBehavior({
-        frame,
-        fps,
-        axis: node.axis || "z",
-        speed: Number(node.params.speed) || 1.0,
-      });
-      if (rot.axis === "x") rx = rot.rotationRadians;
-      else if (rot.axis === "y") ry = rot.rotationRadians;
-      else rz = rot.rotationRadians;
-    } else if (node.behavior === "explode") {
-      const expl = useExplodeBehavior({
-        frame,
-        startFrame: Number(node.params.startFrame) || 0,
-        fps,
-        offset: Number(node.params.offset) || 1.5,
-        direction: (node.params.direction as [number, number, number]) || [0, 1, 0],
-      });
-      px += expl.offsetTranslation[0];
-      py += expl.offsetTranslation[1];
-      pz += expl.offsetTranslation[2];
-    }
+  // Update animated nodes on every frame
+  useMemo(() => {
+    const activeIds = phase?.activeComponentIds;
+    const isExplodedPhase = phase?.objectState?.exploded ?? false;
 
-    return {
-      posOffset: [px, py, pz] as [number, number, number],
-      rotEuler: [rx, ry, rz] as [number, number, number],
-    };
-  }, [node, frame, fps]);
+    sceneGroup.children.forEach((child) => {
+      const userData = (child as any).userData;
+      if (!userData) return;
 
-  return (
-    <primitive
-      object={meshGroup}
-      position={posOffset}
-      rotation={rotEuler}
-    />
-  );
+      const { id, behavior, axis, initialPosition, initialRotation } = userData;
+
+      // Visibility filter
+      if (activeIds && activeIds.length > 0 && id) {
+        child.visible = activeIds.includes(id);
+      } else {
+        child.visible = true;
+      }
+
+      const initPos = Array.isArray(initialPosition) && initialPosition.length === 3
+        ? initialPosition
+        : [child.position.x, child.position.y, child.position.z];
+      const initRot = Array.isArray(initialRotation) && initialRotation.length === 3
+        ? initialRotation
+        : [child.rotation.x, child.rotation.y, child.rotation.z];
+
+      // 1. Rotation Behavior (pure Z-axis or specified axis, no scaling)
+      if (behavior === "rotate") {
+        const rot = calculateRotation({
+          frame,
+          fps,
+          axis: axis || "z",
+          speed: 1.2,
+        });
+
+        if (rot.axis === "x") child.rotation.x = initRot[0] + rot.rotationRadians;
+        else if (rot.axis === "y") child.rotation.y = initRot[1] + rot.rotationRadians;
+        else child.rotation.z = initRot[2] + rot.rotationRadians;
+      }
+
+      // 2. Explode Behavior (translateY/X/Z with spring, no scale deformation)
+      if (behavior === "explode" || isExplodedPhase) {
+        const expl = calculateExplode({
+          frame,
+          fps,
+          offset: 1.6,
+          direction: [0, 1, 0],
+        });
+
+        child.position.x = initPos[0] + expl.offsetTranslation[0];
+        child.position.y = initPos[1] + expl.offsetTranslation[1];
+        child.position.z = initPos[2] + expl.offsetTranslation[2];
+      } else if (behavior !== "rotate") {
+        child.position.set(initPos[0], initPos[1], initPos[2]);
+      }
+    });
+  }, [sceneGroup, frame, fps, phase]);
+
+  return <primitive object={sceneGroup} />;
 };
 
 /**
- * Universal dynamic 3D blueprint scene renderer:
- * - Generates 3D model graph dynamically from blueprint (jet turbofan, tumbler, piston, etc.)
- * - Filters active components based on current phase
- * - Renders proper Three.js primitives with neon blueprint styling (#00D4FF)
- * - Movement is pure rotation & translation without unnatural scaling
+ * Universal Kitabedah 3D X-Ray Hologram Scene (Section 3.5):
+ * - Black #000000 background (bukan abu-abu #F2F2F2)
+ * - ThreeCanvas with perspective camera & high precision WebGL
+ * - CameraRig with spring interpolation and clamped zoom/explode
+ * - Directional cyan & blue specular lights for transparent X-ray brilliance
  */
 export const KitabedahScene: React.FC<KitabedahSceneProps> = ({
   blueprint,
   phase,
-  frame,
-  fps = 30,
+  width = VIDEO_WIDTH,
+  height = VIDEO_HEIGHT,
   style,
-  width = 1080,
-  height = 1920,
 }) => {
-  const sceneGraph = useMemo(() => generateSceneGraph(blueprint), [blueprint]);
-
-  const activeNodes = useMemo(() => {
-    if (!phase || !Array.isArray(phase.activeComponentIds) || phase.activeComponentIds.length === 0) {
-      return sceneGraph;
-    }
-    return sceneGraph.filter((n) => phase.activeComponentIds.includes(n.id));
-  }, [sceneGraph, phase]);
-
-  const themeColor = blueprint?.themeColor || BLUEPRINT_CYAN;
+  const cameraShot: ShotType =
+    phase?.cameraDirection?.shotType || "MEDIUM";
+  const zoomMultiplier = phase?.cameraDirection?.zoomMultiplier ?? 1.0;
+  const explodeFactor = phase?.cameraDirection?.explodeFactor ?? 0.0;
 
   return (
     <div
       style={{
-        width: "100%",
-        height: "100%",
+        width,
+        height,
+        backgroundColor: "#000000",
         position: "relative",
         overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background:
-          "radial-gradient(ellipse at 50% 50%, #0A223A 0%, #061528 55%, #030A14 100%)",
         ...style,
       }}
     >
-      {/* Blueprint Grid Overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `
-            linear-gradient(to right, rgba(0, 212, 255, 0.08) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(0, 212, 255, 0.08) 1px, transparent 1px)`,
-          backgroundSize: "60px 60px",
-          pointerEvents: "none",
-        }}
-      />
-
       <ThreeCanvas
         width={width}
         height={height}
-        camera={{ position: [0, 0, 7.5], fov: 36, near: 0.1, far: 100 }}
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#000000",
+        }}
       >
-        <ambientLight intensity={0.9} />
-        <directionalLight position={[5, 10, 7]} intensity={1.5} color={themeColor} />
-        <pointLight position={[-5, -5, -5]} intensity={0.5} color="#38BDF8" />
+        {/* Cinematic Ambient & Directional Lights */}
+        <ambientLight intensity={0.4} color="#004466" />
+        <directionalLight
+          position={[6, 12, 10]}
+          intensity={1.2}
+          color="#00D4FF"
+        />
+        <directionalLight
+          position={[-8, -4, -6]}
+          intensity={0.6}
+          color="#FF6B35"
+        />
+        <pointLight position={[0, 4, 2]} intensity={0.8} color="#66E0FF" />
 
-        <group position={[0, 0, 0]}>
-          {activeNodes.map((node) => (
-            <DynamicNode3D
-              key={node.id}
-              node={node}
-              frame={frame}
-              fps={fps}
-              themeColor={themeColor}
-            />
-          ))}
-        </group>
+        {/* Dynamic Procedural Scene Graph */}
+        <AnimatedSceneTree blueprint={blueprint} phase={phase} />
+
+        {/* Spring Camera Rig */}
+        <CameraRig
+          shotType={cameraShot}
+          zoomMultiplier={zoomMultiplier}
+          explodeFactor={explodeFactor}
+        />
       </ThreeCanvas>
     </div>
   );

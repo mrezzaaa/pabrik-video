@@ -13,6 +13,7 @@ import { Storyboard, VideoProps } from "../lib/types";
 import { logTelemetry } from "../lib/job-log";
 import { computeWordTimestamps } from "../lib/subtitle-sync";
 import { runTechStages } from "./tech-stages";
+import { runKitabedahStages } from "./kitabedah-stages";
 import { ASSEMBLIES } from "../remotion/tech3d/assemblies";
 
 const CURATED_MECHANICAL_TERMS = [
@@ -139,14 +140,27 @@ export const videoWorker = new Worker<VideoJobData>(
       // Gaya 3D vs Dynamic Hybrid Visuals
       const isCurated3D = isCuratedMechanicalTopic(topic);
       const shouldAttemptTech =
-        PIPELINE_STYLE === "tech" || (PIPELINE_STYLE === "auto" && isCurated3D);
+        PIPELINE_STYLE === "tech" || PIPELINE_STYLE === "kitabedah" || (PIPELINE_STYLE === "auto" && isCurated3D);
 
       if (shouldAttemptTech) {
         await logTelemetry(
           jobId,
           "02_LLM_DIRECTOR",
-          `Routing to 3D Technical Assembly pipeline (Topic matched curated 3D model: ${isCurated3D}).`
+          `Routing to Universal Kitabedah 3D X-Ray Hologram pipeline (Topic: "${topic}").`
         );
+        const kitabedahSuccess = await runKitabedahStages({
+          jobId,
+          topic,
+          modelId,
+          knowledgeBase,
+          existingStoryboard: existingJob?.storyboard,
+          startTime,
+        });
+        if (kitabedahSuccess) {
+          return;
+        }
+
+        // Secondary fallback to tech-stages
         const techSuccess = await runTechStages({
           jobId,
           topic,
@@ -161,7 +175,7 @@ export const videoWorker = new Worker<VideoJobData>(
         await logTelemetry(
           jobId,
           "02_LLM_DIRECTOR",
-          `Topic does not fit 3D mechanical assembly. Transitioning to Dynamic Hybrid Visual pipeline (SearXNG + Pexels).`,
+          `Topic does not fit 3D assembly. Transitioning to Dynamic Hybrid Visual pipeline (SearXNG + Pexels).`,
           "INFO"
         );
       } else {
