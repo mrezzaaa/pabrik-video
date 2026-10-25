@@ -97,12 +97,14 @@ export class TTSWorker {
     speed,
   }: SynthesizeAudioOptions): Promise<SynthesizedAudioResult> {
     const outputDir = path.join(process.cwd(), "public", "assets", jobId);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    const finalPath = path.join(outputDir, outputFileName);
+    const finalDir = path.dirname(finalPath);
+    if (!fs.existsSync(finalDir)) {
+      fs.mkdirSync(finalDir, { recursive: true });
     }
 
-    const rawPath = path.join(outputDir, `raw_${Date.now()}_${outputFileName}`);
-    const finalPath = path.join(outputDir, outputFileName);
+    const baseName = path.basename(outputFileName);
+    const rawPath = path.join(finalDir, `raw_${Date.now()}_${baseName}`);
     const targetVoice = voiceId || this.voiceId;
     const targetSpeed = speed || this.speed;
 
@@ -138,11 +140,45 @@ export class TTSWorker {
       console.warn(
         `[TTS WORKER] VoiceStudio error (${err.message}), falling back to EdgeTTS:`
       );
-      // Fallback using child_process edge-playback/edge-tts if available
+
+      try {
+        const { exec } = await import("child_process");
+        const { promisify } = await import("util");
+        const execAsync = promisify(exec);
+        const escapedText = text.replace(/"/g, '\\"');
+        const cmd = `edge-tts --voice "id-ID-ArdiNeural" --rate="+10%" --text "${escapedText}" --write-media "${rawPath}"`;
+        await execAsync(cmd);
+
+        if (fs.existsSync(rawPath) && fs.statSync(rawPath).size > 500) {
+          const durationMs = await this.processWithFfmpeg(rawPath, finalPath);
+          const durationInFrames = Math.round((durationMs / 1000) * VIDEO_FPS);
+          return {
+            filePath: finalPath,
+            durationMs,
+            durationInFrames,
+          };
+        }
+      } catch (edgeErr: any) {
+        console.warn(`[TTS WORKER] EdgeTTS fallback failed:`, edgeErr.message);
+      }
+
+      // If all fails, create a clean silent audio so Remotion never 404s
+      await new Promise<void>((resolve) => {
+        ffmpeg()
+          .input("anullsrc=r=44100:cl=stereo")
+          .inputFormat("lavfi")
+          .duration(5)
+          .audioCodec("libmp3lame")
+          .output(finalPath)
+          .on("end", () => resolve())
+          .on("error", () => resolve())
+          .run();
+      });
+
       return {
         filePath: finalPath,
-        durationMs: 6000,
-        durationInFrames: 6 * VIDEO_FPS,
+        durationMs: 5000,
+        durationInFrames: 5 * VIDEO_FPS,
       };
     }
   }
