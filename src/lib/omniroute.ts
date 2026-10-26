@@ -5,21 +5,63 @@ import { Storyboard, StoryboardSchema } from "./types";
 export class OmniRouteClient {
   private client: OpenAI;
   private defaultModel: string;
+  private baseURL: string;
+  private apiKey: string;
 
   constructor(baseURL?: string, apiKey?: string, defaultModel?: string) {
-    const url =
+    this.baseURL =
       baseURL ||
       process.env.OMNIROUTE_BASE_URL ||
-      "http://host.docker.internal:20128/v1";
-    const key = apiKey || process.env.OMNIROUTE_API_KEY || "dummy-key";
+      "http://localhost:20128/v1";
+    this.apiKey = apiKey || process.env.OMNIROUTE_API_KEY || "dummy-key";
 
     this.defaultModel =
       defaultModel || process.env.OMNIROUTE_MODEL || "ddgw/gpt-5.4-mini";
 
     this.client = new OpenAI({
-      baseURL: url,
-      apiKey: key,
+      baseURL: this.baseURL,
+      apiKey: this.apiKey,
     });
+  }
+
+  public async getAvailableModels(): Promise<string[]> {
+    try {
+      const response = await this.client.models.list();
+      const models: string[] = [];
+      for await (const m of response) {
+        if (m.id) models.push(m.id);
+      }
+      if (models.length > 0) {
+        return models.sort();
+      }
+    } catch (err: any) {
+      console.warn("[OMNIROUTE] SDK models.list() failed, trying direct HTTP fetch:", err.message);
+    }
+
+    try {
+      const url = `${this.baseURL}/models`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const models = (data.data || []).map((m: any) => m.id).filter(Boolean);
+        if (models.length > 0) return models.sort();
+      }
+    } catch (e: any) {
+      console.error("[OMNIROUTE] HTTP fetch models failed:", e.message);
+    }
+
+    return [
+      "groq/openai/gpt-oss-120b",
+      "groq/openai/gpt-oss-20b",
+      "qwen/qwen3.8-27b",
+      "ddgw/gpt-5.4-mini",
+      "zc/glm-5.3-flash",
+      "auto",
+    ];
   }
 
   /**
