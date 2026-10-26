@@ -1,0 +1,31 @@
+# SearXNG configuration for Pabrik Video research agent.
+# The JSON output format is required by src/lib/searxng.ts.
+use_default_settings: true
+
+server:
+  secret_key: "pabrik-video-searxng-secret-change-me"
+  bind_address: "0.0.0.0"
+  port: 8080
+  base_url: false
+  image_proxy: true
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "id-ID"
+  formats:
+    - html
+    - json
+
+categories_as_tabs:
+  general:
+    - google
+    - duckduckgo
+    - bing
+    - brave
+  images:
+    - google images
+    - bing images
+    - duckduckgo images
+    - unsplash
+    - wikimedia

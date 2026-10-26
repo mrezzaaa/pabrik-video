@@ -1,0 +1,72 @@
+// PABRIK VIDEO - Prisma schema
+// PostgreSQL database for the FB Pro Reels factory.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  QUEUED
+  RESEARCHING
+  SCRIPTING
+  TTS_PROCESSING
+  VISUAL_PLANNING
+  RENDERING
+  DONE
+  FAILED
+}
+
+// Named PipelineJobStatus so it can coexist with the legacy `JobStatus`
+// enum still present in older Pabrik Video databases.
+enum PipelineJobStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+model Project {
+  id             String        @id @default(cuid())
+  topic          String
+  status         ProjectStatus @default(QUEUED)
+  hook           String?
+  fullScript     Json?
+  researchData   Json?
+  visualPlan     Json?
+  wordTimestamps Json?
+  audioUrl       String?
+  videoUrl       String?
+  thumbnailUrl   String?
+  duration       Int?
+  error          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  jobs           Job[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Job {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type       String
+  status     PipelineJobStatus @default(PENDING)
+  payload    Json?
+  result     Json?
+  error      String?
+  attempts   Int       @default(0)
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([projectId, type])
+  @@index([status])
+}

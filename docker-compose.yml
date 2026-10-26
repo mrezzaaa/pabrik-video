@@ -1,0 +1,167 @@
+# Pabrik Video — docker compose
+#
+# Core infrastructure (Postgres, Redis, SearXNG) plus the web app and the
+# standalone BullMQ worker. OmniRoute (20128) and VoiceStudio (3900) are
+# expected to run on the host machine; both containers reach them through
+# host.docker.internal.
+#
+#   docker compose up -d postgres redis searxng
+#   docker compose up -d --build web worker
+#
+# Copy .env.example to .env before running. Compose reads that file for the
+# variables below.
+
+name: pabrik-video
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pabrik-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pabrik
+      POSTGRES_PASSWORD: pabrik_secret
+      POSTGRES_DB: pabrik_video
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pabrik -d pabrik_video"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pabrik-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: pabrik-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pabrik-network
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: pabrik-searxng
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pabrik-network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: pabrik-web
+    restart: unless-stopped
+    ports:
+      - "2000:2000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_APP_URL: http://localhost:2000
+      DATABASE_URL: postgresql://pabrik:pabrik_secret@postgres:5432/pabrik_video?schema=public
+      REDIS_URL: redis://redis:6379
+      SEARXNG_URL: http://searxng:8080
+      OMNIROUTE_BASE_URL: http://host.docker.internal:20128/v1
+      OMNIROUTE_API_KEY: ${OMNIROUTE_API_KEY:-local}
+      OMNIROUTE_PRIMARY_MODEL: ${OMNIROUTE_PRIMARY_MODEL:-auto}
+      OMNIROUTE_FAST_MODEL: ${OMNIROUTE_FAST_MODEL:-auto}
+      VOICESTUDIO_BASE_URL: http://host.docker.internal:3900/v1
+      VOICE_DEFAULT_ID: ${VOICE_DEFAULT_ID:-aad77d68}
+      VOICESTUDIO_VOICE_NAME: ${VOICESTUDIO_VOICE_NAME:-reza}
+      NEXT_PUBLIC_VOICE_LABEL: ${NEXT_PUBLIC_VOICE_LABEL:-reza}
+    volumes:
+      - media_audio:/app/public/audio
+      - media_videos:/app/public/videos
+      - media_thumbnails:/app/public/thumbnails
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      searxng:
+        condition: service_started
+    networks:
+      - pabrik-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: pabrik-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://pabrik:pabrik_secret@postgres:5432/pabrik_video?schema=public
+      REDIS_URL: redis://redis:6379
+      SEARXNG_URL: http://searxng:8080
+      OMNIROUTE_BASE_URL: http://host.docker.internal:20128/v1
+      OMNIROUTE_API_KEY: ${OMNIROUTE_API_KEY:-local}
+      OMNIROUTE_PRIMARY_MODEL: ${OMNIROUTE_PRIMARY_MODEL:-auto}
+      OMNIROUTE_FAST_MODEL: ${OMNIROUTE_FAST_MODEL:-auto}
+      VOICESTUDIO_BASE_URL: http://host.docker.internal:3900/v1
+      VOICE_DEFAULT_ID: ${VOICE_DEFAULT_ID:-aad77d68}
+      VOICESTUDIO_VOICE_NAME: ${VOICESTUDIO_VOICE_NAME:-reza}
+      VOICESTUDIO_MODEL: ${VOICESTUDIO_MODEL:-omnivoice}
+      VOICESTUDIO_SPEED: ${VOICESTUDIO_SPEED:-1.05}
+      VOICESTUDIO_API_KEY: ${VOICESTUDIO_API_KEY:-}
+      UNLIMITEDTTS_LANGUAGE: ${UNLIMITEDTTS_LANGUAGE:-id-ID}
+      UNLIMITEDTTS_VOICE: ${UNLIMITEDTTS_VOICE:-Ethan}
+      UNLIMITEDTTS_SPEED: ${UNLIMITEDTTS_SPEED:-1.1}
+      UNLIMITEDTTS_VOICE_ID: ${UNLIMITEDTTS_VOICE_ID:-id-ID-ArdiNeural}
+      PEXELS_API_KEY: ${PEXELS_API_KEY:-}
+      REMOTION_CONCURRENCY: ${REMOTION_CONCURRENCY:-2}
+      REMOTION_FPS: ${REMOTION_FPS:-30}
+      REMOTION_GL: ${REMOTION_GL:-swangle}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-1}
+      NEXT_PUBLIC_APP_URL: http://web:2000
+    volumes:
+      - media_audio:/app/public/audio
+      - media_videos:/app/public/videos
+      - media_thumbnails:/app/public/thumbnails
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      searxng:
+        condition: service_started
+    networks:
+      - pabrik-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_audio:
+  media_videos:
+  media_thumbnails:
+
+networks:
+  pabrik-network:
+    driver: bridge

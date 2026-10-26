@@ -1,0 +1,203 @@
+// src/remotion/ReelsViral.tsx - ANTI BORING VERSION
+// Paste ini ganti Reels.tsx lu yang sekarang
+import {
+  AbsoluteFill,
+  Audio,
+  Sequence,
+  useCurrentFrame,
+  interpolate,
+  spring,
+  useVideoConfig,
+} from "remotion";
+
+type Props = {
+  audioUrl: string;
+  script: {
+    hook: string;
+    sentences: { text: string; emphasisWords: string[] }[];
+  };
+  wordTimestamps: { word: string; start: number; end: number }[]; // in seconds
+  visualPlan: { bRollKeywords: string[] };
+};
+
+// CAPTION COMPONENT - HIGH RETENTION
+const ViralCaption = ({
+  words,
+  currentTime,
+}: {
+  words: any[];
+  currentTime: number;
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  // Cari kata yang lagi diucapkan
+  const activeIndex = words.findIndex(
+    (w) => currentTime >= w.start && currentTime <= w.end,
+  );
+
+  return (
+    <div className="absolute bottom-[32%] w-full flex flex-col items-center justify-center px-6">
+      <div className="flex flex-wrap justify-center gap-1.5 max-w-[900px]">
+        {words.map((w, i) => {
+          const isActive = i === activeIndex;
+          const isPast = i < activeIndex;
+          const isEmphasis = w.isEmphasis;
+
+          // Spring pop untuk kata aktif
+          const scale = isActive
+            ? spring({
+                frame: frame % 10,
+                fps,
+                config: { damping: 8, stiffness: 200 },
+              })
+            : 1;
+          const finalScale = interpolate(
+            scale,
+            [0, 1],
+            [0.5, isActive ? 1.25 : 1],
+          );
+
+          return (
+            <span
+              key={i}
+              style={{
+                transform: `scale(${finalScale}) rotate(${isActive && isEmphasis ? "-2deg" : "0deg"})`,
+              }}
+              className={`
+                text-[52px] font-black leading-none tracking-tight px-2 py-1 rounded-lg
+                transition-all duration-100
+                ${isActive ? "bg-[#FFE600] text-black -skew-x-6 shadow-[4px_4px_0px_0px_black] z-10" : ""}
+                ${isPast ? "bg-black/80 text-white" : "bg-black/40 text-white/60"}
+                ${isEmphasis && isActive ? "animate-[shake_0.2s_ease-in-out]" : ""}
+              `}
+            >
+              {w.word}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export const Reels: React.FC<Props> = ({ audioUrl, wordTimestamps }) => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+
+  const currentTime = frame / fps;
+
+  // High retention motion: Zoom in-out tiap 45 frame (1.5 detik)
+  const zoomPhase = Math.floor(frame / 45) % 2;
+  const zoom = interpolate(
+    frame % 45,
+    [0, 45],
+    zoomPhase === 0 ? [1, 1.15] : [1.15, 1],
+  );
+  const shakeX = Math.sin(frame * 0.8) * (frame % 60 < 5 ? 8 : 0); // shake tiap emphasis
+  const shakeY = Math.cos(frame * 0.8) * (frame % 60 < 5 ? 4 : 0);
+
+  // Background color shift tiap scene
+  const sceneIndex = Math.floor((frame / durationInFrames) * 10);
+  const bgColors = [
+    "from-[#00FF88] to-[#00CCFF]",
+    "from-[#FF00AA] to-[#FFAA00]",
+    "from-[#8A2BE2] to-[#FF1493]",
+    "from-[#00F5FF] to-[#0055FF]",
+  ];
+  const currentBg = bgColors[sceneIndex % bgColors.length];
+
+  return (
+    <AbsoluteFill className="bg-black">
+      <Audio src={audioUrl} />
+
+      {/* LAYER 1: Dynamic Gradient + Ken Burns */}
+      <AbsoluteFill
+        style={{
+          transform: `scale(${zoom}) translate(${shakeX}px, ${shakeY}px)`,
+        }}
+        className={`bg-gradient-to-br ${currentBg}`}
+      >
+        {/* Grain + Vignette */}
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,_transparent_40%,_black_100%)]" />
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
+      </AbsoluteFill>
+
+      {/* LAYER 2: B-Roll / Emoji Parallax - JANGAN STATIC */}
+      <AbsoluteFill className="flex items-center justify-center">
+        <div
+          style={{
+            transform: `scale(${interpolate(frame, [0, durationInFrames], [1.2, 0.9])}) rotate(${interpolate(frame, [0, durationInFrames], [-5, 5])}deg)`,
+          }}
+          className="text-[420px] opacity-20 blur-[1px]"
+        >
+          {/* Ganti ini dengan <OffthreadVideo> dari Pexels kalau udah integrate */}
+          {["😱", "🐱", "💀", "🔥", "🧠"][sceneIndex % 5]}
+        </div>
+      </AbsoluteFill>
+
+      {/* LAYER 3: Hook Text - Kinetic */}
+      <AbsoluteFill className="p-6">
+        <div className="w-full flex justify-between text-[11px] font-mono text-white/70">
+          <span>PABRIK VIDEO // FB PRO VIRAL</span>
+          <span>
+            {Math.floor(currentTime)}s / {Math.floor(durationInFrames / fps)}s
+          </span>
+        </div>
+
+        {/* Progress Bar Top - Wajib FB Pro */}
+        <div
+          className="absolute top-0 left-0 h-1.5 bg-[#FFE600] z-50"
+          style={{ width: `${(frame / durationInFrames) * 100}%` }}
+        />
+
+        {/* Big Hook - Muncul 0-3 detik dengan POP */}
+        {frame < 90 && (
+          <div
+            style={{
+              transform: `scale(${spring({ frame, fps, config: { damping: 10 } })})`,
+            }}
+            className="mt-6"
+          >
+            <h1 className="text-[68px] font-black leading-[0.85] text-white [text-shadow:6px_6px_0px_black] uppercase">
+              STOP PERCAYA
+              <br />
+              <span className="bg-[#FFE600] text-black px-3">KUCING MALAS</span>
+              <br />
+              LARINYA 48 KM/JAM
+            </h1>
+          </div>
+        )}
+      </AbsoluteFill>
+
+      {/* LAYER 4: Caption - The Main Star */}
+      <ViralCaption
+        words={wordTimestamps.map((w) => ({
+          ...w,
+          isEmphasis: w.word.length > 5,
+        }))}
+        currentTime={currentTime}
+      />
+
+      {/* LAYER 5: Subtitle Kecil Atas (Auto Hook) */}
+      <AbsoluteFill className="flex justify-center pt-[18%]">
+        <div className="bg-black text-white font-bold text-[26px] px-4 py-1 rotate-1">
+          {wordTimestamps[0]?.word?.toUpperCase()} // {sceneIndex + 1}/10
+        </div>
+      </AbsoluteFill>
+
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0) }
+          25% { transform: translateX(-3px) }
+          75% { transform: translateX(3px) }
+        }
+      `}</style>
+    </AbsoluteFill>
+  );
+};
