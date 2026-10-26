@@ -91,6 +91,7 @@ export const KitabedahVideo: React.FC<KitabedahVideoProps> = ({
       archetype: archetype as any,
       params: blueprint.params,
       phases: (blueprint.phases as any) || [],
+      assemblies: blueprint.assemblies || blueprint.parts,
       customAssemblies: blueprint.customAssemblies as any,
     });
   }, [blueprint, archetype]);

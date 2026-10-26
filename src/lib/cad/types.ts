@@ -15,6 +15,18 @@ export type SubAssemblyCategory =
   | "thermal"
   | "electronics";
 
+export type ParametricPrimitiveType =
+  | "box_housing"
+  | "battery_pack_grid"
+  | "cylinder_motor_stator"
+  | "wheel_axle_assembly"
+  | "turbine_rotor_stage"
+  | "contoured_shell_body"
+  | "structural_frame_chassis"
+  | "pcb_stack_module"
+  | "high_voltage_cables"
+  | "stratified_layer_slab";
+
 export interface CADHelpers {
   createCADPart: (
     geometry: THREE.BufferGeometry,
@@ -28,6 +40,23 @@ export interface CADHelpers {
     }
   ) => THREE.Group;
   clipPlane: THREE.Plane;
+}
+
+export interface ComposableAssemblySpec {
+  id: string;
+  stationCode: string; // e.g. "STA-01"
+  label: string; // e.g. "800V LFP Skateboard Battery Pack"
+  metrics?: string; // e.g. "Capacity: 75 kWh | Voltage: 800V DC | Mass: 450 kg"
+  category: SubAssemblyCategory;
+  primitiveType: ParametricPrimitiveType;
+  dimensions?: [number, number, number]; // [width/radius, height, length/depth]
+  basePosition: [number, number, number];
+  baseRotation?: [number, number, number]; // Euler radians [rx, ry, rz]
+  explodeOffset: [number, number, number]; // Direction & distance when exploded
+  rotationAxis?: "x" | "y" | "z";
+  rotationSpeed?: number;
+  bladeOrCellCount?: number;
+  isShell?: boolean;
 }
 
 export interface SubAssemblySpec {
@@ -63,9 +92,10 @@ export interface CADBlueprintPhase {
 export interface CADBlueprintConfig {
   videoTitle: string;
   subtitle?: string;
-  archetype: CADArchetype;
+  archetype?: CADArchetype | string;
   params?: Record<string, any>;
   phases: CADBlueprintPhase[];
+  assemblies?: ComposableAssemblySpec[];
   customAssemblies?: Array<{
     id: string;
     label: string;

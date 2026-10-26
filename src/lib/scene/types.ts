@@ -94,8 +94,9 @@ export interface VideoBlueprint {
     basePosition?: [number, number, number];
     explodeOffset?: [number, number, number];
     rotationSpeed?: number;
-    rotationAxis?: "x" | "y" | "z";
     metrics?: string;
     isShell?: boolean;
   }>;
+  assemblies?: import("../cad/types").ComposableAssemblySpec[];
+  parts?: import("../cad/types").ComposableAssemblySpec[];
 }

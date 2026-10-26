@@ -20,14 +20,17 @@ export const VideoScriptSchema = z.object({
 export type VideoScript = z.infer<typeof VideoScriptSchema>;
 
 export const SCRIPTWRITER_SYSTEM_PROMPT = `Kamu scriptwriter & narator video teknik 3D bergaya Kitabedah.
-Tugasmu: Menulis naskah narasi lisan Bahasa Indonesia yang luwes, mengalir, dan sinkron dengan fase visual 3D X-Ray.
+Tugasmu: Menulis naskah narasi lisan Bahasa Indonesia yang luwes, mengalir, dan menjelaskan mekanisme rekayasa internal secara langsung.
 
-ATURAN NARASI:
-1. Bahasa lisan sehari-hari yang luwes: gunakan "Kenapa", "Gimana", "Tapi", "Makanya", "Terus", "Bisa", "Udah".
-2. DILARANG kata kaku: "Mengapa", "Apakah", "Namun", "Oleh karena itu", "Tahukah kamu", "Halo guys".
-3. Tiap fase 1-2 kalimat (sekitar 14-22 kata) pas untuk durasi 5-7 detik.
-4. Narasi HARUS menjelaskan langsung komponen 3D yang sedang aktif pada fase tersebut!
-5. Judul fase HARUS SPESIFIK per topik (BUKAN generik).
+CRITICAL NARRATION RULES (BAHASA INDONESIA):
+1. DILARANG KERAS menyebutkan istilah teknis kamera atau arah visual dalam narasi lisan!
+   - FORBIDDEN PHRASES: "potongan melintang", "tampilan meledak", "sintesis keseluruhan", "mari kita lihat blueprint", "pada animasi ini", "tampilan x-ray", "pada visual ini", "gambar ini menunjukkan".
+   - Alih-alih menyebut efek visual kamera, jelaskan mekanisme rekayasanya secara langsung, hidup, dan alami seolah sedang menerangkan ke penonton yang penasaran (Contoh: "Saat pedal gas diinjak, baterai di kolong mobil langsung mengalirkan arus searah menuju inverter...").
+2. Bahasa lisan sehari-hari yang luwes: gunakan "Kenapa", "Gimana", "Tapi", "Makanya", "Terus", "Bisa", "Udah".
+3. DILARANG kata kaku: "Mengapa", "Apakah", "Namun", "Oleh karena itu", "Tahukah kamu", "Halo guys".
+4. Tiap fase 1-2 kalimat (sekitar 14-22 kata) pas untuk durasi 5-7 detik.
+5. Narasi HARUS menjelaskan langsung fungsi teknis komponen mesin/objek pada fase tersebut!
+6. Judul fase HARUS SPESIFIK per topik (BUKAN generik).
 
 FORMAT OUTPUT (HANYA JSON mentah, tanpa markdown code fence):
 {
@@ -36,14 +39,26 @@ FORMAT OUTPUT (HANYA JSON mentah, tanpa markdown code fence):
   "beats": [
     {
       "phaseIndex": 0,
-      "title": "Nama Fase",
-      "narration": "Kalimat narasi...",
-      "hudLabel": "LABEL HUD",
-      "activeComponentIds": ["id_komponen"],
+      "title": "Nama Sistem Teknis",
+      "narration": "Saat pedal gas diinjak, baterai di kolong mobil langsung menyalurkan arus tegangan tinggi...",
+      "hudLabel": "BATTERY_DISCHARGE",
+      "activeComponentIds": ["battery_pack"],
       "durationSec": 6
     }
   ]
 }`;
+
+export function sanitizeNarration(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/potongan melintang/gi, "arsitektur internal")
+    .replace(/tampilan meledak/gi, "susunan komponen")
+    .replace(/sintesis keseluruhan/gi, "cara kerja sistem")
+    .replace(/mari kita lihat blueprint/gi, "kita bedah")
+    .replace(/pada animasi ini/gi, "di dalamnya")
+    .replace(/pada visual ini/gi, "di dalamnya")
+    .trim();
+}
 
 export async function generateScriptForBlueprint(
   topic: string,
@@ -83,7 +98,13 @@ export async function generateScriptForBlueprint(
       parsed.videoTitle = blueprint.videoTitle || topic;
     }
 
-    return VideoScriptSchema.parse(parsed);
+    const script = VideoScriptSchema.parse(parsed);
+    script.hookNarration = sanitizeNarration(script.hookNarration);
+    script.beats = script.beats.map((b) => ({
+      ...b,
+      narration: sanitizeNarration(b.narration),
+    }));
+    return script;
   } catch (err: any) {
     console.warn("[SCRIPTWRITER] Parsing retry:", err.message);
     const retryMessages: Array<{ role: "system" | "user"; content: string }> = [
@@ -99,6 +120,12 @@ export async function generateScriptForBlueprint(
         beats: parsed,
       };
     }
-    return VideoScriptSchema.parse(parsed);
+    const script = VideoScriptSchema.parse(parsed);
+    script.hookNarration = sanitizeNarration(script.hookNarration);
+    script.beats = script.beats.map((b) => ({
+      ...b,
+      narration: sanitizeNarration(b.narration),
+    }));
+    return script;
   }
 }

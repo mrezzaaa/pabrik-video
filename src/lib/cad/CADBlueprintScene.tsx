@@ -295,11 +295,14 @@ export const CADBlueprintScene: React.FC<CADBlueprintSceneProps> = ({
             </div>
             <div
               style={{
-                fontSize: 28,
+                fontSize: "clamp(18px, 2.5vw, 30px)",
                 fontWeight: 800,
                 color: "#ffffff",
                 marginTop: 4,
                 letterSpacing: "0.04em",
+                maxWidth: 720,
+                lineHeight: 1.25,
+                wordBreak: "break-word",
               }}
             >
               {title.toUpperCase()}
@@ -326,47 +329,63 @@ export const CADBlueprintScene: React.FC<CADBlueprintSceneProps> = ({
         </div>
 
         {/* Bottom Active Sub-Assembly Readout */}
-        {activeSpec && (
-          <div
-            style={{
-              alignSelf: "flex-start",
-              backgroundColor: "rgba(6, 16, 30, 0.88)",
-              borderLeft: "4px solid #f59e0b",
-              borderTop: "1px solid rgba(245, 158, 11, 0.3)",
-              borderRight: "1px solid rgba(245, 158, 11, 0.3)",
-              borderBottom: "1px solid rgba(245, 158, 11, 0.3)",
-              padding: "12px 20px",
-              maxWidth: 580,
-              backdropFilter: "blur(8px)",
-            }}
-          >
+        {activeSpec && (() => {
+          const stationCode = activeSpec.stationCode || (activeSpec as any).station || "STA-01";
+          const category = (activeSpec.category || (activeSpec as any).type || "CORE").toUpperCase();
+          const displayLabel =
+            activeSpec.label ||
+            (activeSpec as any).name ||
+            (activeSpec as any).title ||
+            "Component Specification";
+          const displayMetrics =
+            activeSpec.metrics ||
+            (activeSpec as any).description ||
+            (activeSpec as any).specs ||
+            "";
+
+          return (
             <div
               style={{
-                color: "#f59e0b",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: 1.5,
+                alignSelf: "flex-start",
+                backgroundColor: "rgba(6, 16, 30, 0.88)",
+                borderLeft: "4px solid #f59e0b",
+                borderTop: "1px solid rgba(245, 158, 11, 0.3)",
+                borderRight: "1px solid rgba(245, 158, 11, 0.3)",
+                borderBottom: "1px solid rgba(245, 158, 11, 0.3)",
+                padding: "12px 20px",
+                maxWidth: 580,
+                backdropFilter: "blur(8px)",
               }}
             >
-              STATION [{activeSpec.stationCode}] // {activeSpec.category.toUpperCase()}
-            </div>
-            <div
-              style={{
-                fontSize: 20,
-                fontWeight: 700,
-                color: "#ffffff",
-                margin: "4px 0",
-              }}
-            >
-              {activeSpec.label}
-            </div>
-            {activeSpec.metrics && (
-              <div style={{ fontSize: 13, color: "#38bdf8" }}>
-                {activeSpec.metrics}
+              <div
+                style={{
+                  color: "#f59e0b",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                }}
+              >
+                STATION [{stationCode}] // {category}
               </div>
-            )}
-          </div>
-        )}
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  margin: "4px 0",
+                  lineHeight: 1.3,
+                }}
+              >
+                {displayLabel}
+              </div>
+              {displayMetrics ? (
+                <div style={{ fontSize: 13, color: "#38bdf8", marginTop: 4 }}>
+                  {displayMetrics}
+                </div>
+              ) : null}
+            </div>
+          );
+        })()}
       </div>
     </AbsoluteFill>
   );
