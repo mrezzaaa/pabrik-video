@@ -2,8 +2,6 @@ import React from "react";
 import { Composition } from "remotion";
 import { MainVideo } from "./MainVideo";
 import { VideoProps } from "../lib/types";
-import { TechVideo } from "./TechVideo";
-import { SAMPLE_PISTON_PROPS, TechVideoProps } from "../lib/tech-storyboard";
 import { KitabedahVideo, KitabedahVideoProps } from "./KitabedahVideo";
 import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "./constants";
 
@@ -194,19 +192,6 @@ export const RemotionRoot: React.FC = () => {
         width={VIDEO_WIDTH}
         height={VIDEO_HEIGHT}
         defaultProps={defaultProps}
-      />
-      <Composition
-        id="TechVideo"
-        component={TechVideo}
-        durationInFrames={SAMPLE_PISTON_PROPS.totalDurationInFrames}
-        fps={VIDEO_FPS}
-        width={VIDEO_WIDTH}
-        height={VIDEO_HEIGHT}
-        defaultProps={SAMPLE_PISTON_PROPS as TechVideoProps}
-        calculateMetadata={({ props }) => ({
-          durationInFrames: Math.max(1, props.totalDurationInFrames),
-        })}
-      />
-    </>
+      />    </>
   );
 };

@@ -3,7 +3,6 @@ import fs from "fs";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import { VideoProps } from "./types";
-import type { TechVideoProps } from "./tech-storyboard";
 
 export class RemotionRendererService {
   private bundleLocationPromise: Promise<string> | null = null;
@@ -61,7 +60,7 @@ export class RemotionRendererService {
     jobId: string,
     videoProps: any,
     onProgress?: (progress: number) => void,
-    compositionId: "MainVideo" | "TechVideo" | "Kitabedah" = "Kitabedah"
+    compositionId: "MainVideo" | "Kitabedah" = "Kitabedah"
   ): Promise<{ outputPath: string; outputUrl: string; durationMs: number }> {
     const startTime = Date.now();
     const bundleLocation = await this.getBundleLocation();

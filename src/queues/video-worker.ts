@@ -13,44 +13,6 @@ import { Storyboard, VideoProps } from "../lib/types";
 import { logTelemetry } from "../lib/job-log";
 import { computeWordTimestamps } from "../lib/subtitle-sync";
 import { runKitabedahStages } from "./kitabedah-stages";
-import { ASSEMBLIES } from "../remotion/tech3d/assemblies";
-
-const CURATED_MECHANICAL_TERMS = [
-  "piston",
-  "turbofan",
-  "jet engine",
-  "mesin jet",
-  "4-tak",
-  "4 tak",
-  "motor bakar",
-  "poros engkol",
-  "baterai lithium",
-  "li-ion",
-  "18650",
-  "termos air",
-  "botol vakum",
-];
-
-/**
- * Cek apakah topik secara spesifik cocok dengan salah satu mesin mekanikal 3D terkurasi
- * (piston_engine, turbofan, li_ion_cell, tumbler). Topik umum lainnya (hujan, cuaca, biologi,
- * komputasi, sains, sejarah, listrik, dll.) diarahkan ke Dynamic Hybrid Visual Pipeline.
- */
-export function isCuratedMechanicalTopic(topic: string): boolean {
-  const t = topic.toLowerCase();
-  if (CURATED_MECHANICAL_TERMS.some((term) => t.includes(term))) {
-    return true;
-  }
-  for (const assembly of Object.values(ASSEMBLIES)) {
-    const keywords = assembly.fits.split(",").map((k) => k.trim().toLowerCase());
-    for (const kw of keywords) {
-      if (kw.length >= 5 && t.includes(kw)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
 
 /**
  * Gaya video:
