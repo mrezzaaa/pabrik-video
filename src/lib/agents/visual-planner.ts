@@ -3,10 +3,13 @@ import { searchPexelsVideos } from "../pexels";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
 import { visualPlanSchema, type VisualPlanOutput } from "../schemas";
+import { cleanCopy, clipWords, formatCounter, wordCount } from "../text";
 import { cleanVisual } from "../visual-spec";
 import type {
   FullScript,
   MotionType,
+  SceneLayout,
+  SceneTheme,
   ScriptSentence,
   TextAnimationType,
   VisualPlan,
@@ -104,23 +107,129 @@ function sentenceTimings(
 }
 
 function cleanHeadline(value: string, fallback: string, sourceText = "") {
-  const source = value.replace(/[^\p{L}\p{N}\s!?%]/gu, " ").replace(/\s+/g, " ").trim();
-  const words = source.split(" ").filter(Boolean).slice(0, 5);
+  // Word-safe + grounded in the narration: garbled tokens are dropped instead
+  // of being rendered (no more "RCUN DI KULIT").
+  const cleaned = cleanCopy(value, sourceText, 30, 4);
+  if (cleaned) return cleaned.toUpperCase();
+  return clipWords(fallback, 30, 4).toUpperCase();
+}
 
-  // Accuracy guard: never show a number the narration does not mention.
-  const sourceNumbers = new Set(sourceText.match(/\d+/g) ?? []);
-  const hasBadNumber = words.some((word) => {
-    const digits = word.match(/\d+/g);
-    return Boolean(digits && digits.some((digit) => !sourceNumbers.has(digit)));
-  });
+/**
+ * 2-3 word contextual callout.
+ * A single echoed word (KULIT / PUTIH / AKTIF) is explicitly rejected: it is
+ * expanded with a second grounded keyword or replaced by the stat label.
+ */
+function calloutFor(
+  candidate: VisualPlanOutput["scenes"][number] | undefined,
+  sentence: ScriptSentence,
+  number: ReturnType<typeof parseNumber>,
+  visual: ReturnType<typeof cleanVisual>,
+  headline: string,
+) {
+  const raw = candidate?.subheadline || candidate?.overlay?.textHook || "";
+  const cleaned = cleanCopy(raw, sentence.text, 26, 3);
+  if (wordCount(cleaned) >= 2) return cleaned.toUpperCase();
 
-  const picked = hasBadNumber
-    ? fallback.split(" ").slice(0, 5)
-    : words.length > 0
-      ? words
-      : fallback.split(" ").slice(0, 5);
-  const headline = picked.join(" ").toUpperCase();
-  return headline.slice(0, 34);
+  if (number) {
+    return `${formatCounter(number.value)}${number.suffix}`.trim().toUpperCase();
+  }
+
+  if (visual?.kind === "stat") {
+    return `${formatCounter(visual.value)}${visual.suffix ? ` ${visual.suffix}` : ""}`
+      .trim()
+      .toUpperCase();
+  }
+
+  const used = headline.toUpperCase();
+  const keywords = keywordsFor(sentence).filter(
+    (keyword) => !used.includes(keyword.toUpperCase()),
+  );
+  if (keywords.length >= 2) {
+    return `${keywords[0]} ${keywords[1]}`.toUpperCase();
+  }
+
+  const headlineWords = headline.split(/\s+/).filter(Boolean);
+  const first = keywords[0] ?? headlineWords[1] ?? "FAKTA";
+  const second = headlineWords[0] ?? "INI";
+  return `${first} ${second}`.toUpperCase().slice(0, 26);
+}
+
+function tagsFor(
+  candidate: VisualPlanOutput["scenes"][number] | undefined,
+  sentence: ScriptSentence,
+) {
+  const raw = (candidate?.tags ?? [])
+    .map((tag) => clipWords(tag, 18, 3).toUpperCase())
+    .filter(Boolean)
+    .slice(0, 3);
+  if (raw.length > 0) return raw;
+
+  const keywords = keywordsFor(sentence).slice(0, 3);
+  return keywords.map((keyword) => keyword.toUpperCase());
+}
+
+function resolveLayout(
+  raw: SceneLayout | undefined,
+  visual: ReturnType<typeof cleanVisual>,
+  hasNumber: boolean,
+  previous: SceneLayout | null,
+): SceneLayout {
+  // Content wins over the LLM's suggestion: a stat must stay a hero card, a
+  // comparison must stay a split layout, etc.
+  const base: SceneLayout = visual
+    ? visual.kind === "stat"
+      ? "HERO_STAT_CARD"
+      : visual.kind === "compare"
+        ? "SPLIT_COMPARISON"
+        : visual.kind === "stamp"
+          ? "FULL_KINETIC_IMPACT"
+          : "B_ROLL_FRAME"
+    : hasNumber
+      ? "HERO_STAT_CARD"
+      : (raw ?? "B_ROLL_FRAME");
+
+  // Only rotate layouts that do not lose information when swapped.
+  if (
+    base === previous &&
+    (base === "B_ROLL_FRAME" || base === "FULL_KINETIC_IMPACT")
+  ) {
+    return base === "B_ROLL_FRAME" ? "FULL_KINETIC_IMPACT" : "B_ROLL_FRAME";
+  }
+  return base;
+}
+
+function hexToRgb(value: string) {
+  if (!/^#[0-9a-f]{6}$/i.test(value)) return null;
+  return {
+    r: Number.parseInt(value.slice(1, 3), 16),
+    g: Number.parseInt(value.slice(3, 5), 16),
+    b: Number.parseInt(value.slice(5, 7), 16),
+  };
+}
+
+function resolveTheme(
+  raw: SceneTheme | undefined,
+  sentence: ScriptSentence,
+  accent: string,
+  visual: ReturnType<typeof cleanVisual>,
+): SceneTheme {
+  const text = sentence.text.toLowerCase();
+  if (
+    visual?.kind === "stamp" &&
+    (visual.word === "BAHAYA" || visual.word === "MITOS")
+  ) {
+    return "danger";
+  }
+  if (/bahaya|racun|salah|mitos|dilarang|risiko|gagal|beracun|fatal/.test(text)) {
+    return "danger";
+  }
+  if (/aman|solusi|benar|terbukti|menyelamatkan/.test(text)) return "success";
+  if (/waspada|hati-hati|awas|jangan/.test(text)) return "warn";
+  if (raw) return raw;
+
+  const rgb = hexToRgb(accent);
+  if (rgb && rgb.r > rgb.g * 1.25 && rgb.r > rgb.b * 1.25) return "warn";
+  return "info";
 }
 
 /**
@@ -201,29 +310,6 @@ function parseNumber(text: string) {
   };
 }
 
-function textHookFor(
-  candidate: VisualPlanOutput["scenes"][number] | undefined,
-  sentence: ScriptSentence,
-  number: ReturnType<typeof parseNumber>,
-  fallbackHeadline: string,
-  chunkIndex: number,
-) {
-  if (chunkIndex === 0) {
-    const explicit = (candidate?.overlay?.textHook ?? "").trim();
-    if (explicit) return explicit.slice(0, 24).toUpperCase();
-    if (number) return `${number.label}!!`.slice(0, 24);
-
-    const headline = cleanHeadline(candidate?.headline ?? "", fallbackHeadline);
-    if (headline) return headline.split(" ").slice(0, 4).join(" ");
-  }
-
-  const keywords = keywordsFor(sentence);
-  if (keywords.length > 0) {
-    return keywords[chunkIndex % keywords.length].toUpperCase().slice(0, 24);
-  }
-  return "";
-}
-
 function normalizeScenes(
   output: VisualPlanOutput,
   sentences: ScriptSentence[],
@@ -233,6 +319,7 @@ function normalizeScenes(
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
   let previousEmoji: string | null = null;
+  let previousLayout: SceneLayout | null = null;
 
   sentences.forEach((sentence, sentenceIndex) => {
     const candidate = output.scenes[sentenceIndex];
@@ -263,6 +350,19 @@ function normalizeScenes(
     const fallbackHeadline = sentence.text.replace(/[^\p{L}\p{N}\s]/gu, "");
     // Visual bertipe: lolos hanya kalau semua angkanya ada di narasi kalimat ini.
     const visual = cleanVisual(candidate?.visual, sentence.text, number);
+    const headline = cleanHeadline(
+      candidate?.headline ?? "",
+      fallbackHeadline,
+      sentence.text,
+    );
+    const subheadline = calloutFor(
+      candidate,
+      sentence,
+      number,
+      visual,
+      headline,
+    );
+    const tags = tagsFor(candidate, sentence);
 
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
       const chunkStart = start + chunkIndex * chunkLength;
@@ -290,6 +390,15 @@ function normalizeScenes(
       previousEmoji = emoji;
 
       const accent = candidate?.accentColor ?? "";
+      const accentColor = pickAccent(accent, sceneIndex);
+      const layout = resolveLayout(
+        candidate?.layout,
+        visual,
+        Boolean(number),
+        previousLayout,
+      );
+      previousLayout = layout;
+      const theme = resolveTheme(candidate?.theme, sentence, accentColor, visual);
       const gradient = pickBackground(
         candidate?.background.value ?? "",
         sceneIndex,
@@ -356,29 +465,21 @@ function normalizeScenes(
         overlayEmoji: emoji,
         overlay: {
           bigEmoji: emoji,
-          // Visual utama menggantikan textHook/counter (zona tengah sama).
-          textHook: visual
-            ? ""
-            : textHookFor(
-                candidate,
-                sentence,
-                number,
-                fallbackHeadline,
-                chunkIndex,
-              ),
+          // Callout 2-3 kata; bukan satu kata acak dari narasi.
+          textHook: subheadline,
           counter: visual ? undefined : counter,
         },
+        layout,
+        theme,
+        subheadline,
+        tags,
         visual,
         visualOffset: visual
           ? Math.round((chunkStart - start) * 1000) / 1000
           : undefined,
         visualFinal: visual ? chunkIndex === chunkCount - 1 : undefined,
-        headline: cleanHeadline(
-          candidate?.headline ?? "",
-          fallbackHeadline,
-          sentence.text,
-        ),
-        accentColor: pickAccent(accent, sceneIndex),
+        headline,
+        accentColor,
       });
     }
   });
@@ -447,6 +548,8 @@ function fallbackPlan(
           },
           bRollKeywords: keywordsFor(sentence),
           overlayEmoji: EMOJI_POOL[index % EMOJI_POOL.length],
+          subheadline: "",
+          tags: [],
           headline: "",
           accentColor: ACCENTS[index % ACCENTS.length],
         })),

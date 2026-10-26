@@ -20,6 +20,11 @@ function emojiFor(word: string) {
   return EMPHASIS_EMOJI[hash % EMPHASIS_EMOJI.length];
 }
 
+/**
+ * Karaoke captions in the FB Reels safe zone (bottom: 220px).
+ * Word pop uses a stiff spring; the emphasis emoji flies up with rotation
+ * instead of sitting statically on the pill.
+ */
 export const Caption: React.FC<{
   words: WordTimestamp[];
   accentColor?: string;
@@ -48,7 +53,7 @@ export const Caption: React.FC<{
   const enter = spring({
     frame: frame - pageStart * fps,
     fps,
-    config: { damping: 14, mass: 0.55, stiffness: 190 },
+    config: { damping: 15, mass: 0.5, stiffness: 300 },
   });
   const exit = interpolate(time, [pageEnd + 0.05, pageEnd + 0.24], [1, 0], {
     extrapolateLeft: "clamp",
@@ -61,17 +66,25 @@ export const Caption: React.FC<{
   });
 
   const charCount = page.text.length;
-  const fontSize = charCount > 17 ? 70 : charCount > 13 ? 80 : 92;
+  const fontSize = charCount > 17 ? 68 : charCount > 13 ? 78 : 92;
   const currentWord = page.words[currentWordIndex]?.word ?? "";
   const emphasis =
     currentWordIndex >= 0 && Boolean(page.words[currentWordIndex]?.emphasis);
+
+  const emojiSpring = spring({
+    frame: frame - (page.words[currentWordIndex]?.start ?? pageStart) * fps,
+    fps,
+    config: { damping: 9, mass: 0.4, stiffness: 260 },
+  });
+  const emojiY = interpolate(emojiSpring, [0, 1], [54, 0]);
+  const emojiRotate = interpolate(emojiSpring, [0, 1], [-32, 12]);
 
   return (
     <AbsoluteFill
       style={{
         justifyContent: "flex-end",
         alignItems: "center",
-        paddingBottom: "33%",
+        paddingBottom: 220,
         pointerEvents: "none",
         zIndex: 30,
       }}
@@ -80,29 +93,23 @@ export const Caption: React.FC<{
         style={{
           position: "relative",
           opacity: enter * exit,
-          transform: `translateY(${(1 - enter) * 50}px) scale(${interpolate(enter, [0, 1], [0.86, 1])}) rotate(-1deg)`,
+          transform: `translateY(${(1 - enter) * 54}px) scale(${interpolate(enter, [0, 1], [0.88, 1])})`,
         }}
       >
-        {emphasis ? (
+        {emphasis || currentWordIndex >= 0 ? (
           <div
             style={{
               position: "absolute",
-              right: -26,
-              top: -104,
-              fontSize: 78,
-              transform: `rotate(12deg) scale(${interpolate(
-                spring({
-                  frame: frame - (page.words[currentWordIndex].start * fps),
-                  fps,
-                  config: { damping: 7, mass: 0.4, stiffness: 200 },
-                }),
-                [0, 1],
-                [0, 1.15],
-              )})`,
-              filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.8))",
+              right: -30,
+              top: -108,
+              fontSize: 84,
+              transform: `translateY(${emojiY}px) rotate(${emojiRotate}deg) scale(${interpolate(emojiSpring, [0, 1], [0.4, 1])})`,
+              filter: "drop-shadow(0 10px 14px rgba(0,0,0,0.8))",
+              opacity: interpolate(emojiSpring, [0, 1], [0, 1]),
+              zIndex: 2,
             }}
           >
-            {emojiFor(currentWord)}
+            {emojiFor(currentWord || page.text)}
           </div>
         ) : null}
 
@@ -111,14 +118,15 @@ export const Caption: React.FC<{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 26,
-            padding: "22px 34px 26px",
-            backgroundColor: "rgba(0,0,0,0.72)",
+            gap: 24,
+            padding: "20px 32px 24px",
+            backgroundColor: "rgba(0,0,0,0.74)",
             border: "3px solid rgba(255,255,255,0.14)",
             borderLeft: `8px solid ${accentColor}`,
-            borderRadius: 24,
-            boxShadow: `0 18px 50px rgba(0,0,0,0.65), 0 0 36px ${accentColor}22`,
+            borderRadius: 22,
+            boxShadow: `0 20px 54px rgba(0,0,0,0.68), 0 0 36px ${accentColor}22`,
             backdropFilter: "blur(4px)",
+            maxWidth: 980,
           }}
         >
           {page.words.map((word, index) => {
@@ -129,7 +137,7 @@ export const Caption: React.FC<{
                   spring({
                     frame: frame - word.start * fps,
                     fps,
-                    config: { damping: 8, mass: 0.35, stiffness: 240 },
+                    config: { damping: 15, mass: 0.35, stiffness: 300 },
                   }),
                   [0, 1],
                   [1, 1.2],
@@ -163,26 +171,6 @@ export const Caption: React.FC<{
               </span>
             );
           })}
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 12,
-            fontFamily: "monospace",
-            fontSize: 18,
-            letterSpacing: 3,
-            color: "rgba(255,255,255,0.55)",
-            textTransform: "uppercase",
-          }}
-        >
-          <span>● LIVE CAPTION</span>
-          <span>
-            {String(activePageIndex + 1).padStart(2, "0")}/
-            {String(pages.length).padStart(2, "0")}
-          </span>
         </div>
       </div>
     </AbsoluteFill>

@@ -44,6 +44,14 @@ next-env.d.ts
 /public/audio/*
 !/public/audio/.gitkeep
 !/public/audio/whoosh.mp3
+!/public/audio/swipe.mp3
+!/public/audio/pop.mp3
+!/public/audio/counter-tick.mp3
+!/public/audio/sub-bass-impact.mp3
+!/public/audio/alert-glitch.mp3
+!/public/audio/notification-ding.mp3
+!/public/audio/riser.mp3
+!/public/audio/bgm-dark.mp3
 /public/videos/*
 !/public/videos/.gitkeep
 /public/thumbnails/*

@@ -49,6 +49,13 @@ export const motionSchema = z.enum([
   "panLeft",
 ]);
 export const textAnimationSchema = z.enum(["karaoke", "popIn", "typewriter"]);
+export const sceneLayoutSchema = z.enum([
+  "HERO_STAT_CARD",
+  "B_ROLL_FRAME",
+  "SPLIT_COMPARISON",
+  "FULL_KINETIC_IMPACT",
+]);
+export const sceneThemeSchema = z.enum(["danger", "warn", "info", "success"]);
 
 export const numberCounterSchema = z.object({
   value: looseNumber,
@@ -90,6 +97,10 @@ export const visualSceneSchema = z.object({
   bRollKeywords: z.array(z.string()).default([]),
   overlayEmoji: z.string().default("🔥"),
   overlay: sceneOverlaySchema.optional(),
+  layout: sceneLayoutSchema.optional(),
+  theme: sceneThemeSchema.optional(),
+  subheadline: z.string().optional().default(""),
+  tags: z.array(z.string()).optional().default([]),
   // Divalidasi terpisah (cleanVisual) supaya visual yang rusak tidak menggagalkan seluruh plan.
   visual: z.unknown().optional(),
   headline: z.string().default(""),

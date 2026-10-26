@@ -9,17 +9,17 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { AudioMixer } from "./components/AudioMixer";
+import { CameraRig } from "./components/CameraRig";
 import { Caption } from "./components/Caption";
 import {
-  CtaOverlay,
-  HookBanner,
+  CtaBadge,
+  HookInterrupt,
   IntroWipe,
-  TopHud,
+  TopBar,
 } from "./components/Overlays";
 import { SceneBackground } from "./components/SceneBackground";
-import { SceneHeadline } from "./components/SceneHeadline";
-import { SceneOverlay } from "./components/SceneOverlay";
-import { SceneVisual } from "./components/SceneVisual";
+import { SceneStage } from "./components/Stage/SceneStage";
 import { ANTON_FAMILY, anton } from "./fonts";
 import type { ReelsProps } from "./types";
 
@@ -51,7 +51,6 @@ export const Reels: React.FC<ReelsProps> = ({
 
   const accent = activeScene?.accentColor ?? "#39FF14";
   const totalFrames = Math.max(1, durationInFrames);
-  const safeDuration = Math.max(0.5, duration);
 
   return (
     <AbsoluteFill
@@ -62,9 +61,7 @@ export const Reels: React.FC<ReelsProps> = ({
       }}
     >
       {audioSrc ? <Audio src={staticFile(audioSrc)} /> : null}
-      <Sequence from={0} durationInFrames={Math.round(0.9 * fps)} layout="none">
-        <Audio src={staticFile("audio/whoosh.mp3")} volume={0.45} />
-      </Sequence>
+      <AudioMixer scenes={sortedScenes} words={words} duration={duration} />
 
       {sortedScenes.map((scene, index) => {
         const from = Math.max(0, Math.round(scene.startTime * fps));
@@ -80,60 +77,26 @@ export const Reels: React.FC<ReelsProps> = ({
             durationInFrames={Math.max(6, to - from)}
             layout="none"
           >
-            <SceneBackground
-              scene={scene}
-              index={index}
-              total={sortedScenes.length}
-            />
-            <SceneVisual
-              scene={scene}
-              index={index}
-              total={sortedScenes.length}
-            />
-            {index === 0 ? null : (
-              <SceneHeadline
+            <CameraRig scene={scene}>
+              <SceneBackground
                 scene={scene}
                 index={index}
                 total={sortedScenes.length}
               />
-            )}
-            <SceneOverlay
-              scene={scene}
-              index={index}
-              total={sortedScenes.length}
-            />
+              <SceneStage scene={scene} index={index} />
+            </CameraRig>
           </Sequence>
         );
       })}
 
-      <TopHud topic={topic} accent={accent} />
-      <HookBanner hook={hook} accent={accent} />
-      {words.length > 0 ? <Caption words={words} accentColor={accent} /> : null}
-      <CtaOverlay durationInFrames={totalFrames} accent={accent} />
-      <IntroWipe accent={accent} />
+      <TopBar topic={topic} accent={accent} />
+      <Sequence from={0} durationInFrames={Math.round(3 * fps)} layout="none">
+        <HookInterrupt hook={hook} accent={accent} />
+      </Sequence>
 
-      {/* Constant safe-area shimmer keeps the frame from looking flat. */}
-      <AbsoluteFill
-        style={{
-          pointerEvents: "none",
-          zIndex: 40,
-          background: `linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 18%, transparent 72%, rgba(0,0,0,0.45) 100%)`,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          right: 54,
-          bottom: 100,
-          fontFamily: "monospace",
-          fontSize: 16,
-          letterSpacing: 4,
-          color: "rgba(255,255,255,0.38)",
-          zIndex: 55,
-        }}
-      >
-        {safeDuration.toFixed(1)}S // AI GENERATED
-      </div>
+      {words.length > 0 ? <Caption words={words} accentColor={accent} /> : null}
+      <CtaBadge durationInFrames={totalFrames} accent={accent} />
+      <IntroWipe accent={accent} />
     </AbsoluteFill>
   );
 };

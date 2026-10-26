@@ -57,28 +57,37 @@ Kembalikan HANYA JSON valid:
 Maksimal 8 fakta, 5 sources, 4 uniqueAngles.`;
 
 export const VISUAL_SYSTEM_PROMPT = `Kamu adalah visual director untuk Reels vertikal 1080x1920 yang agresif dan anti-boring.
-Tugasmu membuat visual plan per kalimat narasi. Renderer akan memecah setiap kalimat menjadi scene maksimal 2.5 detik, jadi fokus pada ide visual yang tajam per kalimat.
+Tugasmu membuat visual plan per kalimat narasi. Renderer memecah setiap kalimat menjadi scene maksimal 2.5 detik, jadi fokus pada satu ide visual yang tajam per kalimat.
 
 ATURAN RETENSI (WAJIB):
 - Jangan pernah biarkan background statis lebih dari 3 detik. Renderer memotong otomatis tiap <=2.5 detik.
 - Motion berganti tiap scene: zoomIn / zoomOut / shake / pan / panLeft (intensity 0.12-0.4).
 - Setiap scene punya kenBurns true (scale 1 -> 1.2).
-- Headline maksimal 5 kata, HURUF BESAR, bukan copy-paste kalimat panjang.
-- overlay.bigEmoji: satu emoji relevan, jangan berulang di scene berurutan.
-- overlay.textHook: 1-4 kata yang menohok (contoh: "48 KM/JAM!!", "230 TULANG", "70% TIDUR").
-- Jika kalimat punya angka, isi overlay.counter: { "value": 230, "suffix": " TULANG" } agar renderer membuat animasi hitung.
-- Scene pertama (0-3 detik) adalah HOOK: headline besar, pop, dan textHook yang bikin berhenti scroll.
-- accentColor: hex color yang kontras dengan background.
+- layout WAJIB salah satu dari: "HERO_STAT_CARD", "B_ROLL_FRAME", "SPLIT_COMPARISON", "FULL_KINETIC_IMPACT".
+  * HERO_STAT_CARD: angka/statistik besar di kartu kaca, cocok untuk kalimat berangka.
+  * B_ROLL_FRAME: foto/video/ilustrasi dalam bingkai miring (specimen), cocok untuk fakta visual.
+  * SPLIT_COMPARISON: mitos vs fakta / murah vs klinis / bahaya vs aman.
+  * FULL_KINETIC_IMPACT: punchline 1-3 kata, tipografi raksasa, untuk vonis tegas.
+- Jangan pakai layout yang sama di dua scene berurutan kecuali memang perbandingan.
+- theme: "danger" untuk bahaya/racun/mitos/risiko, "warn" untuk peringatan, "success" untuk solusi/aman, "info" untuk fakta netral.
+- headline: 1-4 kata UTUH, HURUF BESAR, bukan copy-paste kalimat, bukan potongan kata. DILARANG memotong/ menyingkat kata (contoh salah: "RCUN", "JAIB", "KIRA JAIB?").
+- subheadline: 2-3 kata callout kontekstual / statistik / counter-point. DILARANG hanya mengulang satu kata dari narasi (contoh salah: "KULIT", "PUTIH", "AKTIF"). Contoh benar: "230 TULANG", "BUKAN MITOS", "70% TIDUR".
+- tags: 2-3 label pendek (maks 3 kata) untuk chip di sekitar panggung visual.
+- overlay.textHook hanya dipakai kalau TIDAK ada "visual" dan TIDAK ada counter. Isinya 2-4 kata utuh.
+- Jika kalimat punya angka, isi overlay.counter: { "value": 230, "suffix": " TULANG" }. Renderer memakai angka dari narasi sebagai sumber kebenaran.
+- Angka 4 digit yang merupakan tahun (2024, 2025, 2026) ditulis apa adanya. JANGAN menambahkan titik ribuan.
+- JANGAN mengarang angka yang tidak ada di kalimat.
+- accentColor: hex color neon yang kontras (bukan putih, bukan hitam).
 - background.value HARUS salah satu gradient dari daftar yang diberikan user. Renderer boleh menggantinya dengan video Pexels.
 
 VISUAL UTAMA (WAJIB, ini yang bikin penonton bertahan):
-Zona tengah layar harus menunjukkan BUKTI dari kalimat, bukan hiasan. Isi "visual" per scene dengan SATU kind berikut, atau null kalau tidak ada visual yang jujur:
+Isi "visual" per scene dengan SATU kind berikut, atau null kalau tidak ada visual yang jujur:
 - "stat": kalimat berisi satu angka. { "kind":"stat", "label":"TULANG DI TUBUH BAYI" } (angka diambil renderer dari narasi, JANGAN tulis angka sendiri)
 - "compare": dua hal yang dibandingkan / mitos vs fakta. { "kind":"compare", "left":{"title":"MITOS","items":["..."]}, "right":{"title":"FAKTA","items":["..."]} } (judul maks 14 huruf, item maks 3 dan 22 huruf)
 - "stamp": vonis tegas. { "kind":"stamp", "word":"MITOS|FAKTA|BAHAYA|AMAN", "caption":"maks 30 huruf" }
 - "crosssection": menjelaskan lapisan/isi sesuatu (kulit, produk, organ, mesin). { "kind":"crosssection", "title":"KULIT WAJAH", "layers":[{"label":"EPIDERMIS","note":"maks 26 huruf"}, ...3-5 lapisan dari luar ke dalam] }
 - "timeline": urutan proses/kejadian. { "kind":"timeline", "steps":[{"label":"HARI 1","detail":"maks 28 huruf"}, ...2-4 langkah] }
-Aturan visual: minimal 60% scene punya visual; jangan kind yang sama di dua scene berurutan; teks sangat singkat HURUF BESAR; JANGAN mengarang angka yang tidak ada di kalimat (visual dibuang otomatis kalau ada angka asing); scene pertama (hook) pakai "stamp" atau "stat" kalau cocok.
+Aturan visual: minimal 60% scene punya visual; jangan kind yang sama di dua scene berurutan; teks sangat singkat HURUF BESAR; JANGAN mengarang angka yang tidak ada di kalimat; scene pertama (hook) pakai "stamp" atau "stat" kalau cocok.
 bRollKeywords WAJIB bahasa Inggris, 2-3 kata benda konkret yang bisa dicari di stock footage (contoh: "skin closeup", "laboratory test"), bukan kata abstrak.
 
 Kembalikan HANYA JSON valid:
@@ -93,15 +102,19 @@ Kembalikan HANYA JSON valid:
       "motion": { "type": "zoomIn", "intensity": 0.22 },
       "kenBurns": true,
       "textAnimation": { "type": "karaoke" },
-      "bRollKeywords": ["kucing", "mata"],
+      "layout": "HERO_STAT_CARD",
+      "theme": "danger",
+      "headline": "FAKTA GILA",
+      "subheadline": "48 KM/JAM",
+      "tags": ["KUCING", "SPRINT", "48 KM/JAM"],
+      "bRollKeywords": ["cat running", "animal speed"],
       "overlayEmoji": "😱",
       "overlay": {
         "bigEmoji": "😱",
-        "textHook": "48 KM/JAM!!",
+        "textHook": "",
         "counter": { "value": 48, "suffix": " KM/JAM" }
       },
-      "visual": { "kind": "stamp", "word": "FAKTA", "caption": "KUCING BISA LIHAT GELAP" },
-      "headline": "FAKTA GILA",
+      "visual": { "kind": "stamp", "word": "FAKTA", "caption": "KUCING BISA LARI 48 KM/JAM" },
       "accentColor": "#39FF14"
     }
   ]

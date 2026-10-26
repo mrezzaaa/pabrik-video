@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { SceneVisual } from "./types";
+import { clipWords } from "./text";
 
 const str = z.string().trim().min(1);
 
@@ -31,8 +32,7 @@ export const sceneVisualSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-const clip = (value: string, max: number) =>
-  value.replace(/\s+/g, " ").trim().slice(0, max);
+const clip = (value: string, max: number) => clipWords(value, max, 6);
 
 /**
  * Validasi + bersihkan visual dari LLM.

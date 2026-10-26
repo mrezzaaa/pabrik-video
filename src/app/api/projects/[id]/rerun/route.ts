@@ -12,6 +12,7 @@ const bodySchema = z.object({
   from: z
     .enum(["research", "scriptwriting", "tts", "visual-planning", "render"])
     .default("tts"),
+  force: z.boolean().default(false),
 });
 
 export async function POST(
@@ -46,9 +47,9 @@ export async function POST(
   }
 
   const busy = project.jobs.some((job) => job.status === "ACTIVE");
-  if (busy) {
+  if (busy && !parsed.data.force) {
     return NextResponse.json(
-      { error: "Pipeline masih jalan. Tunggu sampai stage aktif selesai." },
+      { error: "Pipeline masih jalan. Gunakan opsi force untuk merestart jika job stuck." },
       { status: 409 },
     );
   }

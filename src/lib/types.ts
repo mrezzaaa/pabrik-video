@@ -108,6 +108,19 @@ export interface WordTimestamp extends CaptionWord {
 export type MotionType = "zoomIn" | "zoomOut" | "shake" | "pan" | "panLeft";
 export type TextAnimationType = "karaoke" | "popIn" | "typewriter";
 
+/**
+ * Four structurally different center-stage templates.
+ * The planner rotates them so the video never repeats the same layout twice
+ * in a row unless the content demands it (e.g. myth vs fact).
+ */
+export type SceneLayout =
+  | "HERO_STAT_CARD"
+  | "B_ROLL_FRAME"
+  | "SPLIT_COMPARISON"
+  | "FULL_KINETIC_IMPACT";
+
+export type SceneTheme = "danger" | "warn" | "info" | "success";
+
 export interface NumberCounter {
   value: number;
   suffix?: string;
@@ -162,6 +175,14 @@ export interface VisualScene {
   bRollKeywords: string[];
   overlayEmoji: string;
   overlay?: SceneOverlay;
+  /** Center-stage template. Defaults to B_ROLL_FRAME when missing. */
+  layout?: SceneLayout;
+  /** Drives SFX + color treatment (danger scenes get impacts/red). */
+  theme?: SceneTheme;
+  /** 2-3 word contextual callout. Never a single echoed word. */
+  subheadline?: string;
+  /** Short chips rendered around the center stage (max 3). */
+  tags?: string[];
   /** Visual utama scene. Kalau ada, counter/textHook disembunyikan. */
   visual?: SceneVisual;
   /** Detik sejak kalimat mulai (visual lanjut mulus antar potongan 2.5s). */

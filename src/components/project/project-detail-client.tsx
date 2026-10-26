@@ -76,15 +76,18 @@ export function ProjectDetailClient({
   const failedJob = project.jobs.find((job) => job.status === "FAILED");
   const busy = project.jobs.some((job) => job.status === "ACTIVE");
 
-  async function rerun(from?: JobType) {
+  async function rerun(from?: JobType, force = false) {
     setRerunning(true);
     setActionError(null);
     try {
+      const activeJob = project.jobs.find((job) => job.status === "ACTIVE");
+      const target = from ?? failedJob?.type ?? activeJob?.type ?? "tts";
       const response = await fetch(`/api/projects/${project.id}/rerun`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: from ?? failedJob?.type ?? "tts",
+          from: target,
+          force,
         }),
       });
       const data = await response.json();
@@ -190,20 +193,38 @@ export function ProjectDetailClient({
                 </Button>
               </>
             ) : null}
-            <Button
-              size="sm"
-              variant={failedJob ? "destructive" : "secondary"}
-              onClick={() => void rerun()}
-              disabled={rerunning || busy}
-              title={busy ? "Pipeline masih aktif" : "Jalankan ulang stage"}
-            >
-              {rerunning ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="size-3.5" />
-              )}
-              {failedJob ? `Retry ${failedJob.type}` : "Rerun"}
-            </Button>
+            {busy ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                onClick={() => void rerun(undefined, true)}
+                disabled={rerunning}
+                title="Restart paksa jika stage pipeline macet"
+              >
+                {rerunning ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-3.5" />
+                )}
+                Force Restart
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant={failedJob ? "destructive" : "secondary"}
+                onClick={() => void rerun()}
+                disabled={rerunning}
+                title="Jalankan ulang stage"
+              >
+                {rerunning ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-3.5" />
+                )}
+                {failedJob ? `Retry ${failedJob.type}` : "Rerun"}
+              </Button>
+            )}
           </div>
         </div>
 

@@ -102,6 +102,7 @@ export function RemotionReelsPlayer({ project }: { project: ProjectDTO }) {
       compositionWidth={1080}
       compositionHeight={1920}
       style={{ width: "100%" }}
+      numberOfSharedAudioTags={32}
       controls
       loop
       clickToPlay
