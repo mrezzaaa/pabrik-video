@@ -29,6 +29,8 @@ export function resolveCADArchetype(topicOrArchetype: string): CADArchetype | "E
   if (
     str.includes("AXISYMMETRIC") ||
     str.includes("JET") ||
+    str.includes("TURBO") ||
+    str.includes("COMPRESSOR") ||
     str.includes("TURBINE") ||
     str.includes("ROCKET") ||
     str.includes("ROKET") ||

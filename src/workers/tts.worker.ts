@@ -18,23 +18,87 @@ export interface SynthesizedAudioResult {
   durationInFrames: number;
 }
 
+export interface VoiceStudioVoice {
+  /** Canonical id used by the speech endpoint. */
+  id: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+/** VoiceStudio reports `voice_id`; normalise it to `id` for callers. */
+function normaliseVoice(raw: Record<string, any>): VoiceStudioVoice {
+  return {
+    ...raw,
+    id: String(raw.id ?? raw.voice_id ?? raw.name ?? ""),
+    name: raw.name ?? raw.voice_name,
+  };
+}
+
 export class TTSWorker {
   private client: OpenAI;
+  private baseURL: string;
   private voiceId: string;
   private model: string;
   private speed: number;
 
   constructor() {
-    const baseURL =
+    this.baseURL =
       process.env.VOICESTUDIO_BASE_URL || "http://localhost:3900/v1";
     this.voiceId = process.env.VOICE_DEFAULT_ID || "aad77d68";
     this.model = "tts-1-hd";
     this.speed = 1.1;
 
+    // VoiceStudio speaks the OpenAI audio API, which `openai` already wraps.
     this.client = new OpenAI({
-      baseURL,
+      baseURL: this.baseURL,
       apiKey: "local",
     });
+  }
+
+  /**
+   * Lists the cloned voices available on the local VoiceStudio server.
+   *
+   * VoiceStudio exposes them on `/v1/audio/voices` (not `/v1/voices`, which is
+   * 404). Returns an empty list when the server is not running so callers can
+   * fall back to the default voice id instead of throwing.
+   */
+  async listVoices(): Promise<VoiceStudioVoice[]> {
+    const url = `${this.baseURL.replace(/\/+$/, "")}/audio/voices`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn(`[TTS WORKER] ${url} -> HTTP ${res.status}`);
+        return [];
+      }
+      const data = (await res.json()) as unknown;
+      const rawList = Array.isArray(data)
+        ? data
+        : ((data as { voices?: unknown; data?: unknown }).voices ??
+          (data as { data?: unknown }).data);
+      if (!Array.isArray(rawList)) return [];
+      return rawList
+        .filter((voice) => voice && typeof voice === "object")
+        .map((voice) => normaliseVoice(voice as Record<string, any>))
+        .filter((voice) => voice.id.length > 0);
+    } catch (err: any) {
+      console.warn(`[TTS WORKER] VoiceStudio not reachable: ${err.message}`);
+      return [];
+    }
+  }
+
+  /** Resolves the requested voice, falling back to the default when unknown. */
+  async resolveVoice(voiceId?: string): Promise<string> {
+    const requested = voiceId || this.voiceId;
+    const voices = await this.listVoices();
+    if (!voices.length) return requested;
+    const exists = voices.some((voice) => voice.id === requested);
+    if (exists) return requested;
+    console.warn(
+      `[TTS WORKER] Voice "${requested}" not found; falling back to "${this.voiceId}".`
+    );
+    return voices.some((voice) => voice.id === this.voiceId)
+      ? this.voiceId
+      : voices[0].id;
   }
 
   /**
@@ -105,7 +169,7 @@ export class TTSWorker {
 
     const baseName = path.basename(outputFileName);
     const rawPath = path.join(finalDir, `raw_${Date.now()}_${baseName}`);
-    const targetVoice = voiceId || this.voiceId;
+    const targetVoice = await this.resolveVoice(voiceId);
     const targetSpeed = speed || this.speed;
 
     console.log(

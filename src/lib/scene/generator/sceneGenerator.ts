@@ -13,33 +13,36 @@ const VALID_GEOMETRIES: Set<string> = new Set([
   "fan",
   "road",
   "pillar",
+  "quad",
+  "car",
   "chamber",
 ]);
 
 /**
- * Normalizes any LLM geometry string into safe supported primitive type
+ * Normalizes any LLM geometry string into a supported primitive type.
+ * Universal synonyms only — never keyed on the topic.
  */
 export function normalizeGeometryType(raw: string): GeometryType {
   const g = String(raw || "").trim().toLowerCase();
   if (VALID_GEOMETRIES.has(g)) {
     return g as GeometryType;
   }
-  // Tolerant smart synonyms
   if (g.includes("road") || g.includes("highway") || g.includes("bridge") || g.includes("tol")) return "road";
   if (g.includes("pillar") || g.includes("column") || g.includes("pier") || g.includes("tiang")) return "pillar";
-  if (g.includes("fan") || g.includes("rotor") || g.includes("blade") || g.includes("propeller") || g.includes("turbine")) return "fan";
+  if (g.includes("car") || g.includes("vehicle") || g.includes("mobil") || g.includes("truck") || g.includes("bus")) return "car";
+  if (g.includes("fan") || g.includes("rotor") || g.includes("blade") || g.includes("propeller") || g.includes("turbine") || g.includes("impeller")) return "fan";
   if (g.includes("sphere") || g.includes("ball") || g.includes("droplet") || g.includes("atom") || g.includes("nucleus")) return "sphere";
   if (g.includes("torus") || g.includes("ring") || g.includes("seal") || g.includes("coil") || g.includes("donut")) return "torus";
   if (g.includes("cone") || g.includes("nozzle") || g.includes("diffuser") || g.includes("corong")) return "cone";
-  if (g.includes("plane") || g.includes("ground") || g.includes("grid") || g.includes("plate")) return "plane";
+  if (g.includes("plane") || g.includes("ground") || g.includes("terrain") || g.includes("grid") || g.includes("floor")) return "plane";
+  if (g.includes("quad") || g.includes("panel") || g.includes("sheet") || g.includes("screen") || g.includes("display") || g.includes("pcb") || g.includes("plate")) return "quad";
   if (g.includes("box") || g.includes("block") || g.includes("chassis") || g.includes("board") || g.includes("chip")) return "box";
   return "cylinder";
 }
 
 /**
- * Universal 3D Scene Generator (Section 3.3)
- * JANGAN HARDCODE if topic === "jet" else if "car".
- * Builds a dynamic Three.js Group purely from blueprint.components[] Lego bricks.
+ * Universal 3D scene factory (Section 3.3).
+ * Builds the scene purely from blueprint.components[] — no topic branching.
  */
 export function generateScene(blueprint: VideoBlueprint): THREE.Group {
   const sceneGroup = new THREE.Group();
@@ -56,32 +59,33 @@ export function generateScene(blueprint: VideoBlueprint): THREE.Group {
     const geomType = normalizeGeometryType(rawGeom);
     const style = comp.style || "xray-blue";
 
-    // Detect if this component or visual style specifies neon green wireframe terrain
-    if (style === "wireframe-green" || geomType === "plane" && (comp.params as any)?.isTerrain) {
+    if (style === "wireframe-green") {
       hasTerrainGrid = true;
     }
 
     const creator = primitives[geomType] || primitives.cylinder;
-    const primitiveParams = {
+    const meshGroup = creator({
       ...(comp.params || {}),
       style,
-    };
+    });
 
-    const meshGroup = creator(primitiveParams);
     meshGroup.name = `node_${comp.id || `comp_${index}`}`;
-    (meshGroup as any).userData = {
+    meshGroup.userData = {
       id: comp.id,
+      // Ground planes are environment, not subject: the camera must not fit them.
+      kind: geomType === "plane" ? "terrain" : "component",
+      geometryType: geomType,
       behavior: comp.behavior || "static",
       axis: comp.axis || "z",
       initialPosition: comp.position3D || comp.position || [0, 0, 0],
       initialRotation: comp.rotation3D || comp.rotation || [0, 0, 0],
+      explodeDirection: geomType === "plane" ? [0, -1, 0] : [0, 1, 0],
+      componentIndex: index,
     };
 
-    // 3D Position
     const pos = comp.position3D || comp.position || [0, 0, 0];
     meshGroup.position.set(pos[0], pos[1], pos[2]);
 
-    // 3D Rotation
     const rot = comp.rotation3D || comp.rotation;
     if (rot && Array.isArray(rot) && rot.length === 3) {
       meshGroup.rotation.set(rot[0], rot[1], rot[2]);
@@ -90,23 +94,25 @@ export function generateScene(blueprint: VideoBlueprint): THREE.Group {
     sceneGroup.add(meshGroup);
   });
 
-  // If blueprint specifies green wireframe terrain or toll road elevated, add terrain floor
-  const isTollOrLandscape =
+  // Green hologram terrain can also be requested at scene level.
+  const wantsTerrain =
+    hasTerrainGrid ||
     blueprint.subjectArchetype?.includes("TOLL") ||
     blueprint.subjectArchetype?.includes("TERRAIN") ||
-    blueprint.subjectArchetype?.includes("ROAD") ||
-    hasTerrainGrid;
+    blueprint.subjectArchetype?.includes("ROAD");
 
-  if (isTollOrLandscape && !sceneGroup.getObjectByName("WireframeTerrainMesh")) {
-    const terrain = createWireframeTerrainMesh(26, 26, 44, 44, 2.2);
+  if (wantsTerrain && !sceneGroup.getObjectByName("WireframeTerrainMesh")) {
+    const terrain = createWireframeTerrainMesh(26, 26, 96, 96, 2.0);
     terrain.name = "WireframeTerrainMesh";
     terrain.position.set(0, -3.2, 0);
     (terrain as any).userData = {
       id: "WireframeTerrainMesh",
+      kind: "terrain",
       behavior: "static",
       axis: "y",
       initialPosition: [0, -3.2, 0],
       initialRotation: [0, 0, 0],
+      explodeDirection: [0, -1, 0],
     };
     sceneGroup.add(terrain);
   }

@@ -4,6 +4,11 @@ import { MainVideo } from "./MainVideo";
 import { VideoProps } from "../lib/types";
 import { KitabedahVideo, KitabedahVideoProps } from "./KitabedahVideo";
 import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "./constants";
+import {
+  JALAN_TOL_BLUEPRINT,
+  TURBO_BLUEPRINT,
+  LAPTOP_BLUEPRINT,
+} from "../lib/scene/fixtures";
 
 const defaultProps: VideoProps = {
   videoTitle: "Blueprint Demo",
@@ -46,77 +51,43 @@ const defaultProps: VideoProps = {
   ],
 };
 
-export const SAMPLE_KITABEDAH_PROPS: KitabedahVideoProps = {
+/** Total timeline length derived by accumulating every phase (never parallel). */
+function totalFramesOf(blueprint: { phases?: Array<any> }): number {
+  const phases = blueprint.phases || [];
+  let from = 0;
+  for (const phase of phases) {
+    const dur = phase.durationInFrames
+      ? phase.durationInFrames
+      : Math.round((phase.duration || 5) * VIDEO_FPS);
+    from += Math.max(1, dur);
+  }
+  return Math.max(1, from || 450);
+}
+
+const tollProps: KitabedahVideoProps = {
   visualStyle: "blueprint",
-  blueprint: {
-    videoTitle: "JALAN TOL ELEVATED",
-    subtitle: "REKAYASA STRUKTUR JALAN LAYANG",
-    subjectArchetype: "STRATIFIED_INFRASTRUCTURE",
-    cadArchetype: "STRATIFIED_INFRASTRUCTURE",
-    visualStyle: "blueprint",
-    params: { length: 14, width: 4.2 },
-    components: [],
-    phases: [
-      {
-        phaseId: 1,
-        title: "Pondasi Pilar Beton",
-        label: "Substruktur Penahan Gempa & Bore Pile",
-        duration: 4.2,
-        durationInFrames: 124,
-        activeStationCode: "STA-06",
-        audioUrl: "/assets/demo/sample_kitabedah_phase1.mp3",
-        narration: "Pilar beton prategang ini menopang seluruh beban jalan tol layang di atas kontur alam yang dinamis.",
-        cameraDirection: {
-          shotType: "WIDE",
-          zoomMultiplier: 1.0,
-          explodeFactor: 0.0,
-        },
-        telemetryChannels: [
-          { name: "BEBAN DUKUNG", value: "4,500", unit: "TON" },
-          { name: "KEDALAMAN BORE PILE", value: "28", unit: "M" },
-        ],
-      },
-      {
-        phaseId: 2,
-        title: "Konstruksi Girder Tol",
-        label: "Bentang Box Girder Prategang",
-        duration: 6.4,
-        durationInFrames: 192,
-        activeStationCode: "STA-02",
-        audioUrl: "/assets/demo/sample_kitabedah_phase2.mp3",
-        narration: "Di atas pilar, bentang box girder baja dan beton dirangkai rapat untuk menahan getaran dan gempa bumi.",
-        cameraDirection: {
-          shotType: "MEDIUM",
-          zoomMultiplier: 1.0,
-          explodeFactor: 0.2,
-        },
-        telemetryChannels: [
-          { name: "SPAN GIRDER", value: "40", unit: "M" },
-          { name: "MUTU BETON", value: "fc 50", unit: "MPa" },
-        ],
-      },
-      {
-        phaseId: 3,
-        title: "Lapisan Aspal & Marka",
-        label: "Simulasi Arus Beban Puncak & Sensor",
-        duration: 6.4,
-        durationInFrames: 193,
-        activeStationCode: "STA-01",
-        audioUrl: "/assets/demo/sample_kitabedah_phase3.mp3",
-        narration: "Arus kendaraan melaju lancar di atas permukaan jalan dengan pemantauan sensor lalu lintas real time.",
-        cameraDirection: {
-          shotType: "CLOSE",
-          zoomMultiplier: 1.0,
-          explodeFactor: 0.0,
-        },
-        telemetryChannels: [
-          { name: "KAPASITAS JALAN", value: "2,400", unit: "KEND/JAM" },
-          { name: "STATUS ARUS", value: "LANCAR", unit: "" },
-        ],
-      },
-    ],
-  },
+  blueprint: JALAN_TOL_BLUEPRINT,
 };
+
+const turboProps: KitabedahVideoProps = {
+  visualStyle: "xray",
+  blueprint: TURBO_BLUEPRINT,
+};
+
+const laptopProps: KitabedahVideoProps = {
+  visualStyle: "xray",
+  blueprint: LAPTOP_BLUEPRINT,
+};
+
+export const SAMPLE_KITABEDAH_PROPS: KitabedahVideoProps = tollProps;
+
+/**
+ * Every composition reads its duration from the accumulated phase list so the
+ * last phase is never cut off and frames never stack.
+ */
+const metadataFor = (props: KitabedahVideoProps) => ({
+  durationInFrames: totalFramesOf(props.blueprint || {}),
+});
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -124,22 +95,38 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="Kitabedah"
         component={KitabedahVideo}
-        durationInFrames={450} // 15 detik default @ 30fps
+        durationInFrames={495}
         fps={VIDEO_FPS}
         width={VIDEO_WIDTH}
         height={VIDEO_HEIGHT}
-        defaultProps={SAMPLE_KITABEDAH_PROPS}
-        calculateMetadata={({ props }: { props: any }) => {
-          let total = 0;
-          if (props?.blueprint?.phases) {
-            props.blueprint.phases.forEach((p: any) => {
-              total += p.durationInFrames || Math.round((p.duration || 5) * VIDEO_FPS);
-            });
-          }
-          return {
-            durationInFrames: Math.max(1, total || 450),
-          };
-        }}
+        defaultProps={tollProps}
+        calculateMetadata={({ props }) =>
+          metadataFor(props as KitabedahVideoProps)
+        }
+      />
+      <Composition
+        id="KitabedahTurbo"
+        component={KitabedahVideo}
+        durationInFrames={450}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+        defaultProps={turboProps}
+        calculateMetadata={({ props }) =>
+          metadataFor(props as KitabedahVideoProps)
+        }
+      />
+      <Composition
+        id="KitabedahLaptop"
+        component={KitabedahVideo}
+        durationInFrames={450}
+        fps={VIDEO_FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+        defaultProps={laptopProps}
+        calculateMetadata={({ props }) =>
+          metadataFor(props as KitabedahVideoProps)
+        }
       />
       <Composition
         id="MainVideo"
@@ -149,6 +136,7 @@ export const RemotionRoot: React.FC = () => {
         width={VIDEO_WIDTH}
         height={VIDEO_HEIGHT}
         defaultProps={defaultProps}
-      />    </>
+      />
+    </>
   );
 };

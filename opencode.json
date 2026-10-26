@@ -1,0 +1,29 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "models": {
+    "coder": {
+      "provider": "opencode",
+      "model": "deepseek-v4.1-flash",
+      "description": "Coding Remotion + Three.js + BullMQ + Workers - pengganti Gemini 3.8"
+    },
+    "content": {
+      "provider": "opencode",
+      "model": "glm-5.3-flash",
+      "description": "Generate blueprint JSON dinamis - pengganti gpt-oss-120B Groq yang ngaco"
+    },
+    "visual": {
+      "provider": "opencode",
+      "model": "mimo-v2.6-flash",
+      "description": "X-ray shader + isometric math + Fresnel glow"
+    }
+  },
+  "instructions": [
+    ".agents/skills/anatomy/SKILL.md",
+    "AGENT.md"
+  ],
+  "env": {
+    "OMNIROUTE_GATEWAY": "http://localhost:20128/v1",
+    "TTS_GATEWAY": "http://localhost:3900/v1",
+    "VOICE_ID": "aad77d68"
+  }
+}

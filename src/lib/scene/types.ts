@@ -8,6 +8,8 @@ export type GeometryType =
   | "fan"
   | "road"
   | "pillar"
+  | "quad"
+  | "car"
   | "chamber"; // backward compatibility
 
 export type XRayStyle =
@@ -59,7 +61,13 @@ export interface VideoBlueprintPhase {
   activeComponentIds?: string[];
   activeStationCode?: string;
   cameraDirection?: {
-    shotType?: "WIDE" | "MEDIUM" | "CLOSE" | "MACRO" | "XRAY_SIDE";
+    shotType?:
+      | "WIDE"
+      | "MEDIUM"
+      | "CLOSE"
+      | "MACRO"
+      | "XRAY_SIDE"
+      | "XRAY_QUARTER";
     focusComponentIds?: string[];
     zoomMultiplier?: number;
     explodeFactor?: number;

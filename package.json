@@ -10,6 +10,8 @@
     "start": "next start -p 4000",
     "lint": "next lint",
     "worker": "tsx watch src/queues/video-worker.ts",
+    "worker:deconstructor": "tsx src/workers/deconstructor.cli.ts",
+    "test:deconstructor": "tsx src/workers/deconstructor.selftest.ts",
     "studio": "remotion studio src/remotion/index.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push"

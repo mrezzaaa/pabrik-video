@@ -4,7 +4,9 @@ import {
   xrayBlueLightMaterial,
   xrayOrangeMaterial,
   createWireframeOverlay,
+  addWireframeOverlay,
 } from "../materials/xray.material";
+import { createCar } from "./car";
 
 export interface RoadProps {
   length?: number;
@@ -16,106 +18,119 @@ export interface RoadProps {
 }
 
 /**
- * Creates an elevated transparent X-ray road/highway deck (referensi Foto Test 1):
- * - Transparent blue road deck
- * - Median and lane divider stripes
- * - Shoulder guardrails
- * - Optional miniature X-ray vehicles with orange powertrains
+ * Elevated transparent X-ray highway deck (referensi: jalan tol elevated).
+ *
+ * Cross-section, top to bottom:
+ * - asphalt deck slab
+ * - one deep box girder (not a stack of plates)
+ * - internal diaphragms every ~2 units
+ * - parapets + continuous edge lines + dashed lane dividers on top
  */
 export function createRoad({
-  length = 16,
+  length = 9,
   width = 2.6,
   thickness = 0.18,
   lanes = 4,
-  hasCars = true,
+  hasCars = false,
   style = "xray-blue",
 }: RoadProps = {}): THREE.Group {
   const group = new THREE.Group();
   group.name = "PrimitiveRoad";
 
-  // 1. Main Transparent Road Slab
+  const deckMat = style === "xray-orange" ? xrayOrangeMaterial : xrayBlueMaterial;
+  const edgeMat = xrayBlueLightMaterial;
+  const wireColor = 0x00d4ff;
+
+  /* 1. Main deck slab */
   const deckGeo = new THREE.BoxGeometry(width, thickness, length);
-  const deckMesh = new THREE.Mesh(deckGeo, xrayBlueMaterial);
-  group.add(deckMesh);
-  group.add(createWireframeOverlay(deckGeo, 0x00d4ff));
+  const deck = new THREE.Mesh(deckGeo, deckMat);
+  group.add(deck);
+  group.add(createWireframeOverlay(deckGeo, wireColor));
 
-  // 2. Guardrails on both sides
-  const railHeight = 0.25;
-  const railThick = 0.08;
-  const railGeo = new THREE.BoxGeometry(railThick, railHeight, length);
+  /* 2. Box girder — a single deep box under the deck */
+  const girderDepth = Math.max(0.16, thickness * 1.4);
+  const girderWidth = width * 0.66;
+  const girderGeo = new THREE.BoxGeometry(girderWidth, girderDepth, length * 0.985);
+  const girder = new THREE.Mesh(girderGeo, xrayBlueLightMaterial);
+  girder.position.set(0, -thickness / 2 - girderDepth / 2, 0);
+  group.add(girder);
+  addWireframeOverlay(group, girder, 0x66e0ff);
 
-  const leftRail = new THREE.Mesh(railGeo, xrayBlueLightMaterial);
-  leftRail.position.set(-width / 2 + railThick / 2, railHeight / 2 + thickness / 2, 0);
-  group.add(leftRail);
-  group.add(createWireframeOverlay(railGeo, 0x66e0ff));
+  /* 3. Internal diaphragms (what stiffens the box) */
+  const diaphragmGeo = new THREE.BoxGeometry(
+    girderWidth * 0.9,
+    girderDepth * 0.86,
+    Math.max(0.03, girderDepth * 0.16)
+  );
+  const diaphragmCount = Math.max(2, Math.round(length / 1.8));
+  for (let i = 0; i < diaphragmCount; i++) {
+    const diaphragm = new THREE.Mesh(diaphragmGeo, xrayBlueLightMaterial);
+    const z = -length / 2 + (i + 0.5) * (length / diaphragmCount);
+    diaphragm.position.set(0, -thickness / 2 - girderDepth / 2, z);
+    group.add(diaphragm);
+  }
 
-  const rightRail = new THREE.Mesh(railGeo, xrayBlueLightMaterial);
-  rightRail.position.set(width / 2 - railThick / 2, railHeight / 2 + thickness / 2, 0);
-  group.add(rightRail);
+  /* 4. Parapets (concrete barrier walls) */
+  const parapetHeight = Math.max(0.18, thickness * 1.3);
+  const parapetThickness = Math.max(0.04, width * 0.022);
+  const parapetGeo = new THREE.BoxGeometry(parapetThickness, parapetHeight, length);
+  for (const side of [-1, 1]) {
+    const parapet = new THREE.Mesh(parapetGeo, edgeMat);
+    parapet.position.set(
+      side * (width / 2 - parapetThickness / 2),
+      thickness / 2 + parapetHeight / 2,
+      0
+    );
+    group.add(parapet);
+    addWireframeOverlay(group, parapet, 0x66e0ff);
+  }
 
-  // 3. Lane Dash Markings (wireframe strips)
-  const dashCount = Math.floor(length / 1.2);
-  const dashGeo = new THREE.BoxGeometry(0.06, 0.02, 0.5);
-  const dashMat = new THREE.MeshBasicMaterial({
-    color: 0x66e0ff,
+  /* 5. Road markings, drawn on the deck surface */
+  const topY = thickness / 2 + 0.006;
+  const lineMat = new THREE.MeshBasicMaterial({
+    color: 0x8ef0ff,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.9,
   });
 
-  for (let i = 0; i < dashCount; i++) {
-    const zPos = -length / 2 + 0.6 + i * 1.2;
-    // Center dashed divider
-    const centerDash = new THREE.Mesh(dashGeo, dashMat);
-    centerDash.position.set(0, thickness / 2 + 0.01, zPos);
-    group.add(centerDash);
+  // Continuous edge lines
+  const edgeGeo = new THREE.BoxGeometry(0.035, 0.008, length * 0.97);
+  for (const side of [-1, 1]) {
+    const edge = new THREE.Mesh(edgeGeo, lineMat);
+    edge.position.set(side * (width / 2 - parapetThickness - 0.09), topY, 0);
+    group.add(edge);
+  }
 
-    // Quarter lane dividers for 4-lane feel
-    if (lanes >= 4) {
-      const leftDash = new THREE.Mesh(dashGeo, dashMat);
-      leftDash.position.set(-width / 4, thickness / 2 + 0.01, zPos);
-      group.add(leftDash);
-
-      const rightDash = new THREE.Mesh(dashGeo, dashMat);
-      rightDash.position.set(width / 4, thickness / 2 + 0.01, zPos);
-      group.add(rightDash);
+  // Dashed lane dividers
+  const laneCount = Math.max(1, Math.round(lanes));
+  const dashCount = Math.max(6, Math.floor(length / 0.9));
+  const dashGeo = new THREE.BoxGeometry(0.03, 0.008, Math.min(0.45, length / 14));
+  for (let lane = 1; lane < laneCount; lane++) {
+    const x = -width / 2 + (lane / laneCount) * width;
+    for (let i = 0; i < dashCount; i++) {
+      const dash = new THREE.Mesh(dashGeo, lineMat);
+      const z = -length / 2 + (i + 0.5) * (length / dashCount);
+      dash.position.set(x, topY, z);
+      group.add(dash);
     }
   }
 
-  // 4. Optional miniature X-Ray vehicles (blue transparent body + orange engine core)
+  /* 6. Optional vehicles (the scene usually carries them as separate nodes) */
   if (hasCars) {
-    const carPositions = [
-      { x: -width / 4, z: -3.5, heading: 0 },
-      { x: -width / 4, z: 2.5, heading: 0 },
-      { x: width / 4, z: -1.0, heading: Math.PI },
-      { x: width / 4, z: 4.8, heading: Math.PI },
+    const laneX = [-width * 0.3, width * 0.3];
+    const slots = [
+      { x: laneX[0], z: -length * 0.28, heading: 0 },
+      { x: laneX[1], z: length * 0.18, heading: Math.PI },
     ];
-
-    for (const cp of carPositions) {
-      const carGroup = new THREE.Group();
-      carGroup.position.set(cp.x, thickness / 2 + 0.16, cp.z);
-      carGroup.rotation.y = cp.heading;
-
-      // Car chassis/body
-      const carBodyGeo = new THREE.BoxGeometry(0.55, 0.28, 1.1);
-      const carBody = new THREE.Mesh(carBodyGeo, xrayBlueMaterial);
-      carGroup.add(carBody);
-      carGroup.add(createWireframeOverlay(carBodyGeo, 0x00d4ff));
-
-      // Car engine / drivetrain (glowing orange core inside transparent body)
-      const engineGeo = new THREE.BoxGeometry(0.25, 0.16, 0.35);
-      const engineMesh = new THREE.Mesh(engineGeo, xrayOrangeMaterial);
-      engineMesh.position.set(0, -0.04, 0.28);
-      carGroup.add(engineMesh);
-      carGroup.add(createWireframeOverlay(engineGeo, 0xff4500));
-
-      // Drivetrain shaft
-      const shaftGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 12);
-      shaftGeo.rotateX(Math.PI / 2);
-      const shaftMesh = new THREE.Mesh(shaftGeo, xrayOrangeMaterial);
-      shaftMesh.position.set(0, -0.06, -0.15);
-      carGroup.add(shaftMesh);
-
-      group.add(carGroup);
+    for (const slot of slots) {
+      const car = createCar({
+        length: Math.max(0.7, width * 0.4),
+        width: Math.max(0.3, width * 0.18),
+        height: Math.max(0.22, width * 0.11),
+      });
+      car.position.set(slot.x, thickness / 2, slot.z);
+      car.rotation.y = slot.heading;
+      group.add(car);
     }
   }
 

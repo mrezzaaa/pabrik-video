@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Audio, Sequence, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { VideoBlueprint, VideoBlueprintPhase } from "../lib/scene/types";
 import { CADBlueprintScene, buildCADAssemblies, resolveCADArchetype } from "../lib/cad";
+import { KitabedahScene } from "../lib/scene/remotion/KitabedahScene";
 import { VIDEO_FPS, VIDEO_WIDTH, VIDEO_HEIGHT } from "./constants";
 
 export interface KitabedahVideoProps {
@@ -96,25 +97,38 @@ export const KitabedahVideo: React.FC<KitabedahVideoProps> = ({
     });
   }, [blueprint, archetype]);
 
+  // The universal Lego component scene is the primary path. The CAD assembly
+  // engine stays as the fallback for blueprints without components[].
+  const hasComponents = (blueprint.components || []).length > 0;
+
   return (
     <div
       style={{
         width: VIDEO_WIDTH,
         height: VIDEO_HEIGHT,
-        backgroundColor: "#050b14",
+        backgroundColor: "#000000",
         position: "relative",
         overflow: "hidden",
         fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
       }}
     >
-      {/* 1. Deterministic 3D CAD Blueprint & Cutaway Engine */}
-      <CADBlueprintScene
-        title={blueprint.videoTitle || "CAD BLUEPRINT"}
-        subtitle={blueprint.subtitle || `ARCHETYPE: ${archetype}`}
-        archetype={archetype}
-        assemblies={assemblies}
-        activeStationCode={activePhase?.activeStationCode}
-      />
+      {hasComponents ? (
+        <KitabedahScene
+          blueprint={blueprint}
+          phase={activePhase}
+          phaseStartFrame={activeInterval?.from ?? 0}
+        />
+      ) : (
+        <div style={{ position: "absolute", inset: 0, backgroundColor: "#000000" }}>
+          <CADBlueprintScene
+            title={blueprint.videoTitle || "CAD BLUEPRINT"}
+            subtitle={blueprint.subtitle || `ARCHETYPE: ${archetype}`}
+            archetype={archetype}
+            assemblies={assemblies}
+            activeStationCode={activePhase?.activeStationCode}
+          />
+        </div>
+      )}
 
       {/* 2. Global Audio Track if provided */}
       {audioUrl && (

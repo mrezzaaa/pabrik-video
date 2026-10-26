@@ -8,6 +8,8 @@ import { createPlane, PlaneProps } from "./plane";
 import { createRoad, RoadProps } from "./road";
 import { createPillar, PillarProps } from "./pillar";
 import { createSphere, SphereProps } from "./sphere";
+import { createQuad, QuadProps } from "./quad";
+import { createCar, CarProps } from "./car";
 import { createChamber, ChamberProps } from "./chamber";
 import { GeometryType } from "../types";
 
@@ -20,6 +22,8 @@ export * from "./plane";
 export * from "./road";
 export * from "./pillar";
 export * from "./sphere";
+export * from "./quad";
+export * from "./car";
 export * from "./chamber";
 
 export const primitives: Record<
@@ -35,5 +39,7 @@ export const primitives: Record<
   road: (p: RoadProps) => createRoad(p),
   pillar: (p: PillarProps) => createPillar(p),
   sphere: (p: SphereProps) => createSphere(p),
+  quad: (p: QuadProps) => createQuad(p),
+  car: (p: CarProps) => createCar(p),
   chamber: (p: ChamberProps) => createChamber(p),
 };

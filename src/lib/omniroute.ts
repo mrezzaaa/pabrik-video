@@ -83,7 +83,8 @@ export class OmniRouteClient {
   async getChatCompletion(
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
     modelId?: string,
-    temperature = 0.4
+    temperature = 0.4,
+    maxTokens = 4096
   ): Promise<string> {
     const rawModel = modelId || this.defaultModel;
     const model = !rawModel || rawModel === "auto" ? "ddgw/gpt-5.4-mini" : rawModel;
@@ -91,7 +92,7 @@ export class OmniRouteClient {
       model,
       messages,
       temperature,
-      max_tokens: 4096,
+      max_tokens: maxTokens,
     });
     return completion.choices[0]?.message?.content || "";
   }
@@ -192,3 +193,24 @@ export class OmniRouteClient {
 }
 
 export const omniroute = new OmniRouteClient();
+
+/**
+ * Content-model resolver: blueprint/script generation needs a model with strong
+ * structured-JSON output. Never silently fall back to a weak "auto" route.
+ *
+ * Priority: explicit override -> OMNIROUTE_CONTENT_MODEL -> qwen/qwen3.8-27b.
+ *
+ * Why not GLM today: every "zc/glm-5.3-flash" route on the local OmniRoute is
+ * down with "502 spawn zcode ENOENT", and "auto/glm" (cf/zai-org/glm-4.7-flash)
+ * returns a reasoning_content payload with raw newlines, i.e. invalid JSON.
+ * As soon as a GLM route answers with clean JSON, run:
+ *   OMNIROUTE_CONTENT_MODEL=zc/glm-5.3-flash
+ */
+export function resolveContentModel(override?: string): string {
+  const candidates = [override, process.env.OMNIROUTE_CONTENT_MODEL];
+  for (const candidate of candidates) {
+    const value = (candidate || "").trim();
+    if (value && value !== "auto") return value;
+  }
+  return "qwen/qwen3.8-27b";
+}

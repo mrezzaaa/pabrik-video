@@ -4,6 +4,7 @@ import {
   xrayBlueDarkMaterial,
   xrayBlueLightMaterial,
   xrayOrangeMaterial,
+  xrayGhostMaterial,
   createWireframeOverlay,
 } from "../materials/xray.material";
 import { wireframeTerrainMaterial } from "../materials/wireframe-terrain.material";
@@ -42,6 +43,9 @@ export function createBox({
   } else if (style === "xray-blue-light") {
     mat = xrayBlueLightMaterial;
     wireColor = 0x66e0ff;
+  } else if (style === "xray-ghost") {
+    mat = xrayGhostMaterial;
+    wireColor = 0x00d4ff;
   } else if (style === "wireframe-green") {
     mat = wireframeTerrainMaterial;
     wireColor = 0x00ff00;
