@@ -119,8 +119,8 @@ Semua variabel dibaca dari `process.env`; worker memuat `.env.local` lalu `.env`
 | `OMNIROUTE_PRIMARY_MODEL` | `auto` | Model naskah & visual plan |
 | `OMNIROUTE_FAST_MODEL` | `auto` | Model riset |
 | `VOICESTUDIO_BASE_URL` | `http://localhost:3900/v1` | TTS utama |
-| `VOICE_DEFAULT_ID` | `aad77d68` | Voice ID VoiceStudio |
-| `VOICESTUDIO_VOICE_NAME` | `reza` | Label suara |
+| `VOICE_DEFAULT_ID` | `alloy` | Voice ID VoiceStudio (OpenAI alias) |
+| `VOICESTUDIO_VOICE_NAME` | `Alloy` | Label suara |
 | `VOICESTUDIO_MODEL` | `omnivoice` | Model TTS VoiceStudio |
 | `VOICESTUDIO_SPEED` | `1.05` | Kecepatan VoiceStudio |
 | `UNLIMITEDTTS_LANGUAGE` | `id-ID` | Fallback edge-tts |

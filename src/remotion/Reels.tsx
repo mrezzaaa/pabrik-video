@@ -19,6 +19,7 @@ import {
 import { SceneBackground } from "./components/SceneBackground";
 import { SceneHeadline } from "./components/SceneHeadline";
 import { SceneOverlay } from "./components/SceneOverlay";
+import { SceneVisual } from "./components/SceneVisual";
 import { ANTON_FAMILY, anton } from "./fonts";
 import type { ReelsProps } from "./types";
 
@@ -80,6 +81,11 @@ export const Reels: React.FC<ReelsProps> = ({
             layout="none"
           >
             <SceneBackground
+              scene={scene}
+              index={index}
+              total={sortedScenes.length}
+            />
+            <SceneVisual
               scene={scene}
               index={index}
               total={sortedScenes.length}

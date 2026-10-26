@@ -255,7 +255,7 @@ export function ProjectDetailClient({
               </div>
             ))}
             <div className="border border-zinc-900 bg-black/30 px-2 py-1.5 font-mono text-[8px] uppercase leading-relaxed tracking-[0.08em] text-zinc-600">
-              VOICE // {process.env.NEXT_PUBLIC_VOICE_LABEL ?? "reza"} · TTS // VoiceStudio
+              VOICE // {process.env.NEXT_PUBLIC_VOICE_LABEL ?? "alloy"} · TTS // VoiceStudio
               <br />
               MODEL // auto · QUEUE // pabrik-video-queue
             </div>

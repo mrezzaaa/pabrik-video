@@ -90,6 +90,8 @@ export const visualSceneSchema = z.object({
   bRollKeywords: z.array(z.string()).default([]),
   overlayEmoji: z.string().default("🔥"),
   overlay: sceneOverlaySchema.optional(),
+  // Divalidasi terpisah (cleanVisual) supaya visual yang rusak tidak menggagalkan seluruh plan.
+  visual: z.unknown().optional(),
   headline: z.string().default(""),
   accentColor: z.string().default("#39FF14"),
 });

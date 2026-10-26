@@ -26,8 +26,8 @@ export const env = {
   primaryModel: required("OMNIROUTE_PRIMARY_MODEL", "auto"),
   fastModel: required("OMNIROUTE_FAST_MODEL", "auto"),
 
-  voiceDefaultId: required("VOICE_DEFAULT_ID", "aad77d68"),
-  voiceName: required("VOICESTUDIO_VOICE_NAME", "reza"),
+  voiceDefaultId: required("VOICE_DEFAULT_ID", "alloy"),
+  voiceName: required("VOICESTUDIO_VOICE_NAME", "Alloy"),
   voiceStudioBaseUrl: required(
     "VOICESTUDIO_BASE_URL",
     "http://localhost:3900/v1",

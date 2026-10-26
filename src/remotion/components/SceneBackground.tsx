@@ -64,7 +64,9 @@ export const SceneBackground: React.FC<SceneProps> = ({ scene, index }) => {
   scale *= cutPunch;
   translateX += Math.sin(cut * 1.9 + index) * 6;
 
-  const flash = t % 1.5 < 0.075 ? 0.1 : 0;
+  const hasVisual = Boolean(scene.visual);
+  // Flash acak dimatikan saat ada visual: perhatian harus ke bukti, bukan ke kedipan.
+  const flash = !hasVisual && t % 1.5 < 0.075 ? 0.1 : 0;
   const accent = scene.accentColor || "#39FF14";
   const tickerWords = (
     scene.bRollKeywords.length > 0
@@ -152,7 +154,7 @@ export const SceneBackground: React.FC<SceneProps> = ({ scene, index }) => {
           top: 420 + interpolate(progress, [0, 1], [70, -70]),
           fontSize: 400,
           lineHeight: 1,
-          opacity: 0.2,
+          opacity: hasVisual ? 0.06 : 0.2,
           filter: "blur(1px) drop-shadow(0 0 50px rgba(0,0,0,0.55))",
           transform: `rotate(${Math.sin(t * 0.5 + index) * 9 - 6}deg) scale(${interpolate(
             progress,

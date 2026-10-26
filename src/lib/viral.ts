@@ -26,7 +26,7 @@ ATURAN KERAS:
 - Hook TIDAK boleh mengandung kata "video", "konten", "subscribe".
 - Wajib ada minimal 2 angka/data konkret dari riset.
 - Gunakan kalimat pendek. Maksimal 14 kata per kalimat.
-- Akhiri dengan ajakan komen yang natural, contoh: "Komen MAU kalau mau part 2."
+- Akhiri dengan ajakan komen yang natural.
 - Jangan pakai markdown, jangan pakai emoji di narasi, jangan tulis "Hook:" di dalam teks.
 - Semua narasi harus enak dibaca TTS: tanpa singkatan aneh, tanpa simbol.
 - emphasisWords: 1-3 kata per kalimat yang harus di-highlight (kata asli, bukan tanda baca).
@@ -71,6 +71,16 @@ ATURAN RETENSI (WAJIB):
 - accentColor: hex color yang kontras dengan background.
 - background.value HARUS salah satu gradient dari daftar yang diberikan user. Renderer boleh menggantinya dengan video Pexels.
 
+VISUAL UTAMA (WAJIB, ini yang bikin penonton bertahan):
+Zona tengah layar harus menunjukkan BUKTI dari kalimat, bukan hiasan. Isi "visual" per scene dengan SATU kind berikut, atau null kalau tidak ada visual yang jujur:
+- "stat": kalimat berisi satu angka. { "kind":"stat", "label":"TULANG DI TUBUH BAYI" } (angka diambil renderer dari narasi, JANGAN tulis angka sendiri)
+- "compare": dua hal yang dibandingkan / mitos vs fakta. { "kind":"compare", "left":{"title":"MITOS","items":["..."]}, "right":{"title":"FAKTA","items":["..."]} } (judul maks 14 huruf, item maks 3 dan 22 huruf)
+- "stamp": vonis tegas. { "kind":"stamp", "word":"MITOS|FAKTA|BAHAYA|AMAN", "caption":"maks 30 huruf" }
+- "crosssection": menjelaskan lapisan/isi sesuatu (kulit, produk, organ, mesin). { "kind":"crosssection", "title":"KULIT WAJAH", "layers":[{"label":"EPIDERMIS","note":"maks 26 huruf"}, ...3-5 lapisan dari luar ke dalam] }
+- "timeline": urutan proses/kejadian. { "kind":"timeline", "steps":[{"label":"HARI 1","detail":"maks 28 huruf"}, ...2-4 langkah] }
+Aturan visual: minimal 60% scene punya visual; jangan kind yang sama di dua scene berurutan; teks sangat singkat HURUF BESAR; JANGAN mengarang angka yang tidak ada di kalimat (visual dibuang otomatis kalau ada angka asing); scene pertama (hook) pakai "stamp" atau "stat" kalau cocok.
+bRollKeywords WAJIB bahasa Inggris, 2-3 kata benda konkret yang bisa dicari di stock footage (contoh: "skin closeup", "laboratory test"), bukan kata abstrak.
+
 Kembalikan HANYA JSON valid:
 {
   "vibe": "deskripsi singkat mood",
@@ -90,6 +100,7 @@ Kembalikan HANYA JSON valid:
         "textHook": "48 KM/JAM!!",
         "counter": { "value": 48, "suffix": " KM/JAM" }
       },
+      "visual": { "kind": "stamp", "word": "FAKTA", "caption": "KUCING BISA LIHAT GELAP" },
       "headline": "FAKTA GILA",
       "accentColor": "#39FF14"
     }

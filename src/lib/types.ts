@@ -120,6 +120,24 @@ export interface SceneOverlay {
   counter?: NumberCounter;
 }
 
+export type StampWord = "MITOS" | "FAKTA" | "BAHAYA" | "AMAN";
+
+/** Visual bertipe yang membuktikan isi kalimat narasi (dirender di Remotion). */
+export type SceneVisual =
+  | { kind: "stat"; value: number; prefix: string; suffix: string; label: string }
+  | {
+      kind: "compare";
+      left: { title: string; items: string[] };
+      right: { title: string; items: string[] };
+    }
+  | { kind: "stamp"; word: StampWord; caption: string }
+  | {
+      kind: "crosssection";
+      title: string;
+      layers: { label: string; note: string }[];
+    }
+  | { kind: "timeline"; steps: { label: string; detail: string }[] };
+
 export interface VisualScene {
   id: string;
   startTime: number;
@@ -144,6 +162,12 @@ export interface VisualScene {
   bRollKeywords: string[];
   overlayEmoji: string;
   overlay?: SceneOverlay;
+  /** Visual utama scene. Kalau ada, counter/textHook disembunyikan. */
+  visual?: SceneVisual;
+  /** Detik sejak kalimat mulai (visual lanjut mulus antar potongan 2.5s). */
+  visualOffset?: number;
+  /** false = bukan potongan terakhir kalimat, jangan fade-out. */
+  visualFinal?: boolean;
   headline: string;
   accentColor: string;
 }

@@ -3,6 +3,7 @@ import { searchPexelsVideos } from "../pexels";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
 import { visualPlanSchema, type VisualPlanOutput } from "../schemas";
+import { cleanVisual } from "../visual-spec";
 import type {
   FullScript,
   MotionType,
@@ -260,6 +261,8 @@ function normalizeScenes(
     const chunkLength = span / chunkCount;
     const number = parseNumber(sentence.text);
     const fallbackHeadline = sentence.text.replace(/[^\p{L}\p{N}\s]/gu, "");
+    // Visual bertipe: lolos hanya kalau semua angkanya ada di narasi kalimat ini.
+    const visual = cleanVisual(candidate?.visual, sentence.text, number);
 
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
       const chunkStart = start + chunkIndex * chunkLength;
@@ -353,15 +356,23 @@ function normalizeScenes(
         overlayEmoji: emoji,
         overlay: {
           bigEmoji: emoji,
-          textHook: textHookFor(
-            candidate,
-            sentence,
-            number,
-            fallbackHeadline,
-            chunkIndex,
-          ),
-          counter,
+          // Visual utama menggantikan textHook/counter (zona tengah sama).
+          textHook: visual
+            ? ""
+            : textHookFor(
+                candidate,
+                sentence,
+                number,
+                fallbackHeadline,
+                chunkIndex,
+              ),
+          counter: visual ? undefined : counter,
         },
+        visual,
+        visualOffset: visual
+          ? Math.round((chunkStart - start) * 1000) / 1000
+          : undefined,
+        visualFinal: visual ? chunkIndex === chunkCount - 1 : undefined,
         headline: cleanHeadline(
           candidate?.headline ?? "",
           fallbackHeadline,
