@@ -146,12 +146,12 @@ export async function runKitabedahStages(
     await logTelemetry(
       jobId,
       "05_REMOTION_RENDER",
-      `Starting Kitabedah 3D X-Ray rendering (${totalTimelineFrames} frames @ ${VIDEO_FPS}fps) via Metal GPU...`
+      `Starting Procedural 3D CAD Blueprint rendering (${totalTimelineFrames} frames @ ${VIDEO_FPS}fps) via Metal GPU...`
     );
 
     const videoProps: KitabedahVideoProps = {
       blueprint,
-      visualStyle: (blueprint.visualStyle as any) || "xray",
+      visualStyle: (blueprint.visualStyle as any) || "blueprint",
       totalDurationInFrames: totalTimelineFrames,
     };
 

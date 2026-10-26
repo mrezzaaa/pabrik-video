@@ -57,6 +57,7 @@ export interface VideoBlueprintPhase {
   audioUrl?: string;
   narration?: string;
   activeComponentIds?: string[];
+  activeStationCode?: string;
   cameraDirection?: {
     shotType?: "WIDE" | "MEDIUM" | "CLOSE" | "MACRO" | "XRAY_SIDE";
     focusComponentIds?: string[];
@@ -77,9 +78,24 @@ export interface VideoBlueprintPhase {
 
 export interface VideoBlueprint {
   videoTitle?: string;
+  subtitle?: string;
   themeColor?: string;
   subjectArchetype?: string;
+  cadArchetype?: string;
   visualStyle?: "xray" | "wireframe-green" | "blueprint";
+  params?: Record<string, any>;
   components: VideoBlueprintComponent[];
   phases?: VideoBlueprintPhase[];
+  customAssemblies?: Array<{
+    id: string;
+    label: string;
+    stationCode: string;
+    category: "shell" | "core" | "rotor" | "structure" | "thermal" | "electronics";
+    basePosition?: [number, number, number];
+    explodeOffset?: [number, number, number];
+    rotationSpeed?: number;
+    rotationAxis?: "x" | "y" | "z";
+    metrics?: string;
+    isShell?: boolean;
+  }>;
 }
