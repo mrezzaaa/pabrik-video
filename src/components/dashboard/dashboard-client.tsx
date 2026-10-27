@@ -24,6 +24,8 @@ import {
 } from "@/components/dashboard/system-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ModelSelector } from "@/components/dashboard/model-selector";
+import { VoiceSelector } from "@/components/dashboard/voice-selector";
 import {
   JOB_LABELS,
   JOB_TYPES,
@@ -63,6 +65,8 @@ export function DashboardClient({
 }) {
   const [projects, setProjects] = useState(initialProjects);
   const [topic, setTopic] = useState("");
+  const [selectedModel, setSelectedModel] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("ALL");
@@ -174,7 +178,11 @@ export function DashboardClient({
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: clean }),
+        body: JSON.stringify({
+          topic: clean,
+          model: selectedModel || undefined,
+          voice: selectedVoice || undefined,
+        }),
       });
       const data = await response.json();
 
@@ -242,20 +250,22 @@ export function DashboardClient({
         </div>
       </header>
 
-      <section className="relative overflow-hidden rounded-md border border-border bg-[#08080a]/90">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_0%,rgba(57,255,20,0.12),transparent_52%),radial-gradient(ellipse_at_90%_100%,rgba(255,46,147,0.07),transparent_55%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 factory-grid-fine opacity-40"
-        />
-        <div
-          aria-hidden
-          className="absolute -right-12 top-1/2 hidden -translate-y-1/2 -rotate-90 font-mono text-[110px] font-black leading-none tracking-[-0.08em] text-white/[0.025] lg:block"
-        >
-          PABRIK
+      <section className="relative rounded-md border border-border bg-[#08080a]/90">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-md">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_0%,rgba(57,255,20,0.12),transparent_52%),radial-gradient(ellipse_at_90%_100%,rgba(255,46,147,0.07),transparent_55%)]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 factory-grid-fine opacity-40"
+          />
+          <div
+            aria-hidden
+            className="absolute -right-12 top-1/2 hidden -translate-y-1/2 -rotate-90 font-mono text-[110px] font-black leading-none tracking-[-0.08em] text-white/[0.025] lg:block"
+          >
+            PABRIK
+          </div>
         </div>
 
         <div className="relative grid gap-0 lg:grid-cols-[1fr_390px]">
@@ -289,7 +299,7 @@ export function DashboardClient({
                 void createProject(topic);
               }}
             >
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-col gap-3 lg:flex-row">
                 <div className="relative flex-1">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
                     Topik &gt;
@@ -303,6 +313,16 @@ export function DashboardClient({
                     className="h-16 border-zinc-700 bg-black/70 pl-[86px] text-base font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:border-primary sm:text-lg"
                   />
                 </div>
+                <ModelSelector
+                  value={selectedModel}
+                  onChange={setSelectedModel}
+                  disabled={creating}
+                />
+                <VoiceSelector
+                  value={selectedVoice}
+                  onChange={setSelectedVoice}
+                  disabled={creating}
+                />
                 <Button
                   type="submit"
                   size="xl"
@@ -452,7 +472,7 @@ export function DashboardClient({
           {
             label: "On Production",
             value: counts.active,
-            icon: Loader2,
+            icon: Clapperboard,
             accent: "text-electric",
           },
           {
@@ -485,13 +505,7 @@ export function DashboardClient({
                 {String(stat.value).padStart(2, "0")}
               </div>
             </div>
-            <stat.icon
-              className={cn(
-                "size-5",
-                stat.accent,
-                stat.label === "On Production" && "animate-spin",
-              )}
-            />
+            <stat.icon className={cn("size-5", stat.accent)} />
           </div>
         ))}
       </section>

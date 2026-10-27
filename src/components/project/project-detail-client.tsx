@@ -150,6 +150,16 @@ export function ProjectDetailClient({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={project.status} />
+              {project.model ? (
+                <span className="border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-primary">
+                  MODEL: {project.model}
+                </span>
+              ) : null}
+              {project.voice ? (
+                <span className="border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-primary">
+                  VOICE: {project.voice}
+                </span>
+              ) : null}
               <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-600">
                 JOB {project.id.slice(-8).toUpperCase()}
               </span>

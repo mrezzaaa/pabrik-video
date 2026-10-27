@@ -32,6 +32,8 @@ export function serializeProject(project: ProjectWithJobs): ProjectDTO {
   return {
     id: project.id,
     topic: project.topic,
+    model: project.model ?? null,
+    voice: project.voice ?? null,
     status: project.status,
     hook: project.hook,
     fullScript: (project.fullScript as unknown as FullScript) ?? null,

@@ -119,9 +119,21 @@ export function ProjectCard({ project }: { project: ProjectDTO }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-2">
-          <StatusBadge status={project.status} />
+          <div className="flex items-center gap-1.5 min-w-0">
+            <StatusBadge status={project.status} />
+            {project.model ? (
+              <span className="truncate max-w-[120px] border border-zinc-800 bg-zinc-900/80 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-zinc-400">
+                {project.model}
+              </span>
+            ) : null}
+            {project.voice ? (
+              <span className="truncate max-w-[90px] border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-primary">
+                🎙️ {project.voice}
+              </span>
+            ) : null}
+          </div>
           <span
-            className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground"
+            className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground shrink-0"
             suppressHydrationWarning
           >
             {timeAgo(project.createdAt)}

@@ -36,7 +36,9 @@ export async function runTts(projectId: string) {
 
   const audioPath = path.join(AUDIO_DIR, `${projectId}.mp3`);
   // Sentence-boundary chunking keeps plosives intact and avoids mid-word cuts.
-  const synthesis = await synthesizeChunkedToFile(narration, audioPath);
+  const synthesis = await synthesizeChunkedToFile(narration, audioPath, 2500, {
+    voice: project.voice,
+  });
   let duration = await ffprobeDuration(audioPath);
   if (duration < 0.5) {
     throw new Error("Audio TTS terlalu pendek / rusak.");

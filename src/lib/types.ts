@@ -223,6 +223,8 @@ export interface JobDTO {
 export interface ProjectDTO {
   id: string;
   topic: string;
+  model: string | null;
+  voice: string | null;
   status: ProjectStatus;
   hook: string | null;
   fullScript: FullScript | null;

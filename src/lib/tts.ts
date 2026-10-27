@@ -13,50 +13,138 @@ export type SynthesisResult = {
   bytes: number;
 };
 
-async function synthesizeWithVoiceStudio(text: string, outputPath: string) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 300_000);
+export interface VoiceStudioVoice {
+  voice_id: string;
+  name: string;
+  language: string | null;
+}
 
-  try {
-    const response = await fetch(`${env.voiceStudioBaseUrl}/audio/speech`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(env.voiceStudioApiKey
-          ? { Authorization: `Bearer ${env.voiceStudioApiKey}` }
-          : {}),
-      },
-      body: JSON.stringify({
-        model: env.voiceStudioModel,
-        input: text,
-        voice: env.voiceDefaultId,
-        response_format: "mp3",
-        speed: env.voiceStudioSpeed,
-        language: "id-ID",
-      }),
-      signal: controller.signal,
-    });
+let activeVoiceStudioBaseUrl: string | null = null;
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      throw new Error(
-        `VoiceStudio HTTP ${response.status}: ${errorBody.slice(0, 300)}`,
-      );
-    }
+export function getCandidateVoiceStudioUrls(): string[] {
+  const configured = env.voiceStudioBaseUrl;
+  const urls: string[] = [];
 
-    const contentType = response.headers.get("content-type") ?? "";
-    const buffer = Buffer.from(await response.arrayBuffer());
-    if (!contentType.includes("audio") || buffer.byteLength < 1_000) {
-      throw new Error(
-        `VoiceStudio mengembalikan response tidak valid (${contentType || "no content-type"}, ${buffer.byteLength} bytes).`,
-      );
-    }
-
-    await fs.writeFile(outputPath, buffer);
-    return buffer.byteLength;
-  } finally {
-    clearTimeout(timeout);
+  if (activeVoiceStudioBaseUrl) {
+    urls.push(activeVoiceStudioBaseUrl);
   }
+
+  urls.push(configured);
+
+  if (configured.includes("host.docker.internal")) {
+    urls.push(configured.replace("host.docker.internal", "127.0.0.1"));
+    urls.push(configured.replace("host.docker.internal", "localhost"));
+  } else if (
+    configured.includes("localhost") ||
+    configured.includes("127.0.0.1")
+  ) {
+    urls.push(
+      configured.replace(/localhost|127\.0\.0\.1/, "host.docker.internal"),
+    );
+  }
+
+  return [...new Set(urls)];
+}
+
+export async function listVoiceStudioVoices(): Promise<VoiceStudioVoice[]> {
+  const candidateUrls = getCandidateVoiceStudioUrls();
+  let lastError: unknown;
+
+  for (const baseUrl of candidateUrls) {
+    try {
+      const response = await fetch(`${baseUrl}/audio/voices`, {
+        headers: {
+          ...(env.voiceStudioApiKey
+            ? { Authorization: `Bearer ${env.voiceStudioApiKey}` }
+            : {}),
+        },
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      activeVoiceStudioBaseUrl = baseUrl;
+      if (Array.isArray(data.voices)) {
+        return data.voices.map(
+          (v: { voice_id: string; name: string; language?: string | null }) => ({
+            voice_id: v.voice_id,
+            name: v.name,
+            language: v.language ?? null,
+          }),
+        );
+      }
+      return [];
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  console.warn("[tts] Gagal mengambil daftar suara VoiceStudio:", lastError);
+  return [];
+}
+
+async function synthesizeWithVoiceStudio(
+  text: string,
+  outputPath: string,
+  voiceOverride?: string | null,
+) {
+  const candidateUrls = getCandidateVoiceStudioUrls();
+  const voice = voiceOverride?.trim() || env.voiceDefaultId;
+  let lastError: unknown;
+
+  for (const baseUrl of candidateUrls) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 300_000);
+
+    try {
+      const response = await fetch(`${baseUrl}/audio/speech`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(env.voiceStudioApiKey
+            ? { Authorization: `Bearer ${env.voiceStudioApiKey}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          model: env.voiceStudioModel,
+          input: text,
+          voice,
+          response_format: "mp3",
+          speed: env.voiceStudioSpeed,
+          language: "id-ID",
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => "");
+        throw new Error(
+          `VoiceStudio HTTP ${response.status}: ${errorBody.slice(0, 300)}`,
+        );
+      }
+
+      const contentType = response.headers.get("content-type") ?? "";
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (!contentType.includes("audio") || buffer.byteLength < 1_000) {
+        throw new Error(
+          `VoiceStudio mengembalikan response tidak valid (${contentType || "no content-type"}, ${buffer.byteLength} bytes).`,
+        );
+      }
+
+      await fs.writeFile(outputPath, buffer);
+      activeVoiceStudioBaseUrl = baseUrl;
+      return buffer.byteLength;
+    } catch (err) {
+      lastError = err;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  throw lastError;
 }
 
 function resolveEdgeVoice() {
@@ -119,13 +207,15 @@ async function synthesizeWithUnlimitedTts(text: string, outputPath: string) {
 export async function synthesizeToFile(
   text: string,
   outputPath: string,
+  options?: { voice?: string | null },
 ): Promise<SynthesisResult> {
   if (!text.trim()) throw new Error("Teks TTS kosong.");
 
+  const voice = options?.voice?.trim() || env.voiceDefaultId;
   let primaryError: unknown;
   try {
-    const bytes = await synthesizeWithVoiceStudio(text, outputPath);
-    return { provider: "voicestudio", voice: env.voiceDefaultId, bytes };
+    const bytes = await synthesizeWithVoiceStudio(text, outputPath, voice);
+    return { provider: "voicestudio", voice, bytes };
   } catch (error) {
     primaryError = error;
     console.warn(
@@ -182,10 +272,11 @@ export async function synthesizeChunkedToFile(
   text: string,
   outputPath: string,
   maxChars = 2500,
+  options?: { voice?: string | null },
 ): Promise<SynthesisResult & { chunks: number }> {
   const chunks = speechChunks(text, maxChars);
   if (chunks.length <= 1) {
-    const result = await synthesizeToFile(chunks[0] ?? text, outputPath);
+    const result = await synthesizeToFile(chunks[0] ?? text, outputPath, options);
     return { ...result, chunks: 1 };
   }
 
@@ -195,10 +286,12 @@ export async function synthesizeChunkedToFile(
   );
   await fs.mkdir(workDir, { recursive: true });
 
+  const chosenVoice = options?.voice?.trim() || env.voiceDefaultId;
+
   try {
     const files: string[] = [];
     let provider: SynthesisResult["provider"] = "voicestudio";
-    let voice = env.voiceDefaultId;
+    let voice = chosenVoice;
 
     for (let index = 0; index < chunks.length; index += 1) {
       const chunkPath = path.join(
@@ -208,9 +301,9 @@ export async function synthesizeChunkedToFile(
 
       if (index === 0) {
         try {
-          await synthesizeWithVoiceStudio(chunks[index], chunkPath);
+          await synthesizeWithVoiceStudio(chunks[index], chunkPath, chosenVoice);
           provider = "voicestudio";
-          voice = env.voiceDefaultId;
+          voice = chosenVoice;
         } catch (error) {
           console.warn(
             "[tts] VoiceStudio gagal untuk chunk pertama, memakai UnlimitedTTS untuk semua chunk:",
@@ -221,7 +314,7 @@ export async function synthesizeChunkedToFile(
           voice = resolveEdgeVoice();
         }
       } else if (provider === "voicestudio") {
-        await synthesizeWithVoiceStudio(chunks[index], chunkPath);
+        await synthesizeWithVoiceStudio(chunks[index], chunkPath, chosenVoice);
       } else {
         await synthesizeWithUnlimitedTts(chunks[index], chunkPath);
       }

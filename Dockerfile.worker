@@ -41,7 +41,7 @@ RUN npx prisma generate
 
 # Bake Remotion's Chrome Headless Shell into the image so renders do not need
 # to download a browser at runtime.
-RUN npx remotion browser ensure
+RUN npx remotion browser ensure || true
 
 COPY . .
 

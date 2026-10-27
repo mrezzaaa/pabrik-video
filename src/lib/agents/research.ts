@@ -79,6 +79,7 @@ ${buildSearchContext(results)}
 Ekstrak fakta, angka, kontroversi, dan angle unik. Sertakan URL sumber asli dari daftar di atas.`,
       schema: researchSchema,
       tier: "fast",
+      modelOverride: project.model,
       temperature: 0.4,
       maxTokens: 2200,
     });

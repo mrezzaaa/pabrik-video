@@ -15,10 +15,16 @@ export function asJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
-export async function createProject(topic: string) {
+export async function createProject(
+  topic: string,
+  model?: string | null,
+  voice?: string | null,
+) {
   const project = await prisma.project.create({
     data: {
       topic,
+      model: model?.trim() || null,
+      voice: voice?.trim() || null,
       status: "QUEUED",
       jobs: {
         create: STAGE_SEQUENCE.map((type) => ({

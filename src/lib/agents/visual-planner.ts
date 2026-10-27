@@ -694,6 +694,7 @@ Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan 
 INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center stage hanya angka/metrik atau label sumbu 1-2 kata.`,
       schema: visualPlanSchema,
       tier: "primary",
+      modelOverride: project.model,
       temperature: 0.8,
       maxTokens: 3200,
     });

@@ -33,6 +33,8 @@ enum PipelineJobStatus {
 model Project {
   id             String        @id @default(cuid())
   topic          String
+  model          String?
+  voice          String?
   status         ProjectStatus @default(QUEUED)
   hook           String?
   fullScript     Json?

@@ -79,6 +79,7 @@ Tulis naskah final 30-45 detik. Prioritaskan hook paling bikin berhenti scrollin
 Tutup dengan refleksi natural dari topik. DILARANG memakai kata komen/comment/ketik/share/like/follow/part 2.`,
     schema: scriptSchema,
     tier: "primary",
+    modelOverride: project.model,
     temperature: 0.9,
     maxTokens: 3000,
   });

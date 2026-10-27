@@ -10,24 +10,62 @@ export type ChatJSONOptions<T> = {
   user: string;
   schema: z.ZodType<T>;
   tier?: ModelTier;
+  modelOverride?: string | null;
   temperature?: number;
   maxTokens?: number;
   /** Extra attempt with a lower temperature if the first answer is not valid JSON. */
   retries?: number;
 };
 
+let activeOmnirouteBaseUrl: string | null = null;
+
 const globalForOpenAI = globalThis as unknown as {
   omnirouteClient: OpenAI | undefined;
+  omnirouteBaseUrl: string | undefined;
 };
 
+export function getCandidateBaseUrls(): string[] {
+  const configured = env.omnirouteBaseUrl;
+  const urls: string[] = [];
+
+  if (activeOmnirouteBaseUrl) {
+    urls.push(activeOmnirouteBaseUrl);
+  }
+
+  urls.push(configured);
+
+  if (configured.includes("host.docker.internal")) {
+    urls.push(configured.replace("host.docker.internal", "127.0.0.1"));
+    urls.push(configured.replace("host.docker.internal", "localhost"));
+  } else if (
+    configured.includes("localhost") ||
+    configured.includes("127.0.0.1")
+  ) {
+    urls.push(
+      configured.replace(/localhost|127\.0\.0\.1/, "host.docker.internal"),
+    );
+  }
+
+  return [...new Set(urls)];
+}
+
+export function createOmnirouteClient(baseURL: string) {
+  return new OpenAI({
+    baseURL,
+    apiKey: env.omnirouteApiKey,
+    timeout: 180_000,
+    maxRetries: 0,
+  });
+}
+
 export function getOmnirouteClient() {
-  if (!globalForOpenAI.omnirouteClient) {
-    globalForOpenAI.omnirouteClient = new OpenAI({
-      baseURL: env.omnirouteBaseUrl,
-      apiKey: env.omnirouteApiKey,
-      timeout: 180_000,
-      maxRetries: 0,
-    });
+  const target = activeOmnirouteBaseUrl || env.omnirouteBaseUrl;
+  if (
+    !globalForOpenAI.omnirouteClient ||
+    globalForOpenAI.omnirouteBaseUrl !== target
+  ) {
+    globalForOpenAI.omnirouteBaseUrl = target;
+    globalForOpenAI.omnirouteClient = createOmnirouteClient(target);
   }
   return globalForOpenAI.omnirouteClient;
 }
@@ -82,15 +120,18 @@ export async function chatJSON<T>({
   user,
   schema,
   tier = "primary",
+  modelOverride,
   temperature = 0.75,
   maxTokens = 3200,
   retries = 2,
 }: ChatJSONOptions<T>): Promise<T> {
-  const client = getOmnirouteClient();
-  const model = modelFor(tier);
+  const candidateUrls = getCandidateBaseUrls();
+  const model = modelOverride?.trim() || modelFor(tier);
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const baseUrl = candidateUrls[attempt % candidateUrls.length] || candidateUrls[0];
+    const client = createOmnirouteClient(baseUrl);
     try {
       const completion = await client.chat.completions.create({
         model,
@@ -108,6 +149,7 @@ export async function chatJSON<T>({
         ],
       });
 
+      activeOmnirouteBaseUrl = baseUrl;
       const content = completion.choices[0]?.message?.content;
       if (!content || typeof content !== "string") {
         throw new Error("LLM mengembalikan jawaban kosong.");
@@ -134,32 +176,67 @@ export async function chatText(options: {
   system: string;
   user: string;
   tier?: ModelTier;
+  modelOverride?: string | null;
   temperature?: number;
   maxTokens?: number;
 }): Promise<string> {
-  const client = getOmnirouteClient();
-  const completion = await client.chat.completions.create({
-    model: modelFor(options.tier ?? "primary"),
-    temperature: options.temperature ?? 0.7,
-    max_tokens: options.maxTokens ?? 2000,
-    messages: [
-      { role: "system", content: options.system },
-      { role: "user", content: options.user },
-    ],
-  });
+  const candidateUrls = getCandidateBaseUrls();
+  const model =
+    options.modelOverride?.trim() || modelFor(options.tier ?? "primary");
+  let lastError: unknown;
 
-  const content = completion.choices[0]?.message?.content;
-  if (!content || typeof content !== "string") {
-    throw new Error("LLM mengembalikan jawaban kosong.");
+  for (const baseUrl of candidateUrls) {
+    try {
+      const client = createOmnirouteClient(baseUrl);
+      const completion = await client.chat.completions.create({
+        model,
+        temperature: options.temperature ?? 0.7,
+        max_tokens: options.maxTokens ?? 2000,
+        messages: [
+          { role: "system", content: options.system },
+          { role: "user", content: options.user },
+        ],
+      });
+
+      activeOmnirouteBaseUrl = baseUrl;
+      const content = completion.choices[0]?.message?.content;
+      if (!content || typeof content !== "string") {
+        throw new Error("LLM mengembalikan jawaban kosong.");
+      }
+      return content;
+    } catch (error) {
+      lastError = error;
+    }
   }
-  return content;
+
+  const message =
+    lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`Omniroute gagal: ${message}`);
 }
 
 export async function listOmnirouteModels() {
-  const client = getOmnirouteClient();
-  const response = await client.models.list();
-  return response.data.map((model) => ({
-    id: model.id,
-    ownedBy: model.owned_by,
-  }));
+  const candidateUrls = getCandidateBaseUrls();
+  let lastError: unknown;
+
+  for (const baseUrl of candidateUrls) {
+    try {
+      const client = new OpenAI({
+        baseURL: baseUrl,
+        apiKey: env.omnirouteApiKey,
+        timeout: 10_000,
+        maxRetries: 0,
+      });
+      const response = await client.models.list();
+      activeOmnirouteBaseUrl = baseUrl;
+      return response.data.map((model) => ({
+        id: model.id,
+        ownedBy: model.owned_by,
+      }));
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  console.warn("[omniroute] Gagal mengambil daftar model:", lastError);
+  return [];
 }

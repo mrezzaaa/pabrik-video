@@ -13,6 +13,8 @@ const createSchema = z.object({
     .trim()
     .min(4, "Topik minimal 4 karakter.")
     .max(200, "Topik maksimal 200 karakter."),
+  model: z.string().trim().max(100).optional().nullable(),
+  voice: z.string().trim().max(100).optional().nullable(),
 });
 
 export async function GET() {
@@ -47,7 +49,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const project = await createProject(parsed.data.topic);
+    const project = await createProject(
+      parsed.data.topic,
+      parsed.data.model,
+      parsed.data.voice,
+    );
     return NextResponse.json(
       { project: serializeProject(project) },
       { status: 201 },

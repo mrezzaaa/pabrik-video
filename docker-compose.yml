@@ -93,10 +93,10 @@ services:
       VOICESTUDIO_VOICE_NAME: ${VOICESTUDIO_VOICE_NAME:-Alloy}
       NEXT_PUBLIC_VOICE_LABEL: ${NEXT_PUBLIC_VOICE_LABEL:-alloy}
     volumes:
-      - media_audio:/app/public/audio
-      - media_videos:/app/public/videos
-      - media_thumbnails:/app/public/thumbnails
-      - media_images:/app/public/images
+      - ./public/audio:/app/public/audio
+      - ./public/videos:/app/public/videos
+      - ./public/thumbnails:/app/public/thumbnails
+      - ./public/images:/app/public/images
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -141,10 +141,10 @@ services:
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-1}
       NEXT_PUBLIC_APP_URL: http://web:2000
     volumes:
-      - media_audio:/app/public/audio
-      - media_videos:/app/public/videos
-      - media_thumbnails:/app/public/thumbnails
-      - media_images:/app/public/images
+      - ./public/audio:/app/public/audio
+      - ./public/videos:/app/public/videos
+      - ./public/thumbnails:/app/public/thumbnails
+      - ./public/images:/app/public/images
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -160,10 +160,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  media_audio:
-  media_videos:
-  media_thumbnails:
-  media_images:
 
 networks:
   pabrik-network:
