@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { env } from "./env";
+import { stripEmoji } from "./text";
 
 type ModelTier = "primary" | "fast";
 
@@ -35,6 +36,19 @@ function modelFor(tier: ModelTier) {
   return tier === "fast" ? env.fastModel : env.primaryModel;
 }
 
+function recursivelyStripEmojis(val: unknown): unknown {
+  if (typeof val === "string") return stripEmoji(val);
+  if (Array.isArray(val)) return val.map(recursivelyStripEmojis);
+  if (val && typeof val === "object") {
+    const res: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(val)) {
+      res[k] = recursivelyStripEmojis(v);
+    }
+    return res;
+  }
+  return val;
+}
+
 export function extractJsonObject(raw: string): unknown {
   let text = raw.trim();
 
@@ -52,12 +66,15 @@ export function extractJsonObject(raw: string): unknown {
   }
 
   const candidate = text.slice(first, last + 1);
+  let parsed: unknown;
   try {
-    return JSON.parse(candidate);
+    parsed = JSON.parse(candidate);
   } catch {
     // Common local-model mistakes: trailing commas.
-    return JSON.parse(candidate.replace(/,\s*([}\]])/g, "$1"));
+    parsed = JSON.parse(candidate.replace(/,\s*([}\]])/g, "$1"));
   }
+
+  return recursivelyStripEmojis(parsed);
 }
 
 export async function chatJSON<T>({

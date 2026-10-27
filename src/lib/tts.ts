@@ -181,7 +181,7 @@ async function encodeWav(input: string, output: string) {
 export async function synthesizeChunkedToFile(
   text: string,
   outputPath: string,
-  maxChars = 190,
+  maxChars = 2500,
 ): Promise<SynthesisResult & { chunks: number }> {
   const chunks = speechChunks(text, maxChars);
   if (chunks.length <= 1) {

@@ -11,7 +11,7 @@ export const env = {
     "DATABASE_URL",
     "postgresql://pabrik:pabrik_secret@localhost:5433/pabrik_video?schema=public",
   ),
-  redisUrl: required("REDIS_URL", "redis://localhost:6379"),
+  redisUrl: required("REDIS_URL", "redis://localhost:6380"),
 
   searxngUrl: required("SEARXNG_URL", "http://localhost:8080").replace(
     /\/$/,

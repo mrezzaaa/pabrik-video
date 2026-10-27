@@ -49,7 +49,7 @@ lewat SSE yang membaca database.
 
 - Node.js 20.9+ (disarankan 22)
 - PostgreSQL 16 (port `5433` untuk setup lokal)
-- Redis 7 (port `6379`)
+- Redis 7 (port `6380` untuk setup lokal)
 - SearXNG dengan format JSON aktif (port `8080`)
 - [OmniRoute](https://github.com/) berjalan di `http://localhost:20128/v1`
 - VoiceStudio berjalan di `http://localhost:3900/v1` (opsional; fallback edge-tts)
@@ -112,7 +112,7 @@ Semua variabel dibaca dari `process.env`; worker memuat `.env.local` lalu `.env`
 | Variabel | Default | Keterangan |
 | --- | --- | --- |
 | `DATABASE_URL` | `postgresql://pabrik:pabrik_secret@localhost:5433/pabrik_video?schema=public` | PostgreSQL |
-| `REDIS_URL` | `redis://localhost:6379` | Redis / BullMQ |
+| `REDIS_URL` | `redis://localhost:6380` | Redis / BullMQ |
 | `SEARXNG_URL` | `http://localhost:8080` | SearXNG research |
 | `OMNIROUTE_BASE_URL` | `http://localhost:20128/v1` | Gateway LLM |
 | `OMNIROUTE_API_KEY` | `local` | API key OmniRoute |
@@ -186,7 +186,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Service: `postgres` (5433), `redis` (6379), `searxng` (8080), `web` (2000),
+Service: `postgres` (5433), `redis` (6380), `searxng` (8080), `web` (2000),
 `worker`. OmniRoute (20128) dan VoiceStudio (3900) tetap berjalan di host.
 Volume `media_*` dipakai bersama oleh web dan worker agar file audio/video
 langsung bisa disajikan.
