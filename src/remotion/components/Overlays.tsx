@@ -2,8 +2,6 @@ import React from "react";
 import {
   AbsoluteFill,
   interpolate,
-  Sequence,
-  spring,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -11,7 +9,7 @@ import { ANTON_FAMILY } from "../fonts";
 
 /**
  * Clean top bar: only a progress bar and a minimal topic pill.
- * No FPS/resolution/timecode telemetry.
+ * No transcript, no FPS/resolution/timecode telemetry, no emojis.
  */
 export const TopBar: React.FC<{ topic: string; accent: string }> = ({
   topic,
@@ -97,111 +95,109 @@ export const TopBar: React.FC<{ topic: string; accent: string }> = ({
 };
 
 /**
- * 0-3s pattern interrupt: strobe, warning tape, rapid zoom.
- * It replaces the old static orange card entirely.
+ * 0-3s visual pattern interrupt: strobe, speed lines, scan bars and a rapid
+ * zoom. Zero words — the narration and the bottom caption carry the message.
  */
-export const HookInterrupt: React.FC<{ hook: string; accent: string }> = ({
-  hook,
-  accent,
-}) => {
+export const PatternInterrupt: React.FC<{ accent: string }> = ({ accent }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const zoom = spring({
-    frame,
-    fps,
-    config: { damping: 9, mass: 0.55, stiffness: 240 },
-  });
-  const exit = interpolate(frame, [78, 90], [1, 0], {
+  const enter = interpolate(frame, [0, 6, 18], [0, 1, 0.82], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const strobe = frame < 5 ? 0.42 : frame < 8 ? 0.18 : 0;
-  const tapeShift = (frame * 5) % 72;
-  const fontSize = hook.length > 78 ? 52 : hook.length > 46 ? 64 : 80;
+  const exit = interpolate(frame, [Math.round(2.5 * fps), Math.round(3 * fps)], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const strobe = frame < 4 ? 0.5 : frame < 7 ? 0.22 : 0;
+  const sweep = interpolate(frame, [0, 34], [-120, 1120], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const bars = 9;
 
   return (
-    <AbsoluteFill style={{ pointerEvents: "none", zIndex: 45, opacity: exit }}>
+    <AbsoluteFill
+      style={{ pointerEvents: "none", zIndex: 45, opacity: exit * enter }}
+    >
       <div
         style={{
           position: "absolute",
-          top: 380,
-          left: 0,
-          right: 0,
-          height: 76,
-          background:
-            "repeating-linear-gradient(125deg, #FFD400 0px, #FFD400 36px, #0A0A0A 36px, #0A0A0A 72px)",
-          transform: `translateX(${tapeShift - 72}px) rotate(-1.2deg)`,
-          opacity: 0.96,
-          boxShadow: "0 12px 30px rgba(0,0,0,0.5)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: 470,
-          left: 0,
-          right: 0,
-          height: 56,
-          background:
-            "repeating-linear-gradient(125deg, #FFD400 0px, #FFD400 30px, #0A0A0A 30px, #0A0A0A 60px)",
-          transform: `translateX(${-tapeShift + 20}px) rotate(1deg)`,
-          opacity: 0.9,
+          inset: 0,
+          background: `radial-gradient(ellipse at 50% 42%, ${accent}22 0%, rgba(0,0,0,0) 62%)`,
         }}
       />
 
+      {/* All geometry stays inside the center stage so captions are never crossed. */}
       <div
         style={{
           position: "absolute",
-          top: 470,
-          left: 54,
-          right: 54,
-          bottom: 540,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          top: 280,
+          left: 0,
+          right: 0,
+          height: 1000,
+          overflow: "hidden",
         }}
       >
+        {Array.from({ length: bars }).map((_, index) => {
+          const height = 18 + (index % 3) * 16;
+          const y = 24 + index * 108;
+          return (
+            <div
+              key={`speed-${index}`}
+              style={{
+                position: "absolute",
+                top: y,
+                left: 0,
+                width: `${36 + (index % 4) * 14}%`,
+                height,
+                background: `linear-gradient(90deg, ${accent}00 0%, ${accent}66 45%, ${accent}00 100%)`,
+                transform: `translateX(${((frame * (12 + index * 4)) % 900) - 280}px) skewX(-24deg)`,
+                opacity: 0.26 + (index % 3) * 0.12,
+                mixBlendMode: "screen",
+              }}
+            />
+          );
+        })}
+
         <div
           style={{
-            position: "relative",
-            maxWidth: 940,
-            padding: "34px 38px 38px",
-            background: "rgba(4,6,10,0.9)",
-            border: `5px solid ${accent}`,
-            boxShadow: `18px 18px 0 ${accent}, 0 0 90px ${accent}55`,
-            transform: `rotate(-2deg) scale(${1.28 - 0.28 * zoom})`,
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            width: 220,
+            left: sweep,
+            background: `linear-gradient(90deg, transparent, ${accent}55, transparent)`,
+            mixBlendMode: "screen",
+            transform: "skewX(-14deg)",
           }}
-        >
-          <div
-            style={{
-              display: "inline-block",
-              marginBottom: 18,
-              padding: "6px 14px",
-              background: accent,
-              color: "#050505",
-              fontFamily: "ui-monospace, Menlo, monospace",
-              fontSize: 22,
-              fontWeight: 900,
-              letterSpacing: 4,
-            }}
-          >
-            ⚠ JANGAN SCROLL
-          </div>
-          <div
-            style={{
-              fontFamily: ANTON_FAMILY,
-              fontSize,
-              lineHeight: 0.96,
-              color: "#FFFFFF",
-              textTransform: "uppercase",
-              letterSpacing: -1,
-              textShadow: `0 5px 0 rgba(0,0,0,0.7), 0 0 40px ${accent}55`,
-            }}
-          >
-            {hook}
-          </div>
-        </div>
+        />
+
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 6,
+            background: accent,
+            boxShadow: `0 0 38px ${accent}`,
+            opacity: 0.8,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 6,
+            background: accent,
+            boxShadow: `0 0 38px ${accent}`,
+            opacity: 0.8,
+          }}
+        />
       </div>
 
       <AbsoluteFill
@@ -212,59 +208,6 @@ export const HookInterrupt: React.FC<{ hook: string; accent: string }> = ({
         }}
       />
     </AbsoluteFill>
-  );
-};
-
-/** Small CTA pill during the final 3s, above the caption safe zone. */
-export const CtaBadge: React.FC<{
-  durationInFrames: number;
-  accent: string;
-}> = ({ durationInFrames, accent }) => {
-  const { fps } = useVideoConfig();
-  const duration = Math.round(3.2 * fps);
-  const from = Math.max(0, durationInFrames - duration);
-
-  return (
-    <Sequence from={from} durationInFrames={duration} layout="none">
-      <CtaBadgeInner accent={accent} />
-    </Sequence>
-  );
-};
-
-const CtaBadgeInner: React.FC<{ accent: string }> = ({ accent }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const enter = spring({
-    frame,
-    fps,
-    config: { damping: 10, mass: 0.45, stiffness: 220 },
-  });
-  const pulse = 1 + Math.sin(frame / 4) * 0.02;
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: 150,
-        right: 54,
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        padding: "12px 22px",
-        borderRadius: 999,
-        background: accent,
-        color: "#050505",
-        border: "4px solid #050505",
-        boxShadow: `8px 8px 0 #050505, 0 0 40px ${accent}88`,
-        transform: `translateY(${(1 - enter) * -30}px) scale(${enter * pulse})`,
-        fontFamily: ANTON_FAMILY,
-        fontSize: 30,
-        letterSpacing: 1,
-        textTransform: "uppercase",
-        zIndex: 60,
-        pointerEvents: "none",
-      }}
-    ></div>
   );
 };
 

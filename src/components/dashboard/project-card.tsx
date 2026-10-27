@@ -1,6 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Clock3, Film, Play } from "lucide-react";
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Clapperboard,
+  Clock3,
+  Cog,
+  Film,
+  Mic,
+  PenLine,
+  Play,
+  Search,
+  TriangleAlert,
+} from "lucide-react";
 import { PipelineStrip } from "@/components/pipeline-strip";
 import { StatusBadge } from "@/components/status-badge";
 import { ViralScore } from "@/components/viral-score";
@@ -34,16 +46,16 @@ function placeholderFor(project: ProjectDTO) {
   return PLACEHOLDER_GRADIENTS[hash(project.id + project.topic) % PLACEHOLDER_GRADIENTS.length];
 }
 
-const STATUS_EMOJI: Record<ProjectStatus, string> = {
-  QUEUED: "⏳",
-  RESEARCHING: "🔎",
-  SCRIPTING: "✍️",
-  TTS_PROCESSING: "🎙️",
-  VISUAL_PLANNING: "🎬",
-  RENDERING: "⚙️",
-  DONE: "🔥",
-  FAILED: "💀",
-};
+const STATUS_ICON = {
+  QUEUED: Clock3,
+  RESEARCHING: Search,
+  SCRIPTING: PenLine,
+  TTS_PROCESSING: Mic,
+  VISUAL_PLANNING: Clapperboard,
+  RENDERING: Cog,
+  DONE: CheckCircle2,
+  FAILED: TriangleAlert,
+} satisfies Record<ProjectStatus, typeof Clock3>;
 
 export function ProjectCard({ project }: { project: ProjectDTO }) {
   const score = scoreViralPotential({
@@ -54,6 +66,7 @@ export function ProjectCard({ project }: { project: ProjectDTO }) {
   });
   const progress = STATUS_PROGRESS[project.status];
   const failed = project.status === "FAILED";
+  const StatusIcon = STATUS_ICON[project.status];
 
   return (
     <Link
@@ -81,7 +94,13 @@ export function ProjectCard({ project }: { project: ProjectDTO }) {
             <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/55">
               9:16
             </div>
-            <div className="text-4xl">{STATUS_EMOJI[project.status]}</div>
+            <StatusIcon
+              className={cn(
+                "size-7 text-white/75",
+                failed && "text-destructive",
+              )}
+              strokeWidth={1.5}
+            />
             <div className="font-mono text-[8px] uppercase leading-tight tracking-[0.12em] text-white/60">
               {project.topic.split(" ").slice(0, 3).join(" ")}
             </div>

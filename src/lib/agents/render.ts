@@ -14,7 +14,8 @@ import {
   THUMB_DIR,
   PUBLIC_DIR,
 } from "../media";
-import { completeStage, startStage } from "../pipeline";
+import { attachSceneImages } from "../images";
+import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
 import type {
   FullScript,
@@ -59,13 +60,22 @@ export async function runRender(projectId: string) {
   const thumbnailPath = path.join(THUMB_DIR, `${projectId}.jpg`);
   const propsPath = path.join(TMP_DIR, `${projectId}-reels-props.json`);
 
+  // Download real SearXNG b-roll before Remotion starts. Failures are
+  // non-fatal: the stage falls back to a procedural dark plate.
+  const scenes = await attachSceneImages(plan.scenes, projectId, project.topic);
+  const enrichedPlan: VisualPlan = { ...plan, scenes };
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { visualPlan: asJson(enrichedPlan) },
+  });
+
   const props = {
     audioSrc: stripPublicPrefix(project.audioUrl),
     duration: project.duration,
     fps: env.remotionFps,
     hook: project.hook ?? fullScript.hook,
     topic: project.topic,
-    scenes: plan.scenes,
+    scenes,
     words: words ?? [],
   };
 
@@ -130,7 +140,12 @@ export async function runRender(projectId: string) {
       status: "DONE",
       videoUrl: publicUrl(videoPath),
       thumbnailUrl: publicUrl(thumbnailPath),
-      duration: Math.ceil(videoDuration || project.duration),
+      // The audio-derived duration from the TTS stage is the source of truth.
+      // Never overwrite it with the rendered video length: rendering rounds up
+      // to whole frames, so repeating that would slowly inflate the reel and
+      // leave a captionless tail.
+      duration:
+        project.duration ?? Math.round(videoDuration * 100) / 100,
       error: null,
     },
   });

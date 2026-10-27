@@ -171,6 +171,13 @@ export const SceneBackground: React.FC<SceneProps> = ({ scene, index }) => {
         style={{
           position: "absolute",
           inset: 0,
+          background: "rgba(2,4,8,0.26)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
           background:
             "radial-gradient(ellipse at 50% 48%, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.32) 82%, rgba(0,0,0,0.72) 100%)",
         }}

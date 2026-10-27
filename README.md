@@ -42,7 +42,7 @@ lewat SSE yang membaca database.
 | `research` | `src/lib/agents/research.ts` | fakta, sumber, angka, angle viral |
 | `scriptwriting` | `src/lib/agents/scriptwriter.ts` | hook + naskah 30–45 detik |
 | `tts` | `src/lib/agents/tts.ts` | `public/audio/{id}.mp3` + word timestamps |
-| `visual-planning` | `src/lib/agents/visual-planner.ts` | scene, gerakan kamera, emoji, warna |
+| `visual-planning` | `src/lib/agents/visual-planner.ts` | b-roll query, infografis SVG, gerakan kamera, warna |
 | `render` | `src/lib/agents/render.ts` | `public/videos/{id}.mp4` + thumbnail |
 
 ## Kebutuhan
@@ -126,7 +126,6 @@ Semua variabel dibaca dari `process.env`; worker memuat `.env.local` lalu `.env`
 | `UNLIMITEDTTS_LANGUAGE` | `id-ID` | Fallback edge-tts |
 | `UNLIMITEDTTS_VOICE_ID` | `id-ID-ArdiNeural` | Voice fallback |
 | `UNLIMITEDTTS_SPEED` | `1.1` | Kecepatan fallback |
-| `PEXELS_API_KEY` | *(kosong)* | B-roll video gratis dari Pexels; kosong = gradient animasi |
 | `REMOTION_CONCURRENCY` | `2` | Concurrency render |
 | `REMOTION_GL` | `angle` (macOS) / `swangle` (Docker) | Renderer WebGL |
 | `WORKER_CONCURRENCY` | `1` | Job paralel per worker |
@@ -153,15 +152,23 @@ Komposisi `Reels` berada di `src/remotion/`. Spesifikasi render:
 
 - 1080×1920, 30 fps, H.264, CRF 18
 - Scene anti-boring: maksimal **2.5 detik** per scene, motion berganti
-  (`zoomIn`/`zoomOut`/`shake`/`pan`/`panLeft`), Ken Burns 1 → 1.2
-- Background gradient berganti tiap scene; opsional b-roll video Pexels
-  (portrait, fallback otomatis ke gradient)
-- Emoji parallax 400 px (opacity 0.2, blur 1 px)
-- Text hook pop di awal scene + animasi counter untuk angka (230 tulang,
-  48 km/jam, 70%, dst.)
+  (`zoomIn`/`zoomOut`/`shake`/`pan`/`panLeft`)
+- **Caption bawah adalah satu-satunya renderer transkrip.** Center stage tidak
+  pernah mengulang kalimat narasi; isinya hanya angka/metrik atau label sumbu
+  1–2 kata.
+- **Tanpa emoji di mana pun** (UI, caption, stage). Semua output LLM melewati
+  post-processor regex yang membuang rentang Unicode emoji.
+- **B-roll nyata dari SearXNG**: visual planner menulis `imageSearchQuery`,
+  render mengunduh gambar ke `public/images/{projectId}/` lalu menormalkannya
+  ke 1080×1350. Tiga varian frame: full-bleed, split reveal, dan glass rounded.
+- **Infografis SVG animatif**: `SVG_COUNTER` (odometer), `SVG_GAUGE` (arc
+  meter), `SVG_BAR_CHART` (spring bars), `SVG_WAVEFORM` (ECG/flatline).
 - Caption karaoke per kata, maksimal 3 kata per baris
 - Kata aktif berwarna kuning dengan skala 1.2 dan stroke hitam 4 px
-- Whoosh sting di 0 detik, headline, progress bar, dan transisi scene
+- Tanpa CTA (komen/share/like/follow/part 2) dan tanpa badge CTA; naskah
+  ditutup dengan refleksi/open loop natural
+- TTS disintesis per klausa/kalimat utuh lalu digabung dengan jeda 120 ms,
+  sehingga tidak ada pemotongan di tengah kata atau plosif yang terpotong
 
 Preview tanpa render:
 
@@ -211,8 +218,9 @@ src/
     pipeline.ts        lifecycle stage + status project
     queue.ts           koneksi Redis + BullMQ
     omniroute.ts       klien LLM (JSON + teks)
-    tts.ts             VoiceStudio + edge-tts fallback
-    searxng.ts         pencarian web
+    tts.ts             VoiceStudio + edge-tts fallback (chunk per kalimat)
+    searxng.ts         pencarian web + gambar
+    images.ts          unduh/normalisasi b-roll SearXNG ke public/images
     alignment.ts       estimasi timestamp kata + caption 3 kata
     media.ts           path publik, ffprobe, thumbnail
   remotion/            komposisi Reels 9:16

@@ -1,0 +1,16 @@
+
+> pabrik-video@0.1.0 worker
+> tsx src/worker/index.ts
+
+◇ injected env (27) from .env.local
+◇ injected env (1) from .env
+[worker] online queue=pabrik-video-queue redis=redis://localhost:6379 concurrency=1
+[worker] active visual-planning (cmvplhalk00000sidkvv27os6-visual-planning)
+[worker] visual-planning start project=cmvplhalk00000sidkvv27os6 attempt=1
+[worker] visual-planning done project=cmvplhalk00000sidkvv27os6
+[worker] active render (cmvplhalk00000sidkvv27os6-render)
+[worker] render start project=cmvplhalk00000sidkvv27os6 attempt=1
+[images] 12/12 gambar b-roll berhasil diunduh.
+[render:cmvplhalk00000sidkvv27os6] npm warn install-scripts .npmrc allow-scripts setting is being ignored because --allow-scripts was passed on the command line
+
+[worker] render done project=cmvplhalk00000sidkvv27os6

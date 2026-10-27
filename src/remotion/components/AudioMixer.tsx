@@ -16,9 +16,8 @@ type Sfx = { src: string; at: number; volume: number; length?: number };
  * SFX + BGM engine.
  * - scene transition: swipe/whoosh alternates
  * - danger/warn: sub-bass impact / alert glitch
- * - stat/counter: pop + counter ticks
- * - CTA: notification ding
- * - BGM ducks under the narration and lifts in the gaps
+ * - counters and bars: pop + mechanical ticks
+ * No CTA ding: the script never ends with a call to action.
  */
 export const AudioMixer: React.FC<{
   scenes: VisualScene[];
@@ -37,11 +36,6 @@ export const AudioMixer: React.FC<{
       const start = scene.startTime;
       const danger = scene.theme === "danger";
       const warn = scene.theme === "warn";
-      const isCta =
-        index === scenes.length - 1 ||
-        /komen|part 2|follow|share/i.test(
-          `${scene.headline} ${scene.subheadline ?? ""} ${scene.tags?.join(" ") ?? ""}`,
-        );
 
       if (index > 0) {
         list.push({
@@ -67,11 +61,8 @@ export const AudioMixer: React.FC<{
         });
       }
 
-      const hasStat =
-        scene.layout === "HERO_STAT_CARD" ||
-        scene.visual?.kind === "stat" ||
-        Boolean(scene.overlay?.counter);
-      if (hasStat) {
+      const hasCounter = scene.visualType === "SVG_COUNTER";
+      if (hasCounter) {
         list.push({
           src: "audio/pop.mp3",
           at: start + 0.02,
@@ -86,14 +77,14 @@ export const AudioMixer: React.FC<{
             length: 0.18,
           });
         });
-      }
-
-      if (isCta) {
-        list.push({
-          src: "audio/notification-ding.mp3",
-          at: start + 0.18,
-          volume: 0.4,
-          length: 0.9,
+      } else if (scene.visualType === "SVG_BAR_CHART") {
+        [0.08, 0.22, 0.36].forEach((offset, tickIndex) => {
+          list.push({
+            src: "audio/pop.mp3",
+            at: start + offset,
+            volume: 0.2 - tickIndex * 0.03,
+            length: 0.24,
+          });
         });
       }
     });
@@ -123,11 +114,7 @@ export const AudioMixer: React.FC<{
 
   return (
     <>
-      <Audio
-        src={staticFile("audio/bgm-dark.mp3")}
-        loop
-        volume={bgmVolume}
-      />
+      <Audio src={staticFile("audio/bgm-dark.mp3")} loop volume={bgmVolume} />
       {cues.map((cue, index) => (
         <Sequence
           key={`${cue.src}-${cue.at}-${index}`}

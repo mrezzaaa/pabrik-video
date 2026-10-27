@@ -49,24 +49,48 @@ export const motionSchema = z.enum([
   "panLeft",
 ]);
 export const textAnimationSchema = z.enum(["karaoke", "popIn", "typewriter"]);
-export const sceneLayoutSchema = z.enum([
-  "HERO_STAT_CARD",
-  "B_ROLL_FRAME",
-  "SPLIT_COMPARISON",
-  "FULL_KINETIC_IMPACT",
-]);
 export const sceneThemeSchema = z.enum(["danger", "warn", "info", "success"]);
+export const visualTypeSchema = z.enum([
+  "B_ROLL_IMAGE",
+  "SVG_GAUGE",
+  "SVG_BAR_CHART",
+  "SVG_COUNTER",
+  "SVG_WAVEFORM",
+]);
+export const imageStyleSchema = z.enum(["fullBleed", "split", "glass"]);
 
-export const numberCounterSchema = z.object({
+export const sceneMetricSchema = z.object({
   value: looseNumber,
   suffix: z.string().optional().default(""),
-  prefix: z.string().optional().default(""),
+  label: z.string().optional().default(""),
 });
 
-export const sceneOverlaySchema = z.object({
-  bigEmoji: z.string().optional().default(""),
-  textHook: z.string().optional().default(""),
-  counter: numberCounterSchema.optional().nullable(),
+export const sceneCounterSchema = z.object({
+  from: looseNumber.optional().default(0),
+  to: looseNumber.optional().default(0),
+  suffix: z.string().optional().default(""),
+  label: z.string().optional().default(""),
+});
+
+export const sceneRangeSchema = z.object({
+  from: looseNumber.optional().default(0),
+  to: looseNumber.optional().default(0),
+  min: looseNumber.optional().default(0),
+  max: looseNumber.optional().default(0),
+  unit: z.string().optional().default(""),
+  label: z.string().optional().default(""),
+});
+
+export const sceneBarSchema = z.object({
+  label: z.string().optional().default(""),
+  value: looseNumber.optional().default(0),
+  unit: z.string().optional().default(""),
+  highlight: z.boolean().optional().default(false),
+});
+
+export const sceneWaveSchema = z.object({
+  label: z.string().optional().default(""),
+  dip: looseNumber.optional().default(0.55),
 });
 
 export const visualSceneSchema = z.object({
@@ -94,16 +118,16 @@ export const visualSceneSchema = z.object({
       type: textAnimationSchema.default("karaoke"),
     })
     .default({ type: "karaoke" }),
-  bRollKeywords: z.array(z.string()).default([]),
-  overlayEmoji: z.string().default("🔥"),
-  overlay: sceneOverlaySchema.optional(),
-  layout: sceneLayoutSchema.optional(),
+  visualType: visualTypeSchema.optional(),
+  imageSearchQuery: z.string().optional().default(""),
+  imageStyle: imageStyleSchema.optional(),
+  stageLabel: z.string().optional().default(""),
+  metric: sceneMetricSchema.optional(),
+  counter: sceneCounterSchema.optional(),
+  range: sceneRangeSchema.optional(),
+  bars: z.array(sceneBarSchema).optional().default([]),
+  wave: sceneWaveSchema.optional(),
   theme: sceneThemeSchema.optional(),
-  subheadline: z.string().optional().default(""),
-  tags: z.array(z.string()).optional().default([]),
-  // Divalidasi terpisah (cleanVisual) supaya visual yang rusak tidak menggagalkan seluruh plan.
-  visual: z.unknown().optional(),
-  headline: z.string().default(""),
   accentColor: z.string().default("#39FF14"),
 });
 

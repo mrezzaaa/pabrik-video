@@ -10,20 +10,10 @@ import { groupCaptionPages } from "../../lib/alignment";
 import type { WordTimestamp } from "../../lib/types";
 import { ANTON_FAMILY } from "../fonts";
 
-const EMPHASIS_EMOJI = ["😱", "🔥", "🤯", "👀", "💥", "⚠️", "🧠", "💀"];
-
-function emojiFor(word: string) {
-  const hash = Array.from(word).reduce(
-    (sum, character) => sum + character.codePointAt(0)!,
-    0,
-  );
-  return EMPHASIS_EMOJI[hash % EMPHASIS_EMOJI.length];
-}
-
 /**
- * Karaoke captions in the FB Reels safe zone (bottom: 220px).
- * Word pop uses a stiff spring; the emphasis emoji flies up with rotation
- * instead of sitting statically on the pill.
+ * The only transcript renderer in the whole video.
+ * Karaoke captions in the FB Reels safe zone (bottom: 220px), max three words
+ * per page, current word yellow at 1.2x with a 4px black stroke. No emojis.
  */
 export const Caption: React.FC<{
   words: WordTimestamp[];
@@ -66,18 +56,8 @@ export const Caption: React.FC<{
   });
 
   const charCount = page.text.length;
-  const fontSize = charCount > 17 ? 68 : charCount > 13 ? 78 : 92;
-  const currentWord = page.words[currentWordIndex]?.word ?? "";
-  const emphasis =
-    currentWordIndex >= 0 && Boolean(page.words[currentWordIndex]?.emphasis);
-
-  const emojiSpring = spring({
-    frame: frame - (page.words[currentWordIndex]?.start ?? pageStart) * fps,
-    fps,
-    config: { damping: 9, mass: 0.4, stiffness: 260 },
-  });
-  const emojiY = interpolate(emojiSpring, [0, 1], [54, 0]);
-  const emojiRotate = interpolate(emojiSpring, [0, 1], [-32, 12]);
+  const fontSize =
+    charCount > 24 ? 54 : charCount > 19 ? 62 : charCount > 15 ? 72 : 88;
 
   return (
     <AbsoluteFill
@@ -91,42 +71,24 @@ export const Caption: React.FC<{
     >
       <div
         style={{
-          position: "relative",
           opacity: enter * exit,
-          transform: `translateY(${(1 - enter) * 54}px) scale(${interpolate(enter, [0, 1], [0.88, 1])})`,
+          transform: `translateY(${(1 - enter) * 54}px) scale(${interpolate(enter, [0, 1], [0.9, 1])})`,
+          padding: "18px 34px 22px",
+          backgroundColor: "rgba(0,0,0,0.78)",
+          border: "3px solid rgba(255,255,255,0.14)",
+          borderLeft: `8px solid ${accentColor}`,
+          borderRadius: 22,
+          boxShadow: `0 20px 54px rgba(0,0,0,0.68), 0 0 36px ${accentColor}22`,
+          backdropFilter: "blur(4px)",
+          maxWidth: 1000,
         }}
       >
-        {emphasis || currentWordIndex >= 0 ? (
-          <div
-            style={{
-              position: "absolute",
-              right: -30,
-              top: -108,
-              fontSize: 84,
-              transform: `translateY(${emojiY}px) rotate(${emojiRotate}deg) scale(${interpolate(emojiSpring, [0, 1], [0.4, 1])})`,
-              filter: "drop-shadow(0 10px 14px rgba(0,0,0,0.8))",
-              opacity: interpolate(emojiSpring, [0, 1], [0, 1]),
-              zIndex: 2,
-            }}
-          >
-            {emojiFor(currentWord || page.text)}
-          </div>
-        ) : null}
-
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 24,
-            padding: "20px 32px 24px",
-            backgroundColor: "rgba(0,0,0,0.74)",
-            border: "3px solid rgba(255,255,255,0.14)",
-            borderLeft: `8px solid ${accentColor}`,
-            borderRadius: 22,
-            boxShadow: `0 20px 54px rgba(0,0,0,0.68), 0 0 36px ${accentColor}22`,
-            backdropFilter: "blur(4px)",
-            maxWidth: 980,
+            gap: 38,
           }}
         >
           {page.words.map((word, index) => {
@@ -164,6 +126,7 @@ export const Caption: React.FC<{
                     ? "0 0 28px rgba(255,255,0,0.75), 5px 5px 0 rgba(0,0,0,0.9)"
                     : "4px 4px 0 rgba(0,0,0,0.8)",
                   transform: `scale(${pop}) translateY(${isCurrent ? -4 : 0}px)`,
+                  transformOrigin: "center center",
                   display: "inline-block",
                 }}
               >

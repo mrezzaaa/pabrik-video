@@ -1,7 +1,9 @@
 import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
+import path from "node:path";
 import { promisify } from "node:util";
 import { env } from "./env";
+import { speechChunks } from "./text";
 
 const execFileAsync = promisify(execFile);
 
@@ -149,5 +151,145 @@ export async function synthesizeToFile(
           : String(fallbackError)
       }`,
     );
+  }
+}
+
+const CHUNK_GAP_SECONDS = 0.12;
+
+async function encodeWav(input: string, output: string) {
+  await execFileAsync("ffmpeg", [
+    "-y",
+    "-i",
+    input,
+    "-ar",
+    "44100",
+    "-ac",
+    "1",
+    "-c:a",
+    "pcm_s16le",
+    output,
+  ]);
+}
+
+/**
+ * Synthesize complete clauses/full sentences separately, then concatenate with
+ * a short natural gap. This prevents mid-word splicing (the old pipeline fed
+ * short per-scene fragments to the engine and clipped plosives at 00:25).
+ *
+ * All chunks use the same provider so the voice never changes mid-video.
+ */
+export async function synthesizeChunkedToFile(
+  text: string,
+  outputPath: string,
+  maxChars = 190,
+): Promise<SynthesisResult & { chunks: number }> {
+  const chunks = speechChunks(text, maxChars);
+  if (chunks.length <= 1) {
+    const result = await synthesizeToFile(chunks[0] ?? text, outputPath);
+    return { ...result, chunks: 1 };
+  }
+
+  const workDir = path.join(
+    path.dirname(outputPath),
+    `.tts-chunks-${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+  );
+  await fs.mkdir(workDir, { recursive: true });
+
+  try {
+    const files: string[] = [];
+    let provider: SynthesisResult["provider"] = "voicestudio";
+    let voice = env.voiceDefaultId;
+
+    for (let index = 0; index < chunks.length; index += 1) {
+      const chunkPath = path.join(
+        workDir,
+        `chunk-${String(index).padStart(2, "0")}.mp3`,
+      );
+
+      if (index === 0) {
+        try {
+          await synthesizeWithVoiceStudio(chunks[index], chunkPath);
+          provider = "voicestudio";
+          voice = env.voiceDefaultId;
+        } catch (error) {
+          console.warn(
+            "[tts] VoiceStudio gagal untuk chunk pertama, memakai UnlimitedTTS untuk semua chunk:",
+            error instanceof Error ? error.message : error,
+          );
+          await synthesizeWithUnlimitedTts(chunks[index], chunkPath);
+          provider = "unlimitedtts";
+          voice = resolveEdgeVoice();
+        }
+      } else if (provider === "voicestudio") {
+        await synthesizeWithVoiceStudio(chunks[index], chunkPath);
+      } else {
+        await synthesizeWithUnlimitedTts(chunks[index], chunkPath);
+      }
+
+      files.push(chunkPath);
+    }
+
+    const gapPath = path.join(workDir, "gap.wav");
+    await execFileAsync("ffmpeg", [
+      "-y",
+      "-f",
+      "lavfi",
+      "-i",
+      "anullsrc=r=44100:cl=mono",
+      "-t",
+      String(CHUNK_GAP_SECONDS),
+      "-c:a",
+      "pcm_s16le",
+      gapPath,
+    ]);
+
+    const wavs: string[] = [];
+    for (let index = 0; index < files.length; index += 1) {
+      const wavPath = path.join(workDir, `chunk-${String(index).padStart(2, "0")}.wav`);
+      await encodeWav(files[index], wavPath);
+      wavs.push(wavPath);
+    }
+
+    const listLines: string[] = [];
+    wavs.forEach((wav, index) => {
+      listLines.push(`file '${wav.replace(/'/g, "'\\''")}'`);
+      if (index < wavs.length - 1) {
+        listLines.push(`file '${gapPath.replace(/'/g, "'\\''")}'`);
+      }
+    });
+    const listPath = path.join(workDir, "concat.txt");
+    await fs.writeFile(listPath, `${listLines.join("\n")}\n`, "utf8");
+
+    await execFileAsync(
+      "ffmpeg",
+      [
+        "-y",
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        listPath,
+        "-c:a",
+        "libmp3lame",
+        "-b:a",
+        "192k",
+        "-ar",
+        "44100",
+        "-ac",
+        "1",
+        outputPath,
+      ],
+      { maxBuffer: 8 * 1024 * 1024 },
+    );
+
+    const stat = await fs.stat(outputPath);
+    if (stat.size < 1_000) {
+      throw new Error("Hasil konkatenasi TTS kosong.");
+    }
+
+    return { provider, voice, bytes: stat.size, chunks: chunks.length };
+  } finally {
+    await fs.rm(workDir, { recursive: true, force: true }).catch(() => undefined);
   }
 }

@@ -1,12 +1,31 @@
-"use client";
-
 import { useMemo } from "react";
 import { Player } from "@remotion/player";
 import { Reels } from "@/remotion/Reels";
 import { FPS } from "@/remotion/constants";
 import { alignWords } from "@/lib/alignment";
 import type { ProjectDTO, VisualScene } from "@/lib/types";
-import { EMOJI_POOL, GRADIENT_PALETTES } from "@/lib/viral";
+import { GRADIENT_PALETTES } from "@/lib/viral";
+
+const MOTIONS = ["zoomIn", "shake", "zoomOut", "pan", "panLeft"] as const;
+const ANIMATIONS = ["karaoke", "popIn", "typewriter"] as const;
+const IMAGE_STYLES = ["fullBleed", "glass", "split"] as const;
+
+function keywordsFor(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((word) => word.length > 4)
+    .slice(0, 3)
+    .join(" ");
+}
+
+function firstNumber(text: string) {
+  const match = text.match(/(\d{1,4})/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) && value >= 3 ? value : null;
+}
 
 function fallbackScenes(project: ProjectDTO, duration: number): VisualScene[] {
   const sentences = project.fullScript?.sentences ?? [];
@@ -16,15 +35,17 @@ function fallbackScenes(project: ProjectDTO, duration: number): VisualScene[] {
         id: "preview-1",
         startTime: 0,
         endTime: duration,
+        duration,
         background: {
           type: "gradient",
           value: GRADIENT_PALETTES[0],
         },
         motion: { type: "zoomIn", intensity: 0.2 },
         textAnimation: { type: "karaoke" },
-        bRollKeywords: [project.topic],
-        overlayEmoji: "🔥",
-        headline: project.hook?.split(" ").slice(0, 5).join(" ") ?? "PREVIEW",
+        visualType: "B_ROLL_IMAGE",
+        imageSearchQuery: project.topic,
+        imageStyle: "fullBleed",
+        stageLabel: "",
         accentColor: "#39FF14",
       },
     ];
@@ -33,31 +54,52 @@ function fallbackScenes(project: ProjectDTO, duration: number): VisualScene[] {
   const weights = sentences.map((sentence) => sentence.text.length || 1);
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   let cursor = 0;
-  const motions = ["zoomIn", "shake", "zoomOut", "pan"] as const;
-  const animations = ["karaoke", "popIn", "typewriter"] as const;
 
   return sentences.map((sentence, index) => {
     const slice = (weights[index] / total) * duration;
     const start = cursor;
     cursor += slice;
-    return {
+    const end = index === sentences.length - 1 ? duration : cursor;
+    const value = firstNumber(sentence.text);
+    const isYear = value !== null && value >= 1800 && value <= 2100;
+    const query = keywordsFor(sentence.text) || project.topic;
+
+    const base = {
       id: `preview-${index + 1}`,
       startTime: start,
-      endTime: index === sentences.length - 1 ? duration : cursor,
+      endTime: end,
+      duration: Math.max(0.5, end - start),
       background: {
-        type: "gradient",
+        type: "gradient" as const,
         value: GRADIENT_PALETTES[index % GRADIENT_PALETTES.length],
       },
-      motion: { type: motions[index % motions.length], intensity: 0.22 },
-      textAnimation: { type: animations[index % animations.length] },
-      bRollKeywords: sentence.text
-        .replace(/[^\p{L}\p{N}\s]/gu, "")
-        .split(/\s+/)
-        .filter((word) => word.length > 4)
-        .slice(0, 3),
-      overlayEmoji: EMOJI_POOL[index % EMOJI_POOL.length],
-      headline: sentence.text.split(" ").slice(0, 4).join(" ").toUpperCase(),
+      motion: {
+        type: MOTIONS[index % MOTIONS.length],
+        intensity: 0.22,
+      },
+      textAnimation: {
+        type: ANIMATIONS[index % ANIMATIONS.length],
+      },
+      imageSearchQuery: query,
+      imageStyle: IMAGE_STYLES[index % IMAGE_STYLES.length],
+      stageLabel: isYear ? "TAHUN" : "DATA",
+      theme: "info" as const,
       accentColor: ["#39FF14", "#FF2E93", "#00D4FF", "#F5FF00"][index % 4],
+    };
+
+    if (value !== null) {
+      return {
+        ...base,
+        visualType: "SVG_COUNTER" as const,
+        counter: { from: 0, to: value, suffix: "", label: base.stageLabel },
+        metric: { value, suffix: "", label: base.stageLabel },
+      };
+    }
+
+    return {
+      ...base,
+      stageLabel: "",
+      visualType: "B_ROLL_IMAGE" as const,
     };
   });
 }

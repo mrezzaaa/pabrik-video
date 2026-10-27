@@ -9,7 +9,7 @@ import {
 } from "../media";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
-import { synthesizeToFile } from "../tts";
+import { synthesizeChunkedToFile } from "../tts";
 import type { FullScript } from "../types";
 
 /** Facebook Reels hard limit for this pipeline. */
@@ -35,7 +35,8 @@ export async function runTts(projectId: string) {
   if (!narration) throw new Error("Naskah kosong, tidak ada yang bisa di-TTS.");
 
   const audioPath = path.join(AUDIO_DIR, `${projectId}.mp3`);
-  const synthesis = await synthesizeToFile(narration, audioPath);
+  // Sentence-boundary chunking keeps plosives intact and avoids mid-word cuts.
+  const synthesis = await synthesizeChunkedToFile(narration, audioPath);
   let duration = await ffprobeDuration(audioPath);
   if (duration < 0.5) {
     throw new Error("Audio TTS terlalu pendek / rusak.");
@@ -62,7 +63,10 @@ export async function runTts(projectId: string) {
     where: { id: projectId },
     data: {
       audioUrl: publicUrl(audioPath),
-      duration: Math.min(MAX_REELS_SECONDS, Math.ceil(duration)),
+      duration: Math.min(
+        MAX_REELS_SECONDS,
+        Math.round(duration * 100) / 100,
+      ),
       wordTimestamps: asJson(words),
       fullScript: asJson(updatedScript),
     },
@@ -74,6 +78,7 @@ export async function runTts(projectId: string) {
     duration: Math.round(duration * 100) / 100,
     words: words.length,
     bytes: synthesis.bytes,
+    chunks: synthesis.chunks,
   });
 
   return { audioUrl: publicUrl(audioPath), duration, words, captions };

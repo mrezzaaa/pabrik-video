@@ -604,7 +604,7 @@ export function DashboardClient({
               ].map((label) => (
                 <span key={`${copy}-${label}`} className="mx-5 flex items-center gap-5">
                   <span>{label}</span>
-                  <span className="text-primary/50">✦</span>
+                  <span className="text-primary/50">{"//"}</span>
                 </span>
               ))}
             </span>

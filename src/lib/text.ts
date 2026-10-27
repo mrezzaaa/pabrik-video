@@ -6,11 +6,72 @@
 
 const WORD_SPLIT = /\s+/;
 
+/**
+ * Any pictographic / emoji / dingbat codepoint. Emojis are banned from the
+ * whole pipeline: they are not rendered, not spoken, and never stored.
+ */
+const EMOJI_PATTERN =
+  /[\u{1F000}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}]/gu;
+
+export function stripEmoji(value: string): string {
+  return value.replace(EMOJI_PATTERN, "");
+}
+
 /** Collapse whitespace and strip control characters, keeping punctuation. */
 export function normalizeCopy(value: string): string {
-  return value
+  return stripEmoji(value)
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Speech-safe narration: no emojis, no ellipses, no repeated punctuation, and
+ * always a single space after a sentence terminator. Clean input keeps TTS
+ * from clipping plosives at odd internal chunk boundaries.
+ */
+export function normalizeSpeech(value: string): string {
+  return normalizeCopy(value)
+    .replace(/\u2026/g, ",")
+    .replace(/\.{2,}/g, ",")
+    .replace(/[—–]/g, ", ")
+    .replace(/([.!?,;:])(?=\S)/g, "$1 ")
+    .replace(/\s+([,.!?;:])/g, "$1")
+    .replace(/,\s*,/g, ",")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Split narration into TTS chunks at sentence boundaries, never mid-word. */
+export function speechChunks(value: string, maxChars = 190): string[] {
+  const text = normalizeSpeech(value);
+  if (!text) return [];
+
+  const sentences = text
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const chunks: string[] = [];
+  let current = "";
+
+  for (const sentence of sentences) {
+    const next = current ? `${current} ${sentence}` : sentence;
+    if (current && next.length > maxChars) {
+      chunks.push(current);
+      current = sentence;
+    } else {
+      current = next;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks.length > 0 ? chunks : [text];
+}
+
+/** Keep only the first 1-2 words of an axis label (never a sentence). */
+export function axisLabel(value: string, maxChars = 16): string {
+  return clipWords(normalizeCopy(value).replace(/[:.].*$/, ""), maxChars, 2)
+    .toUpperCase()
     .trim();
 }
 

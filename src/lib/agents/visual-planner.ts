@@ -1,26 +1,30 @@
 import { chatJSON } from "../omniroute";
-import { searchPexelsVideos } from "../pexels";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
 import { visualPlanSchema, type VisualPlanOutput } from "../schemas";
-import { cleanCopy, clipWords, formatCounter, wordCount } from "../text";
-import { cleanVisual } from "../visual-spec";
+import {
+  axisLabel,
+  normalizeCopy,
+  stripEmoji,
+} from "../text";
 import type {
   FullScript,
+  ImageFrameStyle,
   MotionType,
-  SceneLayout,
+  SceneBar,
+  SceneCounter,
+  SceneMetric,
+  SceneRange,
   SceneTheme,
+  SceneWave,
   ScriptSentence,
   TextAnimationType,
   VisualPlan,
   VisualScene,
+  VisualType,
   WordTimestamp,
 } from "../types";
-import {
-  EMOJI_POOL,
-  GRADIENT_PALETTES,
-  VISUAL_SYSTEM_PROMPT,
-} from "../viral";
+import { GRADIENT_PALETTES, VISUAL_SYSTEM_PROMPT } from "../viral";
 
 const MOTIONS: MotionType[] = [
   "zoomIn",
@@ -31,6 +35,7 @@ const MOTIONS: MotionType[] = [
 ];
 const ANIMATIONS: TextAnimationType[] = ["karaoke", "popIn", "typewriter"];
 const ACCENTS = ["#39FF14", "#F5FF00", "#FF2E93", "#00D4FF", "#FF6A00"];
+const IMAGE_STYLES: ImageFrameStyle[] = ["fullBleed", "glass", "split"];
 
 const STOPWORDS = new Set([
   "yang",
@@ -68,9 +73,14 @@ const STOPWORDS = new Set([
   "masih",
   "cuma",
   "banget",
+  "padahal",
+  "sekarang",
+  "coba",
+  "ingat",
 ]);
 
 type Timing = { start: number; end: number };
+type Candidate = VisualPlanOutput["scenes"][number];
 
 function sentenceTimings(
   sentences: ScriptSentence[],
@@ -106,98 +116,6 @@ function sentenceTimings(
   });
 }
 
-function cleanHeadline(value: string, fallback: string, sourceText = "") {
-  // Word-safe + grounded in the narration: garbled tokens are dropped instead
-  // of being rendered (no more "RCUN DI KULIT").
-  const cleaned = cleanCopy(value, sourceText, 30, 4);
-  if (cleaned) return cleaned.toUpperCase();
-  return clipWords(fallback, 30, 4).toUpperCase();
-}
-
-/**
- * 2-3 word contextual callout.
- * A single echoed word (KULIT / PUTIH / AKTIF) is explicitly rejected: it is
- * expanded with a second grounded keyword or replaced by the stat label.
- */
-function calloutFor(
-  candidate: VisualPlanOutput["scenes"][number] | undefined,
-  sentence: ScriptSentence,
-  number: ReturnType<typeof parseNumber>,
-  visual: ReturnType<typeof cleanVisual>,
-  headline: string,
-) {
-  const raw = candidate?.subheadline || candidate?.overlay?.textHook || "";
-  const cleaned = cleanCopy(raw, sentence.text, 26, 3);
-  if (wordCount(cleaned) >= 2) return cleaned.toUpperCase();
-
-  if (number) {
-    return `${formatCounter(number.value)}${number.suffix}`.trim().toUpperCase();
-  }
-
-  if (visual?.kind === "stat") {
-    return `${formatCounter(visual.value)}${visual.suffix ? ` ${visual.suffix}` : ""}`
-      .trim()
-      .toUpperCase();
-  }
-
-  const used = headline.toUpperCase();
-  const keywords = keywordsFor(sentence).filter(
-    (keyword) => !used.includes(keyword.toUpperCase()),
-  );
-  if (keywords.length >= 2) {
-    return `${keywords[0]} ${keywords[1]}`.toUpperCase();
-  }
-
-  const headlineWords = headline.split(/\s+/).filter(Boolean);
-  const first = keywords[0] ?? headlineWords[1] ?? "FAKTA";
-  const second = headlineWords[0] ?? "INI";
-  return `${first} ${second}`.toUpperCase().slice(0, 26);
-}
-
-function tagsFor(
-  candidate: VisualPlanOutput["scenes"][number] | undefined,
-  sentence: ScriptSentence,
-) {
-  const raw = (candidate?.tags ?? [])
-    .map((tag) => clipWords(tag, 18, 3).toUpperCase())
-    .filter(Boolean)
-    .slice(0, 3);
-  if (raw.length > 0) return raw;
-
-  const keywords = keywordsFor(sentence).slice(0, 3);
-  return keywords.map((keyword) => keyword.toUpperCase());
-}
-
-function resolveLayout(
-  raw: SceneLayout | undefined,
-  visual: ReturnType<typeof cleanVisual>,
-  hasNumber: boolean,
-  previous: SceneLayout | null,
-): SceneLayout {
-  // Content wins over the LLM's suggestion: a stat must stay a hero card, a
-  // comparison must stay a split layout, etc.
-  const base: SceneLayout = visual
-    ? visual.kind === "stat"
-      ? "HERO_STAT_CARD"
-      : visual.kind === "compare"
-        ? "SPLIT_COMPARISON"
-        : visual.kind === "stamp"
-          ? "FULL_KINETIC_IMPACT"
-          : "B_ROLL_FRAME"
-    : hasNumber
-      ? "HERO_STAT_CARD"
-      : (raw ?? "B_ROLL_FRAME");
-
-  // Only rotate layouts that do not lose information when swapped.
-  if (
-    base === previous &&
-    (base === "B_ROLL_FRAME" || base === "FULL_KINETIC_IMPACT")
-  ) {
-    return base === "B_ROLL_FRAME" ? "FULL_KINETIC_IMPACT" : "B_ROLL_FRAME";
-  }
-  return base;
-}
-
 function hexToRgb(value: string) {
   if (!/^#[0-9a-f]{6}$/i.test(value)) return null;
   return {
@@ -207,35 +125,7 @@ function hexToRgb(value: string) {
   };
 }
 
-function resolveTheme(
-  raw: SceneTheme | undefined,
-  sentence: ScriptSentence,
-  accent: string,
-  visual: ReturnType<typeof cleanVisual>,
-): SceneTheme {
-  const text = sentence.text.toLowerCase();
-  if (
-    visual?.kind === "stamp" &&
-    (visual.word === "BAHAYA" || visual.word === "MITOS")
-  ) {
-    return "danger";
-  }
-  if (/bahaya|racun|salah|mitos|dilarang|risiko|gagal|beracun|fatal/.test(text)) {
-    return "danger";
-  }
-  if (/aman|solusi|benar|terbukti|menyelamatkan/.test(text)) return "success";
-  if (/waspada|hati-hati|awas|jangan/.test(text)) return "warn";
-  if (raw) return raw;
-
-  const rgb = hexToRgb(accent);
-  if (rgb && rgb.r > rgb.g * 1.25 && rgb.r > rgb.b * 1.25) return "warn";
-  return "info";
-}
-
-/**
- * Reject near-white / near-black / washed-out accent colors from the LLM.
- * They make the headline glow and hook card unreadable on bright gradients.
- */
+/** Reject near-white / near-black / washed-out accent colors from the LLM. */
 function pickAccent(value: string, index: number) {
   if (/^#[0-9a-f]{6}$/i.test(value)) {
     const r = Number.parseInt(value.slice(1, 3), 16) / 255;
@@ -275,9 +165,38 @@ function pickBackground(value: string, index: number) {
 
 const MAX_SCENE_SECONDS = 2.5;
 
+const SPOKEN_NUMBERS: Array<[RegExp, string]> = [
+  [/\bdua belas\b/g, "12"],
+  [/\bsebelas\b/g, "11"],
+  [/\bsepuluh\b/g, "10"],
+  [/\bsembilan\b/g, "9"],
+  [/\bdelapan\b/g, "8"],
+  [/\btujuh\b/g, "7"],
+  [/\benam\b/g, "6"],
+  [/\blima\b/g, "5"],
+  [/\bempat\b/g, "4"],
+  [/\btiga\b/g, "3"],
+  [/\bdua\b/g, "2"],
+  [/\bsatu\b/g, "1"],
+  [/\bsetengah\b/g, "0.5"],
+];
+
+/**
+ * Narration is TTS-safe, so numbers often arrive as words ("lima sampai
+ * sepuluh jam"). Digitize a copy for parsing only; the spoken caption is
+ * never mutated.
+ */
+function digitizeSpokenNumbers(text: string) {
+  return SPOKEN_NUMBERS.reduce(
+    (acc, [pattern, replacement]) => acc.replace(pattern, replacement),
+    text.toLowerCase(),
+  );
+}
+
 function parseNumber(text: string) {
-  const match = text.match(
-    /(\d+(?:[.,]\d+)?)\s*(%|km\/jam|km|cm|mm|kg|gram|tahun|detik|menit|ruas|tulang|derajat|kali|jam|persen)?/i,
+  const normalized = digitizeSpokenNumbers(text);
+  const match = normalized.match(
+    /(\d+(?:[.,]\d+)?)\s*(%|km\/jam|km|cm|mm|kg|gram|tahun|detik|menit|ruas|tulang|derajat|kali|jam|persen|responden|orang)?/i,
   );
   if (!match) return null;
 
@@ -286,11 +205,11 @@ function parseNumber(text: string) {
 
   let suffix = match[2] ?? "";
   if (!suffix) {
-    const after = text
+    const after = normalized
       .slice((match.index ?? 0) + match[0].length)
       .trim()
       .split(/\s+/)[0];
-    if (after && /^[a-zA-Z%]{2,12}$/.test(after)) suffix = after;
+    if (after && /^[a-zA-Z%]{2,14}$/.test(after)) suffix = after;
   }
 
   const normalizedSuffix = suffix.toUpperCase();
@@ -310,16 +229,266 @@ function parseNumber(text: string) {
   };
 }
 
+function parseRange(text: string) {
+  const normalized = digitizeSpokenNumbers(text);
+  const match = normalized.match(
+    /(\d+(?:[.,]\d+)?)\s*(?:sampai dengan|sampai|s\/d|hingga|-|–)\s*(\d+(?:[.,]\d+)?)\s*(jam|persen|%|tahun)?/i,
+  );
+  if (!match) return null;
+
+  const from = Number(match[1].replace(",", "."));
+  const to = Number(match[2].replace(",", "."));
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from >= to) return null;
+
+  const unitRaw = (match[3] ?? "").toLowerCase();
+  const unit = unitRaw === "persen" ? "%" : unitRaw.toUpperCase();
+  const max = unit === "%" ? 100 : Math.max(12, Math.ceil(to * 1.25));
+  return { from, to, min: 0, max, unit };
+}
+
+function narrationDigits(text: string) {
+  return new Set(text.match(/\d+/g) ?? []);
+}
+
+function grounded(value: number, digits: Set<string>) {
+  if (!Number.isFinite(value) || value <= 0) return false;
+  const normalized = Number.isInteger(value) ? String(value) : String(value);
+  return digits.has(normalized);
+}
+
+const DECLINE_PATTERN =
+  /melambat|menurun|turun|drop|anjlok|melemah|lemah|defisit|flat|gagal|rendah|kurang|berkurang|habis|rusak/i;
+
+function cleanQuery(value: string, sentence: ScriptSentence, topic: string) {
+  const raw = normalizeCopy(stripEmoji(value))
+    .replace(/["'`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+  const keywords = keywordsFor(sentence);
+
+  if (raw.length >= 4) {
+    // A one-word LLM query is too generic; give it topical context.
+    return raw.split(/\s+/).length <= 1 ? `${raw} ${topic}`.trim() : raw;
+  }
+  if (keywords.length >= 2) return keywords.slice(0, 3).join(" ");
+  if (keywords.length === 1) return `${keywords[0]} ${topic}`.trim();
+  return topic;
+}
+
+/** Strip a value to a 1-2 word axis label (never a sentence). */
+function axisLabelSafe(value: string, fallback = "DATA") {
+  const cleaned = axisLabel(
+    stripEmoji(value)
+      .replace(/[()[\]]/g, " ")
+      .replace(/[^\p{L}\p{N}\s%]/gu, " "),
+  );
+  return cleaned || fallback;
+}
+
+type StageData = {
+  visualType: VisualType;
+  stageLabel: string;
+  metric?: SceneMetric;
+  counter?: SceneCounter;
+  range?: SceneRange;
+  bars?: SceneBar[];
+  wave?: SceneWave;
+  imageSearchQuery: string;
+  imageStyle: ImageFrameStyle;
+};
+
+/**
+ * Pick the center-stage mode from the narration, not from LLM prose.
+ * Every number that reaches the screen is checked against the sentence.
+ */
+function deriveStage(
+  candidate: Candidate | undefined,
+  sentence: ScriptSentence,
+  topic: string,
+  sceneIndex: number,
+): StageData {
+  const text = sentence.text;
+  const digitText = digitizeSpokenNumbers(text);
+  const digits = narrationDigits(digitText);
+  const query = cleanQuery(candidate?.imageSearchQuery ?? "", sentence, topic);
+  const imageStyle =
+    candidate?.imageStyle ??
+    IMAGE_STYLES[sceneIndex % IMAGE_STYLES.length];
+
+  const image = (): StageData => ({
+    visualType: "B_ROLL_IMAGE",
+    stageLabel: "",
+    imageSearchQuery: query,
+    imageStyle,
+  });
+
+  const yearMatch = digitText.match(/\b(1[89]\d{2}|20\d{2})\b/);
+  if (yearMatch) {
+    const year = Number(yearMatch[1]);
+    if (grounded(year, digits)) {
+      const label = axisLabelSafe(candidate?.stageLabel ?? "TAHUN", "TAHUN");
+      return {
+        visualType: "SVG_COUNTER",
+        stageLabel: label,
+        counter: { from: 2026, to: year, suffix: "", label },
+        metric: { value: year, suffix: "", label },
+        imageSearchQuery: query,
+        imageStyle,
+      };
+    }
+  }
+
+  const rawBars = (candidate?.bars ?? [])
+    .filter((bar) => grounded(bar.value, digits))
+    .slice(0, 3);
+  const barUnits = [...new Set(rawBars.map((bar) => bar.unit).filter(Boolean))];
+  const bars =
+    barUnits.length <= 1
+      ? rawBars.map((bar) => ({
+          label: axisLabelSafe(bar.label, "DATA"),
+          value: bar.value,
+          unit: (barUnits[0] ?? "").replace(/[^a-zA-Z%]/g, "").toUpperCase(),
+          highlight: Boolean(bar.highlight),
+        }))
+      : [];
+  if (bars.length >= 2) {
+    return {
+      visualType: "SVG_BAR_CHART",
+      stageLabel: axisLabelSafe(candidate?.stageLabel ?? "DATA", "DATA"),
+      bars,
+      imageSearchQuery: query,
+      imageStyle,
+    };
+  }
+
+  const explicitRange = candidate?.range;
+  const explicitValid =
+    Boolean(explicitRange?.from && explicitRange?.to) &&
+    explicitRange!.from < explicitRange!.to &&
+    grounded(explicitRange!.from, digits) &&
+    grounded(explicitRange!.to, digits);
+  const parsedRange = parseRange(text);
+
+  const metricValue = Number(candidate?.metric?.value ?? 0);
+  const strongMetric = grounded(metricValue, digits) && metricValue >= 100;
+
+  const rangeSource = strongMetric
+    ? null
+    : explicitValid
+      ? {
+          from: explicitRange!.from,
+          to: explicitRange!.to,
+          min: explicitRange!.min,
+          max: explicitRange!.max,
+          unit: explicitRange!.unit,
+        }
+      : parsedRange;
+
+  if (
+    rangeSource &&
+    grounded(rangeSource.from, digits) &&
+    grounded(rangeSource.to, digits) &&
+    rangeSource.from < rangeSource.to
+  ) {
+    const unit = (rangeSource.unit || "").replace(/[^a-zA-Z%]/g, "").toUpperCase();
+    const max = Math.max(
+      rangeSource.to + 1,
+      Number(rangeSource.max) > rangeSource.to ? rangeSource.max : rangeSource.to + 2,
+    );
+    const labelCandidate =
+      candidate?.stageLabel ??
+      (explicitValid ? explicitRange?.label : unit) ??
+      unit;
+    const gaugeLabel =
+      labelCandidate.trim().toUpperCase() === unit && unit.length > 0
+        ? "RENTANG"
+        : labelCandidate;
+    return {
+      visualType: "SVG_GAUGE",
+      stageLabel: axisLabelSafe(gaugeLabel, unit || "RENTANG"),
+      range: {
+        from: rangeSource.from,
+        to: rangeSource.to,
+        min: Math.max(0, Number(rangeSource.min) || 0),
+        max,
+        unit,
+        label: axisLabelSafe(gaugeLabel, ""),
+      },
+      imageSearchQuery: query,
+      imageStyle,
+    };
+  }
+
+  const wantsWave =
+    candidate?.visualType === "SVG_WAVEFORM" ||
+    Boolean(candidate?.wave) ||
+    DECLINE_PATTERN.test(text);
+  if (wantsWave) {
+    const dip = Math.min(0.85, Math.max(0.3, Number(candidate?.wave?.dip ?? 0.58)));
+    return {
+      visualType: "SVG_WAVEFORM",
+      stageLabel: axisLabelSafe(candidate?.stageLabel ?? candidate?.wave?.label ?? "OTAK", "OTAK"),
+      wave: { label: axisLabelSafe(candidate?.wave?.label ?? "OTAK", "OTAK"), dip },
+      imageSearchQuery: query,
+      imageStyle,
+    };
+  }
+
+  if (grounded(metricValue, digits) && metricValue >= 3) {
+    const label = axisLabelSafe(candidate?.stageLabel ?? candidate?.metric?.label ?? "", "DATA");
+    const suffix = (candidate?.metric?.suffix ?? "").replace(/[^a-zA-Z% ]/g, "").trim();
+    return {
+      visualType: "SVG_COUNTER",
+      stageLabel: label,
+      counter: { from: 0, to: metricValue, suffix, label },
+      metric: { value: metricValue, suffix, label },
+      imageSearchQuery: query,
+      imageStyle,
+    };
+  }
+
+  const number = parseNumber(text);
+  if (number && number.value >= 3 && grounded(number.value, digits)) {
+    const label = axisLabelSafe(candidate?.stageLabel ?? "", "DATA");
+    return {
+      visualType: "SVG_COUNTER",
+      stageLabel: label,
+      counter: { from: 0, to: number.value, suffix: number.suffix, label },
+      metric: { value: number.value, suffix: number.suffix, label },
+      imageSearchQuery: query,
+      imageStyle,
+    };
+  }
+
+  return image();
+}
+
+function resolveTheme(raw: SceneTheme | undefined, sentence: ScriptSentence, accent: string): SceneTheme {
+  const text = sentence.text.toLowerCase();
+  if (/bahaya|racun|salah|mitos|dilarang|risiko|gagal|beracun|fatal|defisit|melambat/.test(text)) {
+    return "danger";
+  }
+  if (/aman|solusi|benar|terbukti|menyelamatkan|segar|nyenyak/.test(text)) return "success";
+  if (/waspada|hati-hati|awas|jangan|kurang/.test(text)) return "warn";
+  if (raw) return raw;
+
+  const rgb = hexToRgb(accent);
+  if (rgb && rgb.r > rgb.g * 1.25 && rgb.r > rgb.b * 1.25) return "warn";
+  return "info";
+}
+
 function normalizeScenes(
   output: VisualPlanOutput,
   sentences: ScriptSentence[],
   timings: Timing[],
   duration: number,
+  topic: string,
 ): VisualScene[] {
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
-  let previousEmoji: string | null = null;
-  let previousLayout: SceneLayout | null = null;
+  let previousStage: VisualType | null = null;
+  let previousImageStyle: ImageFrameStyle | null = null;
 
   sentences.forEach((sentence, sentenceIndex) => {
     const candidate = output.scenes[sentenceIndex];
@@ -333,7 +502,6 @@ function normalizeScenes(
           timings[sentenceIndex + 1].start,
         );
 
-    // Keep the timeline monotonic, then cut the sentence into <=2.5s scenes.
     if (!isLastSentence) {
       end = Math.max(
         start + 0.5,
@@ -346,23 +514,7 @@ function normalizeScenes(
     const span = Math.max(0.5, end - start);
     const chunkCount = Math.max(1, Math.ceil(span / MAX_SCENE_SECONDS));
     const chunkLength = span / chunkCount;
-    const number = parseNumber(sentence.text);
-    const fallbackHeadline = sentence.text.replace(/[^\p{L}\p{N}\s]/gu, "");
-    // Visual bertipe: lolos hanya kalau semua angkanya ada di narasi kalimat ini.
-    const visual = cleanVisual(candidate?.visual, sentence.text, number);
-    const headline = cleanHeadline(
-      candidate?.headline ?? "",
-      fallbackHeadline,
-      sentence.text,
-    );
-    const subheadline = calloutFor(
-      candidate,
-      sentence,
-      number,
-      visual,
-      headline,
-    );
-    const tags = tagsFor(candidate, sentence);
+    const baseStage = deriveStage(candidate, sentence, topic, scenes.length);
 
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
       const chunkStart = start + chunkIndex * chunkLength;
@@ -377,64 +529,42 @@ function normalizeScenes(
       }
       previousMotion = motion;
 
-      let emoji = (
-        candidate?.overlay?.bigEmoji ||
-        candidate?.overlayEmoji ||
-        ""
-      )
-        .trim()
-        .slice(0, 8);
-      if (!emoji || emoji === previousEmoji) {
-        emoji = EMOJI_POOL[sceneIndex % EMOJI_POOL.length];
-      }
-      previousEmoji = emoji;
-
       const accent = candidate?.accentColor ?? "";
       const accentColor = pickAccent(accent, sceneIndex);
-      const layout = resolveLayout(
-        candidate?.layout,
-        visual,
-        Boolean(number),
-        previousLayout,
-      );
-      previousLayout = layout;
-      const theme = resolveTheme(candidate?.theme, sentence, accentColor, visual);
-      const gradient = pickBackground(
-        candidate?.background.value ?? "",
-        sceneIndex,
-      );
+      const theme = resolveTheme(candidate?.theme, sentence, accentColor);
+      const gradient = pickBackground(candidate?.background.value ?? "", sceneIndex);
       const fallback =
         candidate?.background.fallback &&
         candidate.background.fallback.startsWith("linear-gradient")
           ? candidate.background.fallback
           : gradient;
 
-      const candidateCounter = candidate?.overlay?.counter;
-      let counter: { value: number; suffix: string; prefix: string } | undefined;
-      if (chunkIndex === 0) {
-        if (number) {
-          // The narration number is the source of truth. The LLM may only
-          // refine the suffix when it agrees on the value.
-          const agrees =
-            Boolean(candidateCounter) &&
-            Math.abs((candidateCounter?.value ?? 0) - number.value) < 0.01;
-          counter = {
-            value: number.value,
-            prefix: agrees ? (candidateCounter?.prefix ?? "") : "",
-            suffix:
-              agrees && candidateCounter?.suffix
-                ? candidateCounter.suffix
-                : number.suffix,
-          };
-        } else if (candidateCounter && candidateCounter.value >= 3) {
-          // Ignore "part 2" style counters, they look like broken data.
-          counter = {
-            value: candidateCounter.value,
-            suffix: candidateCounter.suffix ?? "",
-            prefix: candidateCounter.prefix ?? "",
-          };
-        }
+      // Alternate visual families: two data graphics in a row is the maximum,
+      // then a real image takes over so the video never feels like a slideshow.
+      let stage = baseStage;
+      const isData = (type: VisualType) => type !== "B_ROLL_IMAGE";
+      if (
+        isData(stage.visualType) &&
+        isData(previousStage ?? "B_ROLL_IMAGE") &&
+        (chunkIndex > 0 || sceneIndex % 3 === 2)
+      ) {
+        stage = {
+          visualType: "B_ROLL_IMAGE",
+          stageLabel: "",
+          imageSearchQuery: stage.imageSearchQuery,
+          imageStyle: stage.imageStyle,
+        };
       }
+      previousStage = stage.visualType;
+
+      if (stage.imageStyle === previousImageStyle) {
+        stage = {
+          ...stage,
+          imageStyle:
+            IMAGE_STYLES[(IMAGE_STYLES.indexOf(stage.imageStyle) + 1) % IMAGE_STYLES.length],
+        };
+      }
+      previousImageStyle = stage.imageStyle;
 
       scenes.push({
         id: `sc${sceneIndex + 1}`,
@@ -448,10 +578,7 @@ function normalizeScenes(
         },
         motion: {
           type: motion,
-          intensity: Math.min(
-            0.5,
-            Math.max(0.1, candidate?.motion.intensity ?? 0.2),
-          ),
+          intensity: Math.min(0.5, Math.max(0.1, candidate?.motion.intensity ?? 0.2)),
         },
         kenBurns: true,
         textAnimation: {
@@ -459,26 +586,16 @@ function normalizeScenes(
             candidate?.textAnimation.type ??
             ANIMATIONS[sceneIndex % ANIMATIONS.length],
         },
-        bRollKeywords:
-          candidate?.bRollKeywords?.slice(0, 4).filter(Boolean) ??
-          keywordsFor(sentence),
-        overlayEmoji: emoji,
-        overlay: {
-          bigEmoji: emoji,
-          // Callout 2-3 kata; bukan satu kata acak dari narasi.
-          textHook: subheadline,
-          counter: visual ? undefined : counter,
-        },
-        layout,
+        visualType: stage.visualType,
+        imageSearchQuery: stage.imageSearchQuery,
+        imageStyle: stage.imageStyle,
+        stageLabel: stage.stageLabel,
+        metric: stage.metric,
+        counter: stage.counter,
+        range: stage.range,
+        bars: stage.bars,
+        wave: stage.wave,
         theme,
-        subheadline,
-        tags,
-        visual,
-        visualOffset: visual
-          ? Math.round((chunkStart - start) * 1000) / 1000
-          : undefined,
-        visualFinal: visual ? chunkIndex === chunkCount - 1 : undefined,
-        headline,
         accentColor,
       });
     }
@@ -487,42 +604,11 @@ function normalizeScenes(
   return scenes;
 }
 
-function brollQuery(scene: VisualScene, topic: string) {
-  const keywords = scene.bRollKeywords.slice(0, 2).join(" ").trim();
-  return keywords || topic;
-}
-
-async function attachBRoll(scenes: VisualScene[], topic: string) {
-  const queries = scenes.map((scene) => brollQuery(scene, topic));
-  const matches = await searchPexelsVideos(queries);
-  if (matches.size === 0) return scenes;
-
-  let replaced = 0;
-  const hydrated = scenes.map((scene) => {
-    const url = matches.get(brollQuery(scene, topic));
-    if (!url) return scene;
-    replaced += 1;
-    return {
-      ...scene,
-      background: {
-        type: "video" as const,
-        value: url,
-        videoUrl: url,
-        fallback: scene.background.fallback ?? scene.background.value,
-      },
-    };
-  });
-
-  if (replaced > 0) {
-    console.info(`[visual-planner] ${replaced} scene memakai b-roll Pexels.`);
-  }
-  return hydrated;
-}
-
 function fallbackPlan(
   sentences: ScriptSentence[],
   timings: Timing[],
   duration: number,
+  topic: string,
 ): VisualPlan {
   return {
     vibe: "fast-cut, high contrast, gen-z viral",
@@ -546,17 +632,14 @@ function fallbackPlan(
           textAnimation: {
             type: ANIMATIONS[index % ANIMATIONS.length],
           },
-          bRollKeywords: keywordsFor(sentence),
-          overlayEmoji: EMOJI_POOL[index % EMOJI_POOL.length],
-          subheadline: "",
-          tags: [],
-          headline: "",
+          imageSearchQuery: cleanQuery("", sentence, topic),
           accentColor: ACCENTS[index % ACCENTS.length],
         })),
-      },
+      } as VisualPlanOutput,
       sentences,
       timings,
       duration,
+      topic,
     ),
   };
 }
@@ -607,7 +690,8 @@ ${paletteTable}
 FAKTA RISET:
 ${JSON.stringify(project.researchData ?? {}).slice(0, 2000)}
 
-Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan mengubah timing.`,
+Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan mengubah timing.
+INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center stage hanya angka/metrik atau label sumbu 1-2 kata.`,
       schema: visualPlanSchema,
       tier: "primary",
       temperature: 0.8,
@@ -617,19 +701,21 @@ Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan 
     plan = {
       vibe: output.vibe,
       generatedAt: new Date().toISOString(),
-      scenes: normalizeScenes(output, fullScript.sentences, timings, duration),
+      scenes: normalizeScenes(
+        output,
+        fullScript.sentences,
+        timings,
+        duration,
+        project.topic,
+      ),
     };
   } catch (error) {
     console.warn(
       "[visual-planner] LLM gagal, memakai visual plan fallback:",
       error instanceof Error ? error.message : error,
     );
-    plan = fallbackPlan(fullScript.sentences, timings, duration);
+    plan = fallbackPlan(fullScript.sentences, timings, duration, project.topic);
   }
-
-  // Optional Pexels b-roll. Without PEXELS_API_KEY this keeps the animated
-  // gradients generated above, so the pipeline never depends on the network.
-  plan.scenes = await attachBRoll(plan.scenes, project.topic);
 
   await prisma.project.update({
     where: { id: projectId },
@@ -639,6 +725,7 @@ Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan 
   await completeStage(projectId, "visual-planning", {
     scenes: plan.scenes.length,
     vibe: plan.vibe,
+    withImages: plan.scenes.filter((scene) => scene.visualType === "B_ROLL_IMAGE").length,
   });
 
   return plan;

@@ -42,7 +42,7 @@ model Project {
   audioUrl       String?
   videoUrl       String?
   thumbnailUrl   String?
-  duration       Int?
+  duration       Float?
   error          String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt

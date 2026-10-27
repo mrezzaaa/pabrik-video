@@ -12,12 +12,7 @@ import {
 import { AudioMixer } from "./components/AudioMixer";
 import { CameraRig } from "./components/CameraRig";
 import { Caption } from "./components/Caption";
-import {
-  CtaBadge,
-  HookInterrupt,
-  IntroWipe,
-  TopBar,
-} from "./components/Overlays";
+import { IntroWipe, PatternInterrupt, TopBar } from "./components/Overlays";
 import { SceneBackground } from "./components/SceneBackground";
 import { SceneStage } from "./components/Stage/SceneStage";
 import { ANTON_FAMILY, anton } from "./fonts";
@@ -26,7 +21,6 @@ import type { ReelsProps } from "./types";
 export const Reels: React.FC<ReelsProps> = ({
   audioSrc,
   duration,
-  hook,
   topic,
   scenes,
   words,
@@ -65,10 +59,13 @@ export const Reels: React.FC<ReelsProps> = ({
 
       {sortedScenes.map((scene, index) => {
         const from = Math.max(0, Math.round(scene.startTime * fps));
-        const to = Math.min(
-          totalFrames,
-          Math.max(from + 6, Math.round(scene.endTime * fps)),
-        );
+        const isLast = index === sortedScenes.length - 1;
+        const to = isLast
+          ? totalFrames
+          : Math.min(
+              totalFrames,
+              Math.max(from + 6, Math.round(scene.endTime * fps)),
+            );
 
         return (
           <Sequence
@@ -90,12 +87,12 @@ export const Reels: React.FC<ReelsProps> = ({
       })}
 
       <TopBar topic={topic} accent={accent} />
+
       <Sequence from={0} durationInFrames={Math.round(3 * fps)} layout="none">
-        <HookInterrupt hook={hook} accent={accent} />
+        <PatternInterrupt accent={accent} />
       </Sequence>
 
       {words.length > 0 ? <Caption words={words} accentColor={accent} /> : null}
-      <CtaBadge durationInFrames={totalFrames} accent={accent} />
       <IntroWipe accent={accent} />
     </AbsoluteFill>
   );

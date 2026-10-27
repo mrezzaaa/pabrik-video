@@ -44,9 +44,6 @@ export const env = {
   remotionFps: Number(process.env.REMOTION_FPS ?? 30),
   remotionGl: process.env.REMOTION_GL ?? "angle",
 
-  // Optional: Pexels b-roll (free API key). Empty = animated gradients only.
-  pexelsApiKey: process.env.PEXELS_API_KEY ?? "",
-
   queueName: "pabrik-video-queue",
 } as const;
 

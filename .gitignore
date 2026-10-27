@@ -56,4 +56,6 @@ next-env.d.ts
 !/public/videos/.gitkeep
 /public/thumbnails/*
 !/public/thumbnails/.gitkeep
+/public/images/*
+!/public/images/.gitkeep
 /.pabrik-tmp/

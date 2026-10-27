@@ -108,48 +108,56 @@ export interface WordTimestamp extends CaptionWord {
 export type MotionType = "zoomIn" | "zoomOut" | "shake" | "pan" | "panLeft";
 export type TextAnimationType = "karaoke" | "popIn" | "typewriter";
 
-/**
- * Four structurally different center-stage templates.
- * The planner rotates them so the video never repeats the same layout twice
- * in a row unless the content demands it (e.g. myth vs fact).
- */
-export type SceneLayout =
-  | "HERO_STAT_CARD"
-  | "B_ROLL_FRAME"
-  | "SPLIT_COMPARISON"
-  | "FULL_KINETIC_IMPACT";
-
 export type SceneTheme = "danger" | "warn" | "info" | "success";
 
-export interface NumberCounter {
+/**
+ * Center-stage visual modes. The stage never renders the spoken transcript:
+ * it is either a real image or an animated data graphic with numbers and
+ * short axis labels.
+ */
+export type VisualType =
+  | "B_ROLL_IMAGE"
+  | "SVG_GAUGE"
+  | "SVG_BAR_CHART"
+  | "SVG_COUNTER"
+  | "SVG_WAVEFORM";
+
+export type ImageFrameStyle = "fullBleed" | "split" | "glass";
+
+export interface SceneMetric {
   value: number;
   suffix?: string;
-  prefix?: string;
+  label?: string;
 }
 
-export interface SceneOverlay {
-  bigEmoji?: string;
-  textHook?: string;
-  counter?: NumberCounter;
+export interface SceneRange {
+  from: number;
+  to: number;
+  min: number;
+  max: number;
+  unit?: string;
+  label?: string;
 }
 
-export type StampWord = "MITOS" | "FAKTA" | "BAHAYA" | "AMAN";
+export interface SceneBar {
+  label: string;
+  value: number;
+  unit?: string;
+  highlight?: boolean;
+}
 
-/** Visual bertipe yang membuktikan isi kalimat narasi (dirender di Remotion). */
-export type SceneVisual =
-  | { kind: "stat"; value: number; prefix: string; suffix: string; label: string }
-  | {
-      kind: "compare";
-      left: { title: string; items: string[] };
-      right: { title: string; items: string[] };
-    }
-  | { kind: "stamp"; word: StampWord; caption: string }
-  | {
-      kind: "crosssection";
-      title: string;
-      layers: { label: string; note: string }[];
-    }
-  | { kind: "timeline"; steps: { label: string; detail: string }[] };
+export interface SceneWave {
+  label?: string;
+  /** Normalized x position (0-1) where the line drops/flatlines. */
+  dip: number;
+}
+
+export interface SceneCounter {
+  from: number;
+  to: number;
+  suffix?: string;
+  label?: string;
+}
 
 export interface VisualScene {
   id: string;
@@ -172,24 +180,26 @@ export interface VisualScene {
   textAnimation: {
     type: TextAnimationType;
   };
-  bRollKeywords: string[];
-  overlayEmoji: string;
-  overlay?: SceneOverlay;
-  /** Center-stage template. Defaults to B_ROLL_FRAME when missing. */
-  layout?: SceneLayout;
+  /** Center-stage mode. Missing = no stage visual (background only). */
+  visualType?: VisualType;
+  /** Local public URL of the downloaded SearXNG image. */
+  imageUrl?: string;
+  /** English/Indonesian query used to fetch the real image. */
+  imageSearchQuery?: string;
+  imageStyle?: ImageFrameStyle;
+  /** 1-2 word axis label. Never a sentence or transcript. */
+  stageLabel?: string;
+  metric?: SceneMetric;
+  counter?: SceneCounter;
+  range?: SceneRange;
+  bars?: SceneBar[];
+  wave?: SceneWave;
   /** Drives SFX + color treatment (danger scenes get impacts/red). */
   theme?: SceneTheme;
-  /** 2-3 word contextual callout. Never a single echoed word. */
-  subheadline?: string;
-  /** Short chips rendered around the center stage (max 3). */
-  tags?: string[];
-  /** Visual utama scene. Kalau ada, counter/textHook disembunyikan. */
-  visual?: SceneVisual;
   /** Detik sejak kalimat mulai (visual lanjut mulus antar potongan 2.5s). */
   visualOffset?: number;
   /** false = bukan potongan terakhir kalimat, jangan fade-out. */
   visualFinal?: boolean;
-  headline: string;
   accentColor: string;
 }
 
