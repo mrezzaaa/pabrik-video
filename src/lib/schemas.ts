@@ -56,6 +56,10 @@ export const visualTypeSchema = z.enum([
   "SVG_BAR_CHART",
   "SVG_COUNTER",
   "SVG_WAVEFORM",
+  "SVG_STAMP",
+  "SVG_COMPARE",
+  "SVG_CROSSSECTION",
+  "SVG_TIMELINE",
 ]);
 export const imageStyleSchema = z.enum(["fullBleed", "split", "glass"]);
 
@@ -93,6 +97,26 @@ export const sceneWaveSchema = z.object({
   dip: looseNumber.optional().default(0.55),
 });
 
+// Longgar di sini; divalidasi ketat oleh lib/visual-spec.ts (label 1-2 kata,
+// harus ada di narasi/riset) supaya satu field rusak tidak menggagalkan plan.
+export const sceneStampSchema = z.object({
+  word: z.string().optional().default(""),
+});
+
+const compareSideSchema = z.object({
+  title: z.string().optional().default(""),
+  items: z.array(z.string()).optional().default([]),
+});
+
+export const sceneCompareSchema = z.object({
+  left: compareSideSchema.optional(),
+  right: compareSideSchema.optional(),
+});
+
+export const sceneLabelSchema = z.object({
+  label: z.string().optional().default(""),
+});
+
 export const visualSceneSchema = z.object({
   id: z.string().optional(),
   startTime: looseNumber,
@@ -127,6 +151,10 @@ export const visualSceneSchema = z.object({
   range: sceneRangeSchema.optional(),
   bars: z.array(sceneBarSchema).optional().default([]),
   wave: sceneWaveSchema.optional(),
+  stamp: sceneStampSchema.optional(),
+  compare: sceneCompareSchema.optional(),
+  layers: z.array(sceneLabelSchema).optional().default([]),
+  steps: z.array(sceneLabelSchema).optional().default([]),
   theme: sceneThemeSchema.optional(),
   accentColor: z.string().default("#39FF14"),
 });

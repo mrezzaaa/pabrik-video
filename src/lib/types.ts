@@ -120,7 +120,11 @@ export type VisualType =
   | "SVG_GAUGE"
   | "SVG_BAR_CHART"
   | "SVG_COUNTER"
-  | "SVG_WAVEFORM";
+  | "SVG_WAVEFORM"
+  | "SVG_STAMP"
+  | "SVG_COMPARE"
+  | "SVG_CROSSSECTION"
+  | "SVG_TIMELINE";
 
 export type ImageFrameStyle = "fullBleed" | "split" | "glass";
 
@@ -159,6 +163,34 @@ export interface SceneCounter {
   label?: string;
 }
 
+export type StampWord = "MITOS" | "FAKTA" | "BAHAYA" | "AMAN";
+
+/** Cap verdict yang "dibanting" (MITOS / FAKTA / BAHAYA / AMAN). */
+export interface SceneStamp {
+  word: StampWord;
+}
+
+export interface SceneCompareSide {
+  title: string;
+  /** 1-3 item, masing-masing 1-2 kata. */
+  items: string[];
+}
+
+export interface SceneCompare {
+  left: SceneCompareSide;
+  right: SceneCompareSide;
+}
+
+/** Lapisan potongan (cutaway), urut dari luar ke dalam. Label 1-2 kata. */
+export interface SceneLayer {
+  label: string;
+}
+
+/** Langkah timeline. Label 1-2 kata. */
+export interface SceneStep {
+  label: string;
+}
+
 export interface VisualScene {
   id: string;
   startTime: number;
@@ -194,6 +226,10 @@ export interface VisualScene {
   range?: SceneRange;
   bars?: SceneBar[];
   wave?: SceneWave;
+  stamp?: SceneStamp;
+  compare?: SceneCompare;
+  layers?: SceneLayer[];
+  steps?: SceneStep[];
   /** Drives SFX + color treatment (danger scenes get impacts/red). */
   theme?: SceneTheme;
   /** Detik sejak kalimat mulai (visual lanjut mulus antar potongan 2.5s). */

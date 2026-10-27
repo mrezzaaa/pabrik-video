@@ -2,6 +2,12 @@ import React from "react";
 import type { VisualScene } from "../../../lib/types";
 import { CognitiveWave } from "./CognitiveWave";
 import { ComparisonBars } from "./ComparisonBars";
+import {
+  CompareStage,
+  CrossSectionStage,
+  StampStage,
+  TimelineStage,
+} from "./EditorialStages";
 import { KenBurnsImageFrame } from "./KenBurnsImageFrame";
 import { OdometerCounter } from "./OdometerCounter";
 import { RangeGauge } from "./RangeGauge";
@@ -18,7 +24,7 @@ export const STAGE_HEIGHT = 1000;
 export const SceneStage: React.FC<{
   scene: VisualScene;
   index: number;
-}> = ({ scene }) => {
+}> = ({ scene, index }) => {
   const stage = (() => {
     switch (scene.visualType) {
       case "SVG_COUNTER":
@@ -29,6 +35,14 @@ export const SceneStage: React.FC<{
         return <ComparisonBars scene={scene} />;
       case "SVG_WAVEFORM":
         return <CognitiveWave scene={scene} />;
+      case "SVG_STAMP":
+        return <StampStage scene={scene} index={index} />;
+      case "SVG_COMPARE":
+        return <CompareStage scene={scene} index={index} />;
+      case "SVG_CROSSSECTION":
+        return <CrossSectionStage scene={scene} index={index} />;
+      case "SVG_TIMELINE":
+        return <TimelineStage scene={scene} index={index} />;
       case "B_ROLL_IMAGE":
         return <KenBurnsImageFrame scene={scene} />;
       default:

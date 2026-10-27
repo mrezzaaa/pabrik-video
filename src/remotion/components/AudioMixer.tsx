@@ -77,6 +77,27 @@ export const AudioMixer: React.FC<{
             length: 0.18,
           });
         });
+      } else if (scene.visualType === "SVG_STAMP") {
+        // Cap mendarat di ~0.16s (sinkron dengan slam di StampStage).
+        list.push({
+          src: "audio/sub-bass-impact.mp3",
+          at: start + 0.14,
+          volume: 0.5,
+          length: 0.9,
+        });
+      } else if (
+        scene.visualType === "SVG_CROSSSECTION" ||
+        scene.visualType === "SVG_TIMELINE" ||
+        scene.visualType === "SVG_COMPARE"
+      ) {
+        [0.2, 0.56, 0.92].forEach((offset, tickIndex) => {
+          list.push({
+            src: "audio/pop.mp3",
+            at: start + offset,
+            volume: 0.22 - tickIndex * 0.03,
+            length: 0.24,
+          });
+        });
       } else if (scene.visualType === "SVG_BAR_CHART") {
         [0.08, 0.22, 0.36].forEach((offset, tickIndex) => {
           list.push({

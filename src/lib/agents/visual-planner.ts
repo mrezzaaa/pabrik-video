@@ -7,14 +7,24 @@ import {
   normalizeCopy,
   stripEmoji,
 } from "../text";
+import {
+  deriveCompare,
+  deriveLayers,
+  deriveStamp,
+  deriveSteps,
+} from "../visual-spec";
 import type {
   FullScript,
   ImageFrameStyle,
   MotionType,
   SceneBar,
+  SceneCompare,
   SceneCounter,
+  SceneLayer,
   SceneMetric,
   SceneRange,
+  SceneStamp,
+  SceneStep,
   SceneTheme,
   SceneWave,
   ScriptSentence,
@@ -294,9 +304,21 @@ type StageData = {
   range?: SceneRange;
   bars?: SceneBar[];
   wave?: SceneWave;
+  stamp?: SceneStamp;
+  compare?: SceneCompare;
+  layers?: SceneLayer[];
+  steps?: SceneStep[];
   imageSearchQuery: string;
   imageStyle: ImageFrameStyle;
 };
+
+/** Stage yang animasinya berjalan sepanjang kalimat (lanjut antar potongan). */
+const EDITORIAL_STAGES = new Set<VisualType>([
+  "SVG_STAMP",
+  "SVG_COMPARE",
+  "SVG_CROSSSECTION",
+  "SVG_TIMELINE",
+]);
 
 /**
  * Pick the center-stage mode from the narration, not from LLM prose.
@@ -307,6 +329,7 @@ function deriveStage(
   sentence: ScriptSentence,
   topic: string,
   sceneIndex: number,
+  knowledge = "",
 ): StageData {
   const text = sentence.text;
   const digitText = digitizeSpokenNumbers(text);
@@ -420,6 +443,57 @@ function deriveStage(
     };
   }
 
+  // Visual editorial: hanya kalau LLM memintanya DAN lolos guard (label 1-2 kata,
+  // terlacak ke narasi/riset). Kalau tidak lolos, jatuh ke wave/counter/b-roll.
+  const wanted = candidate?.visualType;
+  if (wanted === "SVG_STAMP") {
+    const stamp = deriveStamp(candidate?.stamp, text);
+    if (stamp) {
+      return {
+        visualType: "SVG_STAMP",
+        stageLabel: "",
+        stamp,
+        imageSearchQuery: query,
+        imageStyle,
+      };
+    }
+  }
+  if (wanted === "SVG_COMPARE") {
+    const compare = deriveCompare(candidate?.compare, knowledge, digits);
+    if (compare) {
+      return {
+        visualType: "SVG_COMPARE",
+        stageLabel: "",
+        compare,
+        imageSearchQuery: query,
+        imageStyle,
+      };
+    }
+  }
+  if (wanted === "SVG_CROSSSECTION") {
+    const layers = deriveLayers(candidate?.layers, knowledge, digits);
+    if (layers) {
+      return {
+        visualType: "SVG_CROSSSECTION",
+        stageLabel: axisLabelSafe(candidate?.stageLabel ?? "", "POTONGAN"),
+        layers,
+        imageSearchQuery: query,
+        imageStyle,
+      };
+    }
+  }
+  if (wanted === "SVG_TIMELINE") {
+    const steps = deriveSteps(candidate?.steps, knowledge, digits);
+    if (steps) {
+      return {
+        visualType: "SVG_TIMELINE",
+        stageLabel: axisLabelSafe(candidate?.stageLabel ?? "", "URUTAN"),
+        steps,
+        imageSearchQuery: query,
+        imageStyle,
+      };
+    }
+  }
   const wantsWave =
     candidate?.visualType === "SVG_WAVEFORM" ||
     Boolean(candidate?.wave) ||
@@ -484,6 +558,7 @@ function normalizeScenes(
   timings: Timing[],
   duration: number,
   topic: string,
+  knowledge = "",
 ): VisualScene[] {
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
@@ -514,7 +589,13 @@ function normalizeScenes(
     const span = Math.max(0.5, end - start);
     const chunkCount = Math.max(1, Math.ceil(span / MAX_SCENE_SECONDS));
     const chunkLength = span / chunkCount;
-    const baseStage = deriveStage(candidate, sentence, topic, scenes.length);
+    const baseStage = deriveStage(
+      candidate,
+      sentence,
+      topic,
+      scenes.length,
+      knowledge,
+    );
 
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
       const chunkStart = start + chunkIndex * chunkLength;
@@ -595,6 +676,13 @@ function normalizeScenes(
         range: stage.range,
         bars: stage.bars,
         wave: stage.wave,
+        stamp: stage.stamp,
+        compare: stage.compare,
+        layers: stage.layers,
+        steps: stage.steps,
+        visualOffset: EDITORIAL_STAGES.has(stage.visualType)
+          ? Math.round(Math.max(0, chunkStart - start) * 1000) / 1000
+          : undefined,
         theme,
         accentColor,
       });
@@ -673,6 +761,11 @@ export async function runVisualPlanner(projectId: string) {
     (gradient, index) => `${index + 1}. ${gradient}`,
   ).join("\n");
 
+  // Basis pelacakan label editorial: narasi + fakta riset (huruf kecil).
+  const knowledge = `${project.topic} ${fullScript.sentences
+    .map((sentence) => sentence.text)
+    .join(" ")} ${JSON.stringify(project.researchData ?? {})}`.toLowerCase();
+
   let plan: VisualPlan;
   try {
     const output = await chatJSON({
@@ -708,6 +801,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
         timings,
         duration,
         project.topic,
+        knowledge,
       ),
     };
   } catch (error) {

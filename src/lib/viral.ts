@@ -85,11 +85,17 @@ VISUAL TYPE (WAJIB salah satu):
 3. "SVG_GAUGE" untuk rentang angka. Sertakan "range": { "from": 5, "to": 10, "min": 0, "max": 12, "unit": "JAM" }.
 4. "SVG_BAR_CHART" untuk perbandingan 2-3 angka. Sertakan "bars": [{ "label": "BAYI", "value": 14, "unit": "JAM" }, { "label": "DEWASA", "value": 7, "unit": "JAM" }, { "label": "RI", "value": 5, "unit": "JAM", "highlight": true }]. Label maks 2 kata.
 5. "SVG_WAVEFORM" untuk dampak/penurunan/kecepatan. Sertakan "wave": { "label": "OTAK", "dip": 0.6 }.
+6. "SVG_STAMP" untuk vonis tegas. Sertakan "stamp": { "word": "MITOS" } (pilihan: MITOS | FAKTA | BAHAYA | AMAN). Kata cap HARUS sejalan dengan isi kalimat (kalimat tentang bahaya -> BAHAYA, bukan FAKTA).
+7. "SVG_COMPARE" untuk dua hal yang dibandingkan / mitos vs fakta. Sertakan "compare": { "left": { "title": "MITOS", "items": ["BIKIN PUTIH", "AMAN"] }, "right": { "title": "FAKTA", "items": ["MERKURI", "RUSAK KULIT"] } }. Title dan item masing-masing 1-2 kata, 1-3 item per sisi.
+8. "SVG_CROSSSECTION" untuk menjelaskan lapisan / isi sesuatu (kulit, produk, organ). Sertakan "stageLabel": "KULIT" dan "layers": [{ "label": "EPIDERMIS" }, { "label": "DERMIS" }, { "label": "HIPODERMIS" }] (3-5 lapisan dari luar ke dalam, label 1-2 kata).
+9. "SVG_TIMELINE" untuk urutan proses/kejadian. Sertakan "stageLabel": "REAKSI" dan "steps": [{ "label": "OLES" }, { "label": "MERESAP" }, { "label": "IRITASI" }] (2-4 langkah, label 1-2 kata).
 
 ATURAN DATA:
 - "stageLabel": 1-2 kata HURUF BESAR sebagai label sumbu (contoh "TIDUR", "OTAK", "RESPONDEN"). Bukan kalimat, bukan kutipan.
 - Semua angka di metric/range/bars/wave harus benar-benar muncul di kalimat tersebut. JANGAN mengarang angka.
 - Tahun 4 digit (1817, 2025) ditulis apa adanya tanpa titik ribuan.
+- Label di compare/layers/steps HARUS istilah yang ada di kalimat atau fakta riset. JANGAN mengarang nama lapisan, pembanding, atau langkah. Kalau ragu, jangan pakai tipe 6-9.
+- Variasikan: jangan tipe yang sama di dua scene berurutan. Pakai SVG_STAMP maksimal 2x per video (untuk hook dan vonis akhir).
 - Pilih visualType yang paling jujur dengan isi kalimat. Kalau tidak ada angka dan tidak ada visual yang cocok, pakai B_ROLL_IMAGE.
 
 Kembalikan HANYA JSON valid:
@@ -113,6 +119,10 @@ Kembalikan HANYA JSON valid:
       "range": { "from": 5, "to": 10, "min": 0, "max": 12, "unit": "JAM" },
       "bars": [],
       "wave": { "label": "OTAK", "dip": 0.6 },
+      "stamp": { "word": "FAKTA" },
+      "compare": { "left": { "title": "MITOS", "items": ["AMAN"] }, "right": { "title": "FAKTA", "items": ["RACUN"] } },
+      "layers": [{ "label": "EPIDERMIS" }, { "label": "DERMIS" }, { "label": "HIPODERMIS" }],
+      "steps": [{ "label": "OLES" }, { "label": "MERESAP" }],
       "accentColor": "#39FF14"
     }
   ]
