@@ -1,4 +1,5 @@
 import { ExternalLink, Flame, Lightbulb, Quote } from "lucide-react";
+import { STYLE_LABELS, resolveTopicStyle } from "@/lib/topic-style";
 import type { ResearchData } from "@/lib/types";
 
 export function ResearchPanel({ data }: { data: ResearchData | null }) {
@@ -13,6 +14,15 @@ export function ResearchPanel({ data }: { data: ResearchData | null }) {
 
   return (
     <div className="space-y-4">
+      {data.style ? (
+        <div className="flex items-center justify-between border border-zinc-900 bg-black/30 px-2.5 py-2">
+          <span className="label-mono text-muted-foreground">Gaya Video</span>
+          <span className="font-mono text-[10px] uppercase text-primary">
+            {STYLE_LABELS[resolveTopicStyle(data.style)]}
+          </span>
+        </div>
+      ) : null}
+
       {data.viralPotential ? (
         <div className="border border-primary/25 bg-primary/[0.04] p-3">
           <div className="flex items-center gap-1.5 text-primary">

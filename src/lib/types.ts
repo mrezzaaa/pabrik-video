@@ -60,7 +60,19 @@ export const STATUS_PROGRESS: Record<ProjectStatus, number> = {
   FAILED: 100,
 };
 
+/**
+ * Gaya video per jenis topik. Diputuskan sekali di stage research, lalu
+ * dipakai visual planner untuk memilih prompt dan visual type yang boleh.
+ * - engineering: penjelasan sains/teknik (cara kerja, komponen, struktur)
+ * - factcheck:   fakta/mitos, data, metrik, chart, perbandingan
+ * - lifestyle:   kehidupan sehari-hari, dominan footage/foto relevan
+ */
+export const TOPIC_STYLES = ["engineering", "factcheck", "lifestyle"] as const;
+export type TopicStyle = (typeof TOPIC_STYLES)[number];
+
 export interface ResearchData {
+  /** Kosong pada project lama; planner memperlakukannya sebagai "factcheck". */
+  style?: TopicStyle;
   facts: string[];
   sources: { title: string; url: string }[];
   uniqueAngles: string[];

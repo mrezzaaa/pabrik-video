@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TOPIC_STYLES } from "./types";
 import { GRADIENT_PALETTES } from "./viral";
 
 const looseNumber = z
@@ -7,6 +8,16 @@ const looseNumber = z
     const parsed = typeof value === "number" ? value : Number.parseFloat(value);
     return Number.isFinite(parsed) ? parsed : 0;
   });
+
+export const topicStyleSchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
+  z.enum(TOPIC_STYLES),
+);
+
+export const topicClassifySchema = z.object({
+  style: topicStyleSchema,
+  reason: z.string().optional().default(""),
+});
 
 export const researchSchema = z.object({
   facts: z.array(z.string()).default([]),

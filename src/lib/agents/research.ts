@@ -5,6 +5,7 @@ import { asJson } from "../pipeline";
 import { prisma } from "../prisma";
 import { researchSchema } from "../schemas";
 import { searchWeb, type SearchResult } from "../searxng";
+import { classifyTopicStyle } from "../topic-style";
 import type { ResearchData } from "../types";
 import { RESEARCH_SYSTEM_PROMPT } from "../viral";
 
@@ -108,6 +109,15 @@ Ekstrak fakta, angka, kontroversi, dan angle unik. Sertakan URL sumber asli dari
     research.facts = fallbackResearch(project.topic, results).facts;
   }
 
+  // Gaya video (engineering / factcheck / lifestyle) diputuskan sekali di sini,
+  // lalu dibaca visual planner. Disimpan di researchData (JSON) tanpa migrasi DB.
+  const { style, source: styleSource } = await classifyTopicStyle({
+    topic: project.topic,
+    facts: research.facts,
+    modelOverride: project.model,
+  });
+  research.style = style;
+
   await prisma.project.update({
     where: { id: projectId },
     data: { researchData: asJson(research) },
@@ -116,6 +126,8 @@ Ekstrak fakta, angka, kontroversi, dan angle unik. Sertakan URL sumber asli dari
   await completeStage(projectId, "research", {
     facts: research.facts.length,
     sources: research.sources.length,
+    style,
+    styleSource,
   });
 
   return research;

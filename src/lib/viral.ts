@@ -129,6 +129,45 @@ Kembalikan HANYA JSON valid:
 }
 Jumlah scene harus sama dengan jumlah kalimat yang diberikan. startTime/endTime harus mengikuti timing kalimat. Field yang tidak relevan boleh dihilangkan.`;
 
+export const TOPIC_CLASSIFIER_PROMPT = `Kamu adalah editor yang menentukan GAYA VISUAL video Reels berdasarkan topiknya.
+Pilih tepat satu:
+- "engineering": topik penjelasan sains/teknik. Cara kerja mesin, alat, teknologi, struktur, proses alam atau tubuh yang paling jelas kalau dilihat sebagai potongan/diagram bagian dalam (mesin jet, baterai, reaktor, chip, jembatan, tsunami, organ).
+- "factcheck": topik fakta atau mitos. Klaim yang diuji, data/angka, statistik, perbandingan, bahaya vs aman, kontroversi.
+- "lifestyle": topik kehidupan sehari-hari. Kebiasaan, makanan, kesehatan ringan, rumah, kerja, uang, tips, tren yang paling kuat kalau ditunjukkan lewat foto/footage nyata.
+Kalau topik bisa masuk dua kategori, pilih kategori yang paling menentukan cara visualnya ditampilkan, bukan sekadar kata di judulnya.
+Kembalikan HANYA JSON valid: { "style": "engineering" | "factcheck" | "lifestyle", "reason": "satu kalimat singkat" }`;
+
+/**
+ * Tambahan untuk VISUAL_SYSTEM_PROMPT per gaya video. Daftar tipe yang
+ * diizinkan di sini harus sejalan dengan STYLE_POLICY di lib/topic-style.ts
+ * (planner tetap memfilter di kode, prompt ini hanya mengarahkan LLM).
+ */
+export const STYLE_PROMPT_ADDENDUM: Record<
+  "engineering" | "factcheck" | "lifestyle",
+  string
+> = {
+  engineering: `
+
+GAYA VIDEO: SAINS / ENGINEERING (blueprint, teknis, penjelasan bagian dalam).
+- Tipe yang diizinkan HANYA: SVG_CROSSSECTION, SVG_TIMELINE, SVG_GAUGE, SVG_COUNTER, SVG_BAR_CHART, B_ROLL_IMAGE. DILARANG: SVG_STAMP, SVG_COMPARE, SVG_WAVEFORM.
+- Prioritaskan SVG_CROSSSECTION saat kalimat menyebut bagian/lapisan/komponen, dan SVG_TIMELINE saat kalimat menjelaskan urutan proses atau aliran.
+- Pakai SVG_GAUGE/SVG_COUNTER/SVG_BAR_CHART untuk spesifikasi dan angka teknis (suhu, tekanan, kecepatan, ukuran) yang ada di kalimat.
+- B_ROLL_IMAGE hanya untuk gambar teknis: foto komponen nyata, diagram, blueprint, cutaway, close-up mesin. imageSearchQuery harus menyebut objek teknisnya secara spesifik (contoh: "turbofan engine cutaway diagram", "lithium ion battery cell cross section").
+- Nada visual: dingin, presisi, biru/cyan/hijau teknis. Hindari accentColor merah-pink kecuali untuk bahaya.`,
+  factcheck: `
+
+GAYA VIDEO: FAKTA / MITOS (footage + metrik + chart + perbandingan).
+- Semua tipe diizinkan. Prioritaskan SVG_COMPARE untuk mitos vs fakta, SVG_BAR_CHART/SVG_COUNTER/SVG_GAUGE untuk angka, dan SVG_STAMP untuk vonis.
+- Selingi dengan B_ROLL_IMAGE bukti nyata (foto kejadian, produk, dokumen, orang) supaya klaim terasa punya bukti.
+- Kalau kalimat memuat angka atau pembanding, tampilkan sebagai metrik/chart, jangan hanya foto.`,
+  lifestyle: `
+
+GAYA VIDEO: KEHIDUPAN SEHARI-HARI (footage dan foto relevan).
+- Tipe yang diizinkan HANYA: B_ROLL_IMAGE, SVG_COUNTER, SVG_TIMELINE. DILARANG: SVG_STAMP, SVG_COMPARE, SVG_WAVEFORM, SVG_CROSSSECTION, SVG_GAUGE, SVG_BAR_CHART.
+- Minimal 70% scene harus B_ROLL_IMAGE. Pakai SVG_COUNTER hanya untuk satu angka kunci yang benar-benar ada di kalimat, SVG_TIMELINE hanya untuk urutan kebiasaan/langkah.
+- imageSearchQuery harus adegan manusiawi dan konkret (orang, tempat, benda sehari-hari, suasana), bukan konsep abstrak. Variasikan sudut: close-up benda, orang beraktivitas, suasana tempat.`,
+};
+
 export const GRADIENT_PALETTES = [
   "linear-gradient(135deg, #00ff88 0%, #00ccff 100%)",
   "linear-gradient(135deg, #ff00aa 0%, #ffaa00 100%)",

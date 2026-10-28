@@ -29,12 +29,18 @@ import type {
   SceneWave,
   ScriptSentence,
   TextAnimationType,
+  TopicStyle,
   VisualPlan,
   VisualScene,
   VisualType,
   WordTimestamp,
 } from "../types";
-import { GRADIENT_PALETTES, VISUAL_SYSTEM_PROMPT } from "../viral";
+import {
+  isVisualAllowed,
+  resolveTopicStyle,
+  visualSystemPromptFor,
+} from "../topic-style";
+import { GRADIENT_PALETTES } from "../viral";
 
 const MOTIONS: MotionType[] = [
   "zoomIn",
@@ -321,6 +327,21 @@ const EDITORIAL_STAGES = new Set<VisualType>([
 ]);
 
 /**
+ * Visual type di luar kebijakan gaya video (mis. SVG_STAMP di video lifestyle)
+ * diganti B_ROLL_IMAGE. Ini jaring pengaman: LLM bisa saja melanggar prompt,
+ * dan deriveStage juga bisa memilih counter/wave dari pola teks.
+ */
+function restrictToStyle(stage: StageData, style: TopicStyle): StageData {
+  if (isVisualAllowed(style, stage.visualType)) return stage;
+  return {
+    visualType: "B_ROLL_IMAGE",
+    stageLabel: "",
+    imageSearchQuery: stage.imageSearchQuery,
+    imageStyle: stage.imageStyle,
+  };
+}
+
+/**
  * Pick the center-stage mode from the narration, not from LLM prose.
  * Every number that reaches the screen is checked against the sentence.
  */
@@ -559,6 +580,7 @@ function normalizeScenes(
   duration: number,
   topic: string,
   knowledge = "",
+  style: TopicStyle = "factcheck",
 ): VisualScene[] {
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
@@ -589,12 +611,9 @@ function normalizeScenes(
     const span = Math.max(0.5, end - start);
     const chunkCount = Math.max(1, Math.ceil(span / MAX_SCENE_SECONDS));
     const chunkLength = span / chunkCount;
-    const baseStage = deriveStage(
-      candidate,
-      sentence,
-      topic,
-      scenes.length,
-      knowledge,
+    const baseStage = restrictToStyle(
+      deriveStage(candidate, sentence, topic, scenes.length, knowledge),
+      style,
     );
 
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
@@ -697,6 +716,7 @@ function fallbackPlan(
   timings: Timing[],
   duration: number,
   topic: string,
+  style: TopicStyle = "factcheck",
 ): VisualPlan {
   return {
     vibe: "fast-cut, high contrast, gen-z viral",
@@ -728,6 +748,8 @@ function fallbackPlan(
       timings,
       duration,
       topic,
+      "",
+      style,
     ),
   };
 }
@@ -766,10 +788,14 @@ export async function runVisualPlanner(projectId: string) {
     .map((sentence) => sentence.text)
     .join(" ")} ${JSON.stringify(project.researchData ?? {})}`.toLowerCase();
 
+  const style = resolveTopicStyle(
+    (project.researchData as { style?: unknown } | null)?.style,
+  );
+
   let plan: VisualPlan;
   try {
     const output = await chatJSON({
-      system: VISUAL_SYSTEM_PROMPT,
+      system: visualSystemPromptFor(style),
       user: `TOPIK: ${project.topic}
 DURASI AUDIO: ${duration.toFixed(2)} detik
 JUMLAH KALIMAT: ${fullScript.sentences.length}
@@ -802,6 +828,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
         duration,
         project.topic,
         knowledge,
+        style,
       ),
     };
   } catch (error) {
@@ -809,7 +836,13 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
       "[visual-planner] LLM gagal, memakai visual plan fallback:",
       error instanceof Error ? error.message : error,
     );
-    plan = fallbackPlan(fullScript.sentences, timings, duration, project.topic);
+    plan = fallbackPlan(
+      fullScript.sentences,
+      timings,
+      duration,
+      project.topic,
+      style,
+    );
   }
 
   await prisma.project.update({
@@ -819,6 +852,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
 
   await completeStage(projectId, "visual-planning", {
     scenes: plan.scenes.length,
+    style,
     vibe: plan.vibe,
     withImages: plan.scenes.filter((scene) => scene.visualType === "B_ROLL_IMAGE").length,
   });
