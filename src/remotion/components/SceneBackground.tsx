@@ -1,30 +1,36 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Img,
   OffthreadVideo,
   interpolate,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
 import type { SceneProps } from "../types";
 
+function imageSrc(scene: SceneProps["scene"]) {
+  const value = scene.imageUrl?.replace(/^\/+/, "");
+  return value ? staticFile(value) : null;
+}
+
 /**
- * Moving background only: gradient/video, Ken Burns, light blobs and a subtle
- * grid. No emoji watermark and no developer ticker — the center stage owns
- * the attention now.
+ * Full-screen background provider across all scenes.
+ * Renders real B-roll images or video behind everything (including Statistics,
+ * Metrics, and Compare stages). Never uses artificial neon gradients.
  */
-export const SceneBackground: React.FC<SceneProps> = ({ scene, index }) => {
+export const SceneBackground: React.FC<SceneProps> = ({ scene }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const duration = Math.max(0.5, scene.endTime - scene.startTime);
   const progress = Math.min(1, frame / (duration * fps));
-  const t = frame / fps;
   const intensity = Math.min(0.5, Math.max(0.1, scene.motion.intensity));
 
   const kenBurns =
     scene.kenBurns === false
-      ? 1
-      : interpolate(progress, [0, 1], [1, 1.18], {
+      ? 1.02
+      : interpolate(progress, [0, 1], [1.02, 1.15], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
         });
@@ -38,59 +44,50 @@ export const SceneBackground: React.FC<SceneProps> = ({ scene, index }) => {
     case "zoomIn":
       scale =
         kenBurns *
-        interpolate(progress, [0, 1], [1, 1.05 + intensity * 0.2]);
-      translateX = interpolate(progress, [0, 1], [-14, 14]);
+        interpolate(progress, [0, 1], [1, 1.04 + intensity * 0.15]);
+      translateX = interpolate(progress, [0, 1], [-16, 16]);
       break;
     case "zoomOut":
       scale =
         kenBurns *
-        interpolate(progress, [0, 1], [1.06 + intensity * 0.2, 1]);
-      translateY = interpolate(progress, [0, 1], [-16, 16]);
+        interpolate(progress, [0, 1], [1.05 + intensity * 0.15, 1]);
+      translateY = interpolate(progress, [0, 1], [-14, 14]);
       break;
     case "pan":
-      scale = kenBurns * 1.05;
-      translateX = interpolate(progress, [0, 1], [-70, 70]) * (1 + intensity);
-      rotate = interpolate(progress, [0, 1], [-0.5, 0.5]);
+      scale = kenBurns * 1.04;
+      translateX = interpolate(progress, [0, 1], [-45, 45]) * (1 + intensity);
+      rotate = interpolate(progress, [0, 1], [-0.4, 0.4]);
       break;
     case "panLeft":
-      scale = kenBurns * 1.05;
-      translateX = interpolate(progress, [0, 1], [70, -70]) * (1 + intensity);
-      rotate = interpolate(progress, [0, 1], [0.5, -0.5]);
+      scale = kenBurns * 1.04;
+      translateX = interpolate(progress, [0, 1], [45, -45]) * (1 + intensity);
+      rotate = interpolate(progress, [0, 1], [0.4, -0.4]);
       break;
     case "shake":
-      scale = kenBurns * (1.02 + intensity * 0.1);
-      translateX = Math.sin(frame * 2.2) * (6 + intensity * 28);
-      translateY = Math.cos(frame * 2.9) * (5 + intensity * 22);
-      rotate = Math.sin(frame * 1.6) * (0.3 + intensity * 0.7);
+      scale = kenBurns * (1.02 + intensity * 0.08);
+      translateX = Math.sin(frame * 2.2) * (5 + intensity * 18);
+      translateY = Math.cos(frame * 2.9) * (4 + intensity * 16);
+      rotate = Math.sin(frame * 1.6) * (0.2 + intensity * 0.5);
       break;
   }
 
-  const accent = scene.accentColor || "#39FF14";
+  const danger = scene.theme === "danger";
   const hasVideo =
     scene.background.type === "video" && Boolean(scene.background.videoUrl);
-  const danger = scene.theme === "danger";
+  const src = imageSrc(scene);
+  const isSvgStage = scene.visualType !== "B_ROLL_IMAGE";
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#050505", overflow: "hidden" }}>
+    <AbsoluteFill style={{ backgroundColor: "#06080d", overflow: "hidden" }}>
+      {/* Real B-roll Video or Photo with Ken Burns motion */}
       <div
         style={{
           position: "absolute",
-          inset: -80,
+          inset: -60,
           transform: `scale(${scale}) translate3d(${translateX}px, ${translateY}px, 0) rotate(${rotate}deg)`,
           transformOrigin: "center center",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              scene.background.fallback ||
-              (scene.background.type === "gradient"
-                ? scene.background.value
-                : "#050505"),
-          }}
-        />
         {hasVideo ? (
           <OffthreadVideo
             src={scene.background.videoUrl as string}
@@ -101,85 +98,68 @@ export const SceneBackground: React.FC<SceneProps> = ({ scene, index }) => {
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              opacity: 0.55,
-              filter: "saturate(1.05) contrast(1.05) brightness(0.72)",
+              filter: danger
+                ? "saturate(0.9) contrast(1.1) brightness(0.75)"
+                : "saturate(1.02) contrast(1.05) brightness(0.8)",
             }}
           />
-        ) : null}
+        ) : src ? (
+          <Img
+            src={src}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              filter: danger
+                ? "saturate(0.9) contrast(1.1) brightness(0.8) hue-rotate(-6deg)"
+                : "saturate(1.05) contrast(1.08) brightness(0.85)",
+            }}
+          />
+        ) : (
+          /* Neutral dark plate only if no image/video is available (never colorful gradient) */
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundColor: "#070a0f",
+            }}
+          />
+        )}
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          width: 900,
-          height: 900,
-          left: -260 + Math.sin(t * 0.9 + index) * 90,
-          top: 240 + Math.cos(t * 1.1 + index) * 70,
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${danger ? "#FF3B3B" : accent}55 0%, transparent 66%)`,
-          filter: "blur(48px)",
-          mixBlendMode: "screen",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          width: 760,
-          height: 760,
-          right: -220 + Math.cos(t * 0.7 + index) * 70,
-          bottom: 160 + Math.sin(t * 1.2) * 60,
-          borderRadius: "50%",
-          background:
-            "radial-gradient(circle, rgba(255,46,147,0.32) 0%, transparent 66%)",
-          filter: "blur(52px)",
-          mixBlendMode: "screen",
-        }}
-      />
+      {/* When displaying Statistics / Metrics / Compare stages, darken slightly so data text is crisp */}
+      {isSvgStage ? (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(3, 6, 12, 0.56)",
+            backdropFilter: "blur(1.5px)",
+          }}
+        />
+      ) : null}
 
+      {/* Top & bottom cinematic gradients for TopBar and Caption legibility */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          opacity: 0.1,
-          backgroundImage: `linear-gradient(${accent}22 1px, transparent 1px), linear-gradient(90deg, ${accent}22 1px, transparent 1px)`,
-          backgroundSize: "96px 96px",
-          transform: `perspective(700px) rotateX(58deg) translateY(${(t * 26) % 96}px) scale(1.8)`,
-          transformOrigin: "center 78%",
+          background: danger
+            ? "linear-gradient(180deg, rgba(0,0,0,0.78) 0%, rgba(20,0,0,0.1) 22%, rgba(0,0,0,0.08) 60%, rgba(0,0,0,0.85) 100%)"
+            : "linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.08) 22%, rgba(0,0,0,0.08) 60%, rgba(0,0,0,0.85) 100%)",
         }}
       />
 
-      <div
-        style={{
-          position: "absolute",
-          inset: -200,
-          opacity: 0.06,
-          backgroundImage: `repeating-linear-gradient(115deg, ${accent} 0px, ${accent} 2px, transparent 2px, transparent 46px)`,
-          transform: `translateX(${(t * 30) % 46}px)`,
-        }}
-      />
-
+      {/* Subtle cinematic texture overlay */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           opacity: 0.08,
           backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(0,0,0,0.9) 0px, rgba(0,0,0,0.9) 1px, transparent 1px, transparent 5px)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(2,4,8,0.26)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse at 50% 48%, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.32) 82%, rgba(0,0,0,0.72) 100%)",
+            "repeating-linear-gradient(0deg, rgba(0,0,0,0.85) 0px, rgba(0,0,0,0.85) 1px, transparent 1px, transparent 4px)",
         }}
       />
     </AbsoluteFill>

@@ -44,53 +44,26 @@ const Backdrop: React.FC<{ accent: string; tag: string }> = ({
   accent,
   tag,
 }) => {
-  const corner = (pos: React.CSSProperties): React.CSSProperties => ({
-    position: "absolute",
-    width: 44,
-    height: 44,
-    borderColor: accent,
-    borderStyle: "solid",
-    borderWidth: 0,
-    ...pos,
-  });
+  if (!tag) return null;
   return (
-    <>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(165deg, #070a0e 0%, #0d141b 52%, #050608 100%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.28,
-          backgroundImage: `linear-gradient(${accent}33 1px, transparent 1px), linear-gradient(90deg, ${accent}33 1px, transparent 1px)`,
-          backgroundSize: "82px 82px",
-        }}
-      />
-      <div style={corner({ left: 16, top: 16, borderTopWidth: 6, borderLeftWidth: 6 })} />
-      <div style={corner({ right: 16, top: 16, borderTopWidth: 6, borderRightWidth: 6 })} />
-      <div style={corner({ left: 16, bottom: 16, borderBottomWidth: 6, borderLeftWidth: 6 })} />
-      <div style={corner({ right: 16, bottom: 16, borderBottomWidth: 6, borderRightWidth: 6 })} />
-      <div
-        style={{
-          position: "absolute",
-          left: 40,
-          top: 34,
-          fontFamily: MONO,
-          fontSize: 24,
-          letterSpacing: 5,
-          color: accent,
-          opacity: 0.85,
-        }}
-      >
-        {tag}
-      </div>
-    </>
+    <div
+      style={{
+        position: "absolute",
+        left: 24,
+        top: 24,
+        padding: "6px 14px",
+        background: "rgba(4,6,12,0.65)",
+        border: "1px solid rgba(255,255,255,0.15)",
+        borderRadius: 4,
+        fontFamily: MONO,
+        fontSize: 20,
+        letterSpacing: 4,
+        color: accent,
+        backdropFilter: "blur(6px)",
+      }}
+    >
+      {tag}
+    </div>
   );
 };
 

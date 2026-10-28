@@ -80,27 +80,82 @@ async function fetchImage(url: string): Promise<Buffer | null> {
   }
 }
 
-async function normalizeImage(raw: Buffer, outputPath: string) {
+async function getImageDimensions(
+  filePath: string,
+): Promise<{ width: number; height: number } | null> {
+  try {
+    const { stdout } = await execFileAsync("ffprobe", [
+      "-v",
+      "error",
+      "-select_streams",
+      "v:0",
+      "-show_entries",
+      "stream=width,height",
+      "-of",
+      "csv=s=x:p=0",
+      filePath,
+    ]);
+    const [wStr, hStr] = stdout.trim().split("x");
+    const width = parseInt(wStr, 10);
+    const height = parseInt(hStr, 10);
+    if (
+      Number.isFinite(width) &&
+      Number.isFinite(height) &&
+      width > 0 &&
+      height > 0
+    ) {
+      return { width, height };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function normalizeImage(
+  raw: Buffer,
+  outputPath: string,
+  isPortrait = true,
+) {
   const tempPath = `${outputPath}.src`;
   try {
     await fs.writeFile(tempPath, raw);
-    await execFileAsync("ffmpeg", [
-      "-y",
-      "-i",
-      tempPath,
-      "-vf",
-      "scale=1080:1350:force_original_aspect_ratio=increase,crop=1080:1350",
-      "-frames:v",
-      "1",
-      "-q:v",
-      "3",
-      outputPath,
-    ]);
+
+    if (isPortrait) {
+      // True portrait / vertical aspect ratio: scale & center crop cleanly to 1080x1920
+      await execFileAsync("ffmpeg", [
+        "-y",
+        "-i",
+        tempPath,
+        "-vf",
+        "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+        "-frames:v",
+        "1",
+        "-q:v",
+        "2",
+        outputPath,
+      ]);
+    } else {
+      // Landscape fallback: DO NOT zoom excessively to avoid severe pixelation/blur.
+      // Use cinematic stacked background blur + sharp native fit overlay.
+      await execFileAsync("ffmpeg", [
+        "-y",
+        "-i",
+        tempPath,
+        "-filter_complex",
+        "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=24:24[bg];[0:v]scale=1080:-1[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2",
+        "-frames:v",
+        "1",
+        "-q:v",
+        "2",
+        outputPath,
+      ]);
+    }
+
     const stat = await fs.stat(outputPath);
     if (stat.size < 8_000) throw new Error("normalized image too small");
     return true;
   } catch {
-    // Last resort: keep the original bytes if ffmpeg cannot decode it.
     try {
       await fs.rename(tempPath, outputPath);
       const stat = await fs.stat(outputPath);
@@ -122,34 +177,67 @@ export async function downloadSceneImage(
   const normalized = query.replace(/\s+/g, " ").trim().slice(0, 100);
   if (normalized.length < 3) return null;
 
-  const results = await searchImages(normalized, 24).catch(() => []);
-  const relevanceQuery = /photo|photograph/i.test(normalized)
+  // Append portrait hints to guide image engines towards vertical imagery
+  const portraitQuery = /portrait|vertical/i.test(normalized)
     ? normalized
-    : `${normalized} photo`;
+    : `${normalized} portrait vertical`;
+
+  const results = await searchImages(portraitQuery, 30).catch(() => []);
   const ranked: Candidate[] = results
     .map((item) => ({
       imgSrc: item.imgSrc,
       source: item.source,
       title: item.title,
-      score: scoreCandidate(item.imgSrc, item.source, item.title, relevanceQuery),
+      score: scoreCandidate(item.imgSrc, item.source, item.title, normalized),
     }))
     .filter((item) => item.score > -6 && !usedSources.has(item.imgSrc))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 12);
+    .slice(0, 18);
 
   if (ranked.length === 0) return null;
 
   await fs.mkdir(path.join(IMAGE_DIR, projectId), { recursive: true });
   const dir = path.join(IMAGE_DIR, projectId);
+  const filename = `scene-${String(index + 1).padStart(2, "0")}.jpg`;
+  const outputPath = path.join(dir, filename);
+  const tempProbePath = path.join(dir, `probe-${index}.tmp`);
+
+  let bestLandscapeBuffer: Buffer | null = null;
 
   for (const candidate of ranked) {
     if (usedSources.has(candidate.imgSrc)) continue;
     usedSources.add(candidate.imgSrc);
     const raw = await fetchImage(candidate.imgSrc);
     if (!raw) continue;
-    const filename = `scene-${String(index + 1).padStart(2, "0")}.jpg`;
-    const outputPath = path.join(dir, filename);
-    if (await normalizeImage(raw, outputPath)) {
+
+    // Probe dimensions to verify aspect ratio
+    await fs.writeFile(tempProbePath, raw).catch(() => null);
+    const dims = await getImageDimensions(tempProbePath);
+    await fs.rm(tempProbePath, { force: true }).catch(() => null);
+
+    if (dims) {
+      const isPortrait = dims.height >= dims.width * 0.95; // portrait or square
+      if (isPortrait && dims.height >= 700) {
+        // High quality portrait found!
+        if (await normalizeImage(raw, outputPath, true)) {
+          return `/images/${projectId}/${filename}`;
+        }
+      } else if (!bestLandscapeBuffer) {
+        // Keep first decent landscape as emergency fallback
+        bestLandscapeBuffer = raw;
+      }
+    } else {
+      // Dimension probe failed, try normalize as portrait
+      if (await normalizeImage(raw, outputPath, true)) {
+        return `/images/${projectId}/${filename}`;
+      }
+    }
+  }
+
+  // If no true portrait was found after inspecting all candidates,
+  // use the best landscape image with cinematic blurred letterbox so it NEVER looks pixelated/stretched.
+  if (bestLandscapeBuffer) {
+    if (await normalizeImage(bestLandscapeBuffer, outputPath, false)) {
       return `/images/${projectId}/${filename}`;
     }
   }
@@ -169,10 +257,7 @@ export async function attachSceneImages(
 ): Promise<VisualScene[]> {
   const targets = scenes
     .map((scene, index) => ({ scene, index }))
-    .filter(
-      (entry) =>
-        entry.scene.visualType === "B_ROLL_IMAGE" && !entry.scene.imageUrl,
-    );
+    .filter((entry) => !entry.scene.imageUrl);
 
   const resolved = new Map<number, string>();
   const usedSources = new Set<string>();
@@ -232,8 +317,26 @@ export async function attachSceneImages(
     console.warn("[images] tidak ada gambar b-roll yang bisa diunduh.");
   }
 
-  return scenes.map((scene, index) => {
-    const imageUrl = resolved.get(index);
+  // Ensure 100% visual continuity across all scenes (statistics, metrics, compare):
+  let lastImage = "";
+  const withImages = scenes.map((scene, index) => {
+    let imageUrl = resolved.get(index) ?? scene.imageUrl;
+    if (imageUrl) {
+      lastImage = imageUrl;
+    } else if (lastImage) {
+      imageUrl = lastImage;
+    }
     return imageUrl ? { ...scene, imageUrl } : scene;
   });
+
+  // If first scenes missed an image, backfill from the first available image
+  if (lastImage) {
+    for (let i = 0; i < withImages.length; i++) {
+      if (!withImages[i].imageUrl) {
+        withImages[i].imageUrl = lastImage;
+      }
+    }
+  }
+
+  return withImages;
 }

@@ -140,24 +140,6 @@ export const ComparisonBars: React.FC<{ scene: VisualScene }> = ({ scene }) => {
 
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(180deg, #080b10 0%, #0b1118 58%, #050608 100%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.16,
-          backgroundImage: `linear-gradient(${accent}44 1px, transparent 1px)`,
-          backgroundSize: "100% 86px",
-          backgroundPosition: "0 150px",
-        }}
-      />
 
       <div
         style={{
@@ -225,13 +207,6 @@ export const ComparisonBars: React.FC<{ scene: VisualScene }> = ({ scene }) => {
           bottom: 46,
           height: 3,
           background: `linear-gradient(90deg, transparent, ${accent}88, transparent)`,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          border: "2px solid rgba(255,255,255,0.07)",
         }}
       />
     </AbsoluteFill>

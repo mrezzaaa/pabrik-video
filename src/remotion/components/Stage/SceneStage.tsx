@@ -12,19 +12,22 @@ import { KenBurnsImageFrame } from "./KenBurnsImageFrame";
 import { OdometerCounter } from "./OdometerCounter";
 import { RangeGauge } from "./RangeGauge";
 
-/** Vertical safe zone for the center stage (1080x1920). */
+/** Vertical safe zone for the center stage data graphics (1080x1920). */
 export const STAGE_TOP = 280;
 export const STAGE_HEIGHT = 1000;
 
 /**
- * Center stage dispatcher. The stage NEVER renders the spoken transcript:
- * it is either real SearXNG b-roll or an animated data graphic containing
- * numbers and 1-2 word axis labels only.
+ * Center stage dispatcher.
+ * When B_ROLL_IMAGE is used, it renders FULL BLEED (1080x1920) across the entire screen
+ * so the viewer stays focused without visual fragmentation or disjointed frames.
+ * For animated data graphics (counters, gauges, charts), they stay centered in the safe zone.
  */
 export const SceneStage: React.FC<{
   scene: VisualScene;
   index: number;
 }> = ({ scene, index }) => {
+  const isImage = scene.visualType === "B_ROLL_IMAGE";
+
   const stage = (() => {
     switch (scene.visualType) {
       case "SVG_COUNTER":
@@ -52,6 +55,22 @@ export const SceneStage: React.FC<{
 
   if (!stage) return null;
 
+  if (isImage) {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 20,
+          pointerEvents: "none",
+          overflow: "hidden",
+        }}
+      >
+        {stage}
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -63,7 +82,6 @@ export const SceneStage: React.FC<{
         zIndex: 20,
         pointerEvents: "none",
         overflow: "hidden",
-        borderRadius: 4,
       }}
     >
       {stage}

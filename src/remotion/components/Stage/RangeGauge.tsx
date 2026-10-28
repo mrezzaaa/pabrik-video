@@ -84,23 +84,6 @@ export const RangeGauge: React.FC<{ scene: VisualScene }> = ({ scene }) => {
 
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(circle at 50% 42%, rgba(18,26,34,0.9) 0%, #06080b 68%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.2,
-          backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.18) 0px, rgba(255,255,255,0.18) 1px, transparent 1px, transparent 6px)",
-        }}
-      />
 
       <svg
         viewBox="0 0 900 760"
@@ -248,14 +231,6 @@ export const RangeGauge: React.FC<{ scene: VisualScene }> = ({ scene }) => {
         />
         {label}
       </div>
-
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          border: "2px solid rgba(255,255,255,0.07)",
-        }}
-      />
     </AbsoluteFill>
   );
 };

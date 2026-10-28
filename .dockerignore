@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+public/audio
+public/videos
+public/thumbnails
+public/images
+*.mp4
+*.wav
+*.mp3
+.env*.local

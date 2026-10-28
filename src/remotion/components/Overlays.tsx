@@ -110,8 +110,8 @@ export const PatternInterrupt: React.FC<{ accent: string }> = ({ accent }) => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const strobe = frame < 4 ? 0.5 : frame < 7 ? 0.22 : 0;
-  const sweep = interpolate(frame, [0, 34], [-120, 1120], {
+  const strobe = frame < 4 ? 0.35 : frame < 7 ? 0.15 : 0;
+  const sweep = interpolate(frame, [0, 34], [-120, 1200], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -125,24 +125,20 @@ export const PatternInterrupt: React.FC<{ accent: string }> = ({ accent }) => {
         style={{
           position: "absolute",
           inset: 0,
-          background: `radial-gradient(ellipse at 50% 42%, ${accent}22 0%, rgba(0,0,0,0) 62%)`,
+          background: `radial-gradient(ellipse at 50% 50%, ${accent}22 0%, rgba(0,0,0,0) 65%)`,
         }}
       />
 
-      {/* All geometry stays inside the center stage so captions are never crossed. */}
       <div
         style={{
           position: "absolute",
-          top: 280,
-          left: 0,
-          right: 0,
-          height: 1000,
+          inset: 0,
           overflow: "hidden",
         }}
       >
         {Array.from({ length: bars }).map((_, index) => {
           const height = 18 + (index % 3) * 16;
-          const y = 24 + index * 108;
+          const y = 80 + index * 180;
           return (
             <div
               key={`speed-${index}`}
@@ -152,9 +148,9 @@ export const PatternInterrupt: React.FC<{ accent: string }> = ({ accent }) => {
                 left: 0,
                 width: `${36 + (index % 4) * 14}%`,
                 height,
-                background: `linear-gradient(90deg, ${accent}00 0%, ${accent}66 45%, ${accent}00 100%)`,
+                background: `linear-gradient(90deg, ${accent}00 0%, ${accent}44 45%, ${accent}00 100%)`,
                 transform: `translateX(${((frame * (12 + index * 4)) % 900) - 280}px) skewX(-24deg)`,
-                opacity: 0.26 + (index % 3) * 0.12,
+                opacity: 0.2 + (index % 3) * 0.08,
                 mixBlendMode: "screen",
               }}
             />
@@ -166,36 +162,11 @@ export const PatternInterrupt: React.FC<{ accent: string }> = ({ accent }) => {
             position: "absolute",
             top: 0,
             bottom: 0,
-            width: 220,
+            width: 260,
             left: sweep,
-            background: `linear-gradient(90deg, transparent, ${accent}55, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${accent}44, transparent)`,
             mixBlendMode: "screen",
             transform: "skewX(-14deg)",
-          }}
-        />
-
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 0,
-            height: 6,
-            background: accent,
-            boxShadow: `0 0 38px ${accent}`,
-            opacity: 0.8,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 6,
-            background: accent,
-            boxShadow: `0 0 38px ${accent}`,
-            opacity: 0.8,
           }}
         />
       </div>

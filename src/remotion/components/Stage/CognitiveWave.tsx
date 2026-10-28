@@ -65,24 +65,6 @@ export const CognitiveWave: React.FC<{ scene: VisualScene }> = ({ scene }) => {
 
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse at 50% 52%, #101a20 0%, #06080b 72%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.24,
-          backgroundImage: `linear-gradient(${accent}33 1px, transparent 1px), linear-gradient(90deg, ${accent}33 1px, transparent 1px)`,
-          backgroundSize: "90px 90px",
-          transform: `translateX(${-(frame / fps) * 22}px)`,
-        }}
-      />
 
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -190,14 +172,6 @@ export const CognitiveWave: React.FC<{ scene: VisualScene }> = ({ scene }) => {
       >
         {danger ? "DROP" : ""}
       </div>
-
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          border: "2px solid rgba(255,255,255,0.07)",
-        }}
-      />
     </AbsoluteFill>
   );
 };

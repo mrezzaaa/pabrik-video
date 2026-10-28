@@ -59,23 +59,6 @@ export const OdometerCounter: React.FC<{ scene: VisualScene }> = ({
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(165deg, #070a0e 0%, #0d141b 52%, #050608 100%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.28,
-          backgroundImage: `linear-gradient(${accent}33 1px, transparent 1px), linear-gradient(90deg, ${accent}33 1px, transparent 1px)`,
-          backgroundSize: "82px 82px",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
           left: 0,
           right: 0,
           top: `${interpolate(enter, [0, 1], [22, 30])}%`,
@@ -220,14 +203,6 @@ export const OdometerCounter: React.FC<{ scene: VisualScene }> = ({
           ))}
         </div>
       </div>
-
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          border: "2px solid rgba(255,255,255,0.08)",
-        }}
-      />
     </AbsoluteFill>
   );
 };

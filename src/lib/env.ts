@@ -40,7 +40,7 @@ export const env = {
   unlimitedTtsVoice: required("UNLIMITEDTTS_VOICE", "Ethan"),
   unlimitedTtsSpeed: Number(process.env.UNLIMITEDTTS_SPEED ?? 1.1),
 
-  remotionConcurrency: Number(process.env.REMOTION_CONCURRENCY ?? 2),
+  remotionConcurrency: Number(process.env.REMOTION_CONCURRENCY ?? 4),
   remotionFps: Number(process.env.REMOTION_FPS ?? 30),
   remotionGl: process.env.REMOTION_GL ?? "angle",
 

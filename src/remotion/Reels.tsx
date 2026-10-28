@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   AbsoluteFill,
   Audio,
   Sequence,
-  continueRender,
-  delayRender,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -15,7 +13,7 @@ import { Caption } from "./components/Caption";
 import { IntroWipe, PatternInterrupt, TopBar } from "./components/Overlays";
 import { SceneBackground } from "./components/SceneBackground";
 import { SceneStage } from "./components/Stage/SceneStage";
-import { ANTON_FAMILY, anton } from "./fonts";
+import { ANTON_FAMILY } from "./fonts";
 import type { ReelsProps } from "./types";
 
 export const Reels: React.FC<ReelsProps> = ({
@@ -27,14 +25,6 @@ export const Reels: React.FC<ReelsProps> = ({
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
-  const [fontHandle] = useState(() => delayRender("Loading Anton font"));
-
-  useEffect(() => {
-    anton
-      .waitUntilDone()
-      .then(() => continueRender(fontHandle))
-      .catch(() => continueRender(fontHandle));
-  }, [fontHandle]);
 
   const sortedScenes = [...scenes].sort((a, b) => a.startTime - b.startTime);
   const currentTime = frame / fps;

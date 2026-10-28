@@ -228,7 +228,9 @@ export function DashboardClient({
 
         <div className="flex items-center gap-4">
           <div className="hidden text-right sm:block">
-            <div className="label-mono text-muted-foreground">Factory Clock</div>
+            <div className="label-mono text-muted-foreground">
+              Factory Clock
+            </div>
             <div className="font-mono text-sm font-semibold tabular-nums text-foreground">
               {clock} WIB
             </div>
@@ -300,7 +302,7 @@ export function DashboardClient({
               }}
             >
               <div className="flex flex-col gap-3 lg:flex-row">
-                <div className="relative flex-1">
+                <div className="relative ">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
                     Topik &gt;
                   </span>
@@ -616,7 +618,10 @@ export function DashboardClient({
                 "LOCAL FIRST",
                 "9:16 // 1080×1920",
               ].map((label) => (
-                <span key={`${copy}-${label}`} className="mx-5 flex items-center gap-5">
+                <span
+                  key={`${copy}-${label}`}
+                  className="mx-5 flex items-center gap-5"
+                >
                   <span>{label}</span>
                   <span className="text-primary/50">{"//"}</span>
                 </span>
@@ -628,9 +633,7 @@ export function DashboardClient({
 
       <div className="mt-5 flex flex-col items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-zinc-700 sm:flex-row">
         <span>Pabrik Video // Multi-Agent Reels Engine</span>
-        <span>
-          Next.js 16 · Remotion 4 · BullMQ · Prisma · Omniroute
-        </span>
+        <span>Next.js 16 · Remotion 4 · BullMQ · Prisma · Omniroute</span>
       </div>
     </main>
   );
