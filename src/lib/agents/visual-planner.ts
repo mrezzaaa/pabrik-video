@@ -36,6 +36,7 @@ import type {
   WordTimestamp,
 } from "../types";
 import {
+  anchorImageQuery,
   isVisualAllowed,
   resolveTopicStyle,
   visualSystemPromptFor,
@@ -611,10 +612,14 @@ function normalizeScenes(
     const span = Math.max(0.5, end - start);
     const chunkCount = Math.max(1, Math.ceil(span / MAX_SCENE_SECONDS));
     const chunkLength = span / chunkCount;
-    const baseStage = restrictToStyle(
+    const restricted = restrictToStyle(
       deriveStage(candidate, sentence, topic, scenes.length, knowledge),
       style,
     );
+    const baseStage: StageData = {
+      ...restricted,
+      imageSearchQuery: anchorImageQuery(restricted.imageSearchQuery, topic, style),
+    };
 
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
       const chunkStart = start + chunkIndex * chunkLength;

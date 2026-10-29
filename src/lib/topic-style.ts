@@ -119,3 +119,41 @@ export async function classifyTopicStyle(input: {
     };
   }
 }
+
+const QUERY_NOISE = new Set([
+  "gimana", "bagaimana", "kenapa", "mengapa", "apa", "apakah", "benarkah",
+  "cara", "kerja", "bekerja", "yang", "dan", "di", "ke", "dari", "itu", "ini",
+  "untuk", "dengan", "adalah", "bisa", "kah", "the", "how", "why", "what", "does",
+]);
+const DIAGRAM_HINT =
+  /\b(diagram|cutaway|blueprint|schematic|cross.?section|exploded|potongan|skema)\b/i;
+
+/** Kata inti topik (tanpa kata tanya), dipakai sebagai jangkar query gambar. */
+export function topicCore(topic: string): string[] {
+  return topic
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((word) => word.length >= 3 && !QUERY_NOISE.has(word))
+    .slice(0, 4);
+}
+
+/**
+ * Query gambar harus selalu nyambung ke topik. Kalau tidak ada satu pun kata
+ * inti topik di query (mis. "angin kencang"), kata inti topik ditaruh di depan.
+ * Gaya engineering juga diarahkan ke diagram/cutaway, bukan foto umum.
+ */
+export function anchorImageQuery(query: string, topic: string, style: TopicStyle): string {
+  const core = topicCore(topic);
+  const lower = query.toLowerCase();
+  // Query yang sudah eksplisit teknis (cutaway/diagram/...) dipercaya apa adanya.
+  const trusted =
+    core.length === 0 ||
+    core.some((word) => lower.includes(word)) ||
+    DIAGRAM_HINT.test(query);
+  let out = trusted ? query : `${core.join(" ")} ${query}`;
+  if (style === "engineering" && !DIAGRAM_HINT.test(out)) {
+    out = `${out} cutaway diagram`;
+  }
+  return out.replace(/\s+/g, " ").trim().slice(0, 100);
+}
