@@ -179,7 +179,7 @@ export function ModelSelector({
   };
 
   return (
-    <div className="relative w-full sm:w-72 lg:w-80" ref={containerRef}>
+    <div className="relative w-full" ref={containerRef}>
       {/* Autocomplete Input Container */}
       <div
         className={cn(
@@ -247,7 +247,7 @@ export function ModelSelector({
 
       {/* Autocomplete Dropdown List */}
       {open && (
-        <div className="absolute left-0 right-0 top-full z-[100] mt-1.5 border border-zinc-700 bg-[#0b0b0e] shadow-[0_16px_40px_rgba(0,0,0,0.9)]">
+        <div className="absolute left-0 top-full z-[100] mt-1.5 w-full min-w-[340px] sm:min-w-[460px] lg:min-w-[540px] max-w-[92vw] border border-zinc-700 bg-[#0b0b0e] shadow-[0_16px_40px_rgba(0,0,0,0.9)]">
           {/* Quick Filter Badges */}
           <div className="flex flex-wrap gap-1 border-b border-zinc-800 p-2">
             {POPULAR_FILTERS.map((filter) => (
@@ -343,11 +343,12 @@ export function ModelSelector({
                   <button
                     key={model.id}
                     type="button"
+                    title={model.id}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => selectModel(model.id)}
                     onMouseEnter={() => setHighlightIndex(idx)}
                     className={cn(
-                      "flex w-full items-center justify-between px-3 py-2 text-left transition-colors",
+                      "flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors",
                       isSelected
                         ? "bg-primary/15 text-primary font-bold"
                         : isHighlighted
@@ -355,8 +356,8 @@ export function ModelSelector({
                           : "text-zinc-300 hover:bg-zinc-800/60",
                     )}
                   >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <span className="truncate">{model.id}</span>
+                    <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                      <span className="font-mono text-xs break-all sm:break-normal sm:truncate">{model.id}</span>
                       {model.ownedBy && (
                         <span className="shrink-0 border border-zinc-800 bg-black/60 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-zinc-500">
                           {model.ownedBy}
@@ -364,7 +365,7 @@ export function ModelSelector({
                       )}
                     </div>
                     {isSelected && (
-                      <Check className="size-3.5 text-primary shrink-0 ml-2" />
+                      <Check className="size-3.5 text-primary shrink-0" />
                     )}
                   </button>
                 );

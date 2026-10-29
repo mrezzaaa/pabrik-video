@@ -301,8 +301,9 @@ export function DashboardClient({
                 void createProject(topic);
               }}
             >
-              <div className="flex flex-col gap-3 lg:flex-row">
-                <div className="relative ">
+              <div className="flex flex-col gap-3">
+                {/* Baris 1: Input Topik Full Width */}
+                <div className="relative w-full">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
                     Topik &gt;
                   </span>
@@ -315,29 +316,37 @@ export function DashboardClient({
                     className="h-16 border-zinc-700 bg-black/70 pl-[86px] text-base font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:border-primary sm:text-lg"
                   />
                 </div>
-                <ModelSelector
-                  value={selectedModel}
-                  onChange={setSelectedModel}
-                  disabled={creating}
-                />
-                <VoiceSelector
-                  value={selectedVoice}
-                  onChange={setSelectedVoice}
-                  disabled={creating}
-                />
-                <Button
-                  type="submit"
-                  size="xl"
-                  disabled={creating || topic.trim().length < 4}
-                  className="h-16 shrink-0 gap-3 px-6 text-xs sm:text-sm"
-                >
-                  {creating ? (
-                    <Loader2 className="size-5 animate-spin" />
-                  ) : (
-                    <Zap className="size-5" />
-                  )}
-                  {creating ? "Menyalakan..." : "Bikin Pabrik Jalan!"}
-                </Button>
+
+                {/* Baris 2: Model, Suara, dan Tombol Submit */}
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="flex-1">
+                    <ModelSelector
+                      value={selectedModel}
+                      onChange={setSelectedModel}
+                      disabled={creating}
+                    />
+                  </div>
+                  <div className="flex-1 sm:max-w-xs">
+                    <VoiceSelector
+                      value={selectedVoice}
+                      onChange={setSelectedVoice}
+                      disabled={creating}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    size="xl"
+                    disabled={creating || topic.trim().length < 4}
+                    className="h-16 shrink-0 gap-3 px-8 text-xs sm:text-sm font-semibold tracking-wide"
+                  >
+                    {creating ? (
+                      <Loader2 className="size-5 animate-spin" />
+                    ) : (
+                      <Zap className="size-5" />
+                    )}
+                    {creating ? "Menyalakan..." : "Bikin Pabrik Jalan!"}
+                  </Button>
+                </div>
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-2">

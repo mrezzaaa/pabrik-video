@@ -168,7 +168,7 @@ export function VoiceSelector({
   };
 
   return (
-    <div className="relative w-full sm:w-64 lg:w-72" ref={containerRef}>
+    <div className="relative w-full" ref={containerRef}>
       {/* Autocomplete Input */}
       <div
         className={cn(
