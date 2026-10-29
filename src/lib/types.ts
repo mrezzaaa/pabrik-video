@@ -73,6 +73,8 @@ export type TopicStyle = (typeof TOPIC_STYLES)[number];
 export interface ResearchData {
   /** Kosong pada project lama; planner memperlakukannya sebagai "factcheck". */
   style?: TopicStyle;
+  /** "heuristic" = LLM klasifikasi gagal, gaya ditebak dari kata kunci (searchTopic kosong). */
+  styleSource?: "llm" | "heuristic";
   /** Istilah topik 2-4 kata BAHASA INGGRIS untuk pencarian gambar (mis. "turbofan jet engine"). */
   searchTopic?: string;
   facts: string[];

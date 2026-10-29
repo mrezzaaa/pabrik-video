@@ -64,7 +64,7 @@ export function visualSystemPromptFor(style: TopicStyle): string {
 }
 
 const ENGINEERING_HINT =
-  /\b(cara kerja|mesin|turbin|turbofan|jet|pesawat|roket|baterai|reaktor|nuklir|sirkuit|chip|prosesor|semikonduktor|transistor|generator|pompa|kompresor|hidrolik|bendungan|jembatan|struktur|rekayasa|engineering|mekanisme|komponen|rangkaian|sensor|satelit|mobil listrik|motor listrik|kapal selam|tsunami|gempa|gunung berapi|dna|atom|sel|organ|jantung|otak|tata surya|lubang hitam)\b/gi;
+  /\b(cara kerja|mesin|turbin|turbofan|jet|pesawat|roket|baterai|reaktor|nuklir|sirkuit|chip|prosesor|semikonduktor|transistor|generator|pompa|kompresor|hidrolik|bendungan|jembatan|struktur|rekayasa|engineering|mekanisme|komponen|rangkaian|sensor|satelit|mobil listrik|motor listrik|kapal selam|roda|gir|sekrup|baut|katrol|tuas|pegas|rem|bearing|gravitasi|magnet|listrik|energi|hidrogen|fisika|kimia|tsunami|gempa|gunung berapi|dna|atom|sel|organ|jantung|otak|tata surya|lubang hitam)\b/gi;
 const FACTCHECK_HINT =
   /\b(mitos|fakta|benarkah|hoaks|hoax|katanya|salah kaprah|bohong|bahaya|berbahaya|aman|ternyata|terbukti|statistik|persen)\b/gi;
 const LIFESTYLE_HINT =
@@ -88,6 +88,16 @@ export function heuristicTopicStyle(topic: string, facts: string[] = []): TopicS
   return scores[best] > 0 && scores[best] > scores.factcheck ? best : DEFAULT_TOPIC_STYLE;
 }
 
+/** Petakan jawaban LLM yang "hampir benar" ("science", "Engineering/Sains", dst.) ke gaya valid. */
+export function normalizeTopicStyle(value: unknown): TopicStyle | null {
+  if (typeof value !== "string") return null;
+  const v = value.trim().toLowerCase();
+  if (/engineer|teknik|sains|science|technical|explainer/.test(v)) return "engineering";
+  if (/fact|mitos|myth|fakta|data/.test(v)) return "factcheck";
+  if (/life|sehari|daily|everyday/.test(v)) return "lifestyle";
+  return null;
+}
+
 export async function classifyTopicStyle(input: {
   topic: string;
   facts: string[];
@@ -108,13 +118,20 @@ export async function classifyTopicStyle(input: {
       tier: "fast",
       modelOverride: input.modelOverride,
       temperature: 0.1,
-      maxTokens: 200,
-      retries: 1,
+      maxTokens: 600,
+      retries: 2,
     });
+    const searchTopic = cleanSearchTopic(result.searchTopic);
+    const style = normalizeTopicStyle(result.style);
+    if (!style) {
+      console.warn(
+        `[topic-style] style LLM tidak dikenali (${JSON.stringify(result.style)}), style dari heuristik, searchTopic dipertahankan.`,
+      );
+    }
     return {
-      style: result.style,
-      searchTopic: cleanSearchTopic(result.searchTopic),
-      source: "llm",
+      style: style ?? heuristicTopicStyle(input.topic, input.facts),
+      searchTopic,
+      source: style ? "llm" : "heuristic",
     };
   } catch (error) {
     console.warn(

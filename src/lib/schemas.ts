@@ -14,8 +14,10 @@ export const topicStyleSchema = z.preprocess(
   z.enum(TOPIC_STYLES),
 );
 
+// Longgar: nilai style di luar enum tidak boleh membuang searchTopic yang valid.
+// Normalisasi style dilakukan di lib/topic-style.ts (normalizeTopicStyle).
 export const topicClassifySchema = z.object({
-  style: topicStyleSchema,
+  style: z.string().optional().default(""),
   searchTopic: z.string().optional().default(""),
   reason: z.string().optional().default(""),
 });

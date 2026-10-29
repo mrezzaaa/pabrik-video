@@ -117,6 +117,7 @@ Ekstrak fakta, angka, kontroversi, dan angle unik. Sertakan URL sumber asli dari
     modelOverride: project.model,
   });
   research.style = style;
+  research.styleSource = styleSource;
   if (searchTopic) research.searchTopic = searchTopic;
 
   await prisma.project.update({
