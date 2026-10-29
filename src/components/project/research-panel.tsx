@@ -19,6 +19,7 @@ export function ResearchPanel({ data }: { data: ResearchData | null }) {
           <span className="label-mono text-muted-foreground">Gaya Video</span>
           <span className="font-mono text-[10px] uppercase text-primary">
             {STYLE_LABELS[resolveTopicStyle(data.style)]}
+            {data.searchTopic ? ` // ${data.searchTopic}` : ""}
           </span>
         </div>
       ) : null}
