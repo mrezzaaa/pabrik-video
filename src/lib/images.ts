@@ -286,6 +286,7 @@ export async function attachSceneImages(
   scenes: VisualScene[],
   projectId: string,
   topic = "",
+  searchTopic = "",
 ): Promise<VisualScene[]> {
   const targets = scenes
     .map((scene, index) => ({ scene, index }))
@@ -302,12 +303,15 @@ export async function attachSceneImages(
 
     if (!url && query) {
       // SearXNG may return nothing for a wordy or very specific query. Retry
-      // with its three strongest tokens before falling back to the topic.
-      const simplified = query
-        .split(/\s+/)
-        .filter((token) => token.length > 3)
-        .slice(0, 3)
-        .join(" ");
+      // with a simpler one. Kalau ada searchTopic (Inggris) pakai itu, bukan
+      // potongan kata narasi Indonesia yang menarik halaman lokal.
+      const simplified =
+        searchTopic ||
+        query
+          .split(/\s+/)
+          .filter((token) => token.length > 3)
+          .slice(0, 3)
+          .join(" ");
       if (simplified && simplified !== query.toLowerCase()) {
         url = await downloadSceneImage(
           simplified,
@@ -318,9 +322,9 @@ export async function attachSceneImages(
       }
     }
 
-    if (!url && topic) {
+    if (!url && (searchTopic || topic)) {
       url = await downloadSceneImage(
-        `${topic} cinematic dark`,
+        searchTopic ? `${searchTopic} photo` : `${topic} cinematic dark`,
         projectId,
         index,
         usedSources,

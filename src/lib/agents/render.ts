@@ -62,7 +62,14 @@ export async function runRender(projectId: string) {
 
   // Download real SearXNG b-roll before Remotion starts. Failures are
   // non-fatal: the stage falls back to a procedural dark plate.
-  const scenes = await attachSceneImages(plan.scenes, projectId, project.topic);
+  const rawSearchTopic = (project.researchData as { searchTopic?: unknown } | null)
+    ?.searchTopic;
+  const scenes = await attachSceneImages(
+    plan.scenes,
+    projectId,
+    project.topic,
+    typeof rawSearchTopic === "string" ? rawSearchTopic : "",
+  );
   const enrichedPlan: VisualPlan = { ...plan, scenes };
   await prisma.project.update({
     where: { id: projectId },
