@@ -14,14 +14,17 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cad:check": "tsx scripts/cad-check.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@react-three/fiber": "^9.8.2",
     "@remotion/cli": "^4.0.539",
     "@remotion/google-fonts": "^4.0.539",
     "@remotion/media-utils": "^4.0.539",
     "@remotion/player": "^4.0.539",
+    "@remotion/three": "^4.0.539",
     "bullmq": "^6.4.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -35,6 +38,7 @@
     "react-dom": "19.3.0",
     "remotion": "^4.0.539",
     "tailwind-merge": "^3.7.0",
+    "three": "^0.186.1",
     "zod": "4.5.4"
   },
   "devDependencies": {
@@ -42,6 +46,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
     "concurrently": "^10.0.6",
     "dotenv": "^18.0.9",
     "eslint": "^9",

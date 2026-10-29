@@ -1,5 +1,6 @@
 import { Composition } from "remotion";
 import { FPS, HEIGHT, WIDTH } from "./constants";
+import { CAD_FIXTURE_FRAMES, CadFixture } from "./CadFixture";
 import { Reels } from "./Reels";
 import type { ReelsProps } from "./types";
 
@@ -129,7 +130,11 @@ const defaultProps: ReelsProps = {
       textAnimation: { type: "popIn" },
       visualType: "SVG_TIMELINE",
       stageLabel: "TIDUR",
-      steps: [{ label: "MENGANTUK" }, { label: "RINGAN" }, { label: "NYENYAK" }],
+      steps: [
+        { label: "MENGANTUK" },
+        { label: "RINGAN" },
+        { label: "NYENYAK" },
+      ],
       imageSearchQuery: "cat sleeping",
       imageStyle: "fullBleed",
       theme: "success",
@@ -152,7 +157,13 @@ const defaultProps: ReelsProps = {
       sentenceId: "s1",
       emphasis: true,
     },
-    { word: "banget.", start: 1.4, end: 1.9, sentenceId: "s1", emphasis: false },
+    {
+      word: "banget.",
+      start: 1.4,
+      end: 1.9,
+      sentenceId: "s1",
+      emphasis: false,
+    },
     {
       word: "Matanya",
       start: 4.1,
@@ -175,26 +186,36 @@ const defaultProps: ReelsProps = {
 
 export const RemotionRoot: React.FC = () => {
   return (
-    <Composition
-      id="Reels"
-      component={Reels}
-      durationInFrames={Math.round(defaultProps.duration * FPS)}
-      fps={FPS}
-      width={WIDTH}
-      height={HEIGHT}
-      defaultProps={defaultProps}
-      calculateMetadata={({ props }) => {
-        const duration =
-          Number.isFinite(props.duration) && props.duration > 0
-            ? props.duration
-            : 30;
-        return {
-          durationInFrames: Math.max(30, Math.ceil(duration * FPS)),
-          fps: FPS,
-          width: WIDTH,
-          height: HEIGHT,
-        };
-      }}
-    />
+    <>
+      <Composition
+        id="CadFixture"
+        component={CadFixture}
+        durationInFrames={CAD_FIXTURE_FRAMES}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+      />
+      <Composition
+        id="Reels"
+        component={Reels}
+        durationInFrames={Math.round(defaultProps.duration * FPS)}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        defaultProps={defaultProps}
+        calculateMetadata={({ props }) => {
+          const duration =
+            Number.isFinite(props.duration) && props.duration > 0
+              ? props.duration
+              : 30;
+          return {
+            durationInFrames: Math.max(30, Math.ceil(duration * FPS)),
+            fps: FPS,
+            width: WIDTH,
+            height: HEIGHT,
+          };
+        }}
+      />
+    </>
   );
 };
