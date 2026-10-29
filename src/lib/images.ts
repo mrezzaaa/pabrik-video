@@ -43,6 +43,14 @@ function scoreCandidate(
   if (imgSrc.startsWith("https://")) score += 1;
   if (/\.(jpe?g|png|webp)(\?|$)/i.test(imgSrc)) score += 1;
   if (/(thumb|thumbnail|small|icon|logo|avatar|sprite)/i.test(imgSrc)) score -= 3;
+  // Poster/iklan/infografis penuh teks merusak b-roll (teks tumpang tindih caption).
+  if (
+    /\b(poster|iklan|promo|promosi|diskon|sale|banner|infografis|infographic|pamflet|brosur|flyer|meme|mockup|wallpaper|pernyataan)\b/i.test(
+      title,
+    )
+  ) {
+    score -= 8;
+  }
 
   const haystack = `${title} ${source} ${imgSrc}`.toLowerCase();
   const tokens = queryTokens(query);
@@ -182,7 +190,7 @@ export async function downloadSceneImage(
   // ditangani normalizeImage (latar blur + foreground native).
   const portraitQuery = normalized;
 
-  const results = await searchImages(portraitQuery, 30).catch(() => []);
+  const results = await searchImages(portraitQuery, 30, "en").catch(() => []);
   const ranked: Candidate[] = results
     .map((item) => ({
       imgSrc: item.imgSrc,

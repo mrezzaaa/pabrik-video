@@ -122,6 +122,7 @@ function normalizeImages(payload: unknown, limit: number): ImageResult[] {
 export async function searchImages(
   query: string,
   limit = 8,
+  language?: string,
 ): Promise<ImageResult[]> {
   const normalized = query.replace(/\s+/g, " ").trim().slice(0, 100);
   if (normalized.length < 3) return [];
@@ -131,6 +132,7 @@ export async function searchImages(
   url.searchParams.set("format", "json");
   url.searchParams.set("safesearch", "1");
   url.searchParams.set("categories", "images");
+  if (language) url.searchParams.set("language", language);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
@@ -157,6 +159,7 @@ export async function searchImages(
           format: "json",
           categories: "images",
           safesearch: "1",
+          ...(language ? { language } : {}),
         }).toString(),
         signal: controller.signal,
         cache: "no-store",
