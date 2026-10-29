@@ -177,10 +177,10 @@ export async function downloadSceneImage(
   const normalized = query.replace(/\s+/g, " ").trim().slice(0, 100);
   if (normalized.length < 3) return null;
 
-  // Append portrait hints to guide image engines towards vertical imagery
-  const portraitQuery = /portrait|vertical/i.test(normalized)
-    ? normalized
-    : `${normalized} portrait vertical`;
+  // Tidak menambah "portrait vertical" ke query: kata itu menarik screenshot HP,
+  // potret orang, dan ilustrasi anime ke topik teknis. Gambar landscape sudah
+  // ditangani normalizeImage (latar blur + foreground native).
+  const portraitQuery = normalized;
 
   const results = await searchImages(portraitQuery, 30).catch(() => []);
   const ranked: Candidate[] = results
