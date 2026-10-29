@@ -31,6 +31,28 @@ function queryTokens(query: string) {
     .slice(0, 8);
 }
 
+const ID_WORDS =
+  /\b(yang|dan|dengan|untuk|dari|pada|adalah|ini|itu|akan|bisa|dalam|harga|cara|tips|terbaru|indonesia|jakarta|kementerian|menteri|pemerintah|percepatan|ekonomi)\b/i;
+const ID_HOST = /\.(co\.id|go\.id|or\.id|ac\.id|web\.id|sch\.id|id)(\/|:|$)/i;
+
+/**
+ * Query bahasa Inggris tapi hasilnya halaman/judul Indonesia = bocoran geolokasi
+ * mesin pencari (berita lokal, menteri, iklan, grafik anggaran). Dikurangi
+ * besar. Tidak berlaku kalau query-nya sendiri berbahasa Indonesia.
+ */
+export function localeMismatchPenalty(
+  imgSrc: string,
+  source: string,
+  title: string,
+  query: string,
+): number {
+  if (ID_WORDS.test(query)) return 0;
+  let penalty = 0;
+  if (ID_HOST.test(source) || ID_HOST.test(imgSrc)) penalty += 5;
+  if (ID_WORDS.test(title)) penalty += 5;
+  return penalty;
+}
+
 function scoreCandidate(
   imgSrc: string,
   source: string,
@@ -51,6 +73,8 @@ function scoreCandidate(
   ) {
     score -= 8;
   }
+
+  score -= localeMismatchPenalty(imgSrc, source, title, query);
 
   const haystack = `${title} ${source} ${imgSrc}`.toLowerCase();
   const tokens = queryTokens(query);
