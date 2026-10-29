@@ -582,6 +582,7 @@ function normalizeScenes(
   topic: string,
   knowledge = "",
   style: TopicStyle = "factcheck",
+  searchTopic = "",
 ): VisualScene[] {
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
@@ -618,7 +619,13 @@ function normalizeScenes(
     );
     const baseStage: StageData = {
       ...restricted,
-      imageSearchQuery: anchorImageQuery(restricted.imageSearchQuery, topic, style),
+      imageSearchQuery: anchorImageQuery(
+        restricted.imageSearchQuery,
+        topic,
+        style,
+        searchTopic,
+        scenes.length,
+      ),
     };
 
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
@@ -722,6 +729,7 @@ function fallbackPlan(
   duration: number,
   topic: string,
   style: TopicStyle = "factcheck",
+  searchTopic = "",
 ): VisualPlan {
   return {
     vibe: "fast-cut, high contrast, gen-z viral",
@@ -755,6 +763,7 @@ function fallbackPlan(
       topic,
       "",
       style,
+      searchTopic,
     ),
   };
 }
@@ -797,6 +806,10 @@ export async function runVisualPlanner(projectId: string) {
     (project.researchData as { style?: unknown } | null)?.style,
   );
 
+  const rawSearchTopic = (project.researchData as { searchTopic?: unknown } | null)
+    ?.searchTopic;
+  const searchTopic = typeof rawSearchTopic === "string" ? rawSearchTopic : "";
+
   let plan: VisualPlan;
   try {
     const output = await chatJSON({
@@ -834,6 +847,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
         project.topic,
         knowledge,
         style,
+        searchTopic,
       ),
     };
   } catch (error) {
@@ -847,6 +861,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
       duration,
       project.topic,
       style,
+      searchTopic,
     );
   }
 

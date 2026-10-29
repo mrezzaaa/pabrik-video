@@ -111,12 +111,13 @@ Ekstrak fakta, angka, kontroversi, dan angle unik. Sertakan URL sumber asli dari
 
   // Gaya video (engineering / factcheck / lifestyle) diputuskan sekali di sini,
   // lalu dibaca visual planner. Disimpan di researchData (JSON) tanpa migrasi DB.
-  const { style, source: styleSource } = await classifyTopicStyle({
+  const { style, searchTopic, source: styleSource } = await classifyTopicStyle({
     topic: project.topic,
     facts: research.facts,
     modelOverride: project.model,
   });
   research.style = style;
+  if (searchTopic) research.searchTopic = searchTopic;
 
   await prisma.project.update({
     where: { id: projectId },
@@ -127,6 +128,7 @@ Ekstrak fakta, angka, kontroversi, dan angle unik. Sertakan URL sumber asli dari
     facts: research.facts.length,
     sources: research.sources.length,
     style,
+    searchTopic,
     styleSource,
   });
 

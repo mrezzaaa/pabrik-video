@@ -135,7 +135,8 @@ Pilih tepat satu:
 - "factcheck": topik fakta atau mitos. Klaim yang diuji, data/angka, statistik, perbandingan, bahaya vs aman, kontroversi.
 - "lifestyle": topik kehidupan sehari-hari. Kebiasaan, makanan, kesehatan ringan, rumah, kerja, uang, tips, tren yang paling kuat kalau ditunjukkan lewat foto/footage nyata.
 Kalau topik bisa masuk dua kategori, pilih kategori yang paling menentukan cara visualnya ditampilkan, bukan sekadar kata di judulnya.
-Kembalikan HANYA JSON valid: { "style": "engineering" | "factcheck" | "lifestyle", "reason": "satu kalimat singkat" }`;
+Isi juga "searchTopic": 2-4 kata benda BAHASA INGGRIS yang paling tepat untuk mencari FOTO/DIAGRAM topik ini di mesin pencari gambar (istilah teknis baku, tanpa kata tanya). Contoh: "Gimana mesin jet bekerja?" -> "turbofan jet engine"; "Kenapa tidur siang penting" -> "afternoon nap".
+Kembalikan HANYA JSON valid: { "style": "engineering" | "factcheck" | "lifestyle", "searchTopic": "...", "reason": "satu kalimat singkat" }`;
 
 /**
  * Tambahan untuk VISUAL_SYSTEM_PROMPT per gaya video. Daftar tipe yang
@@ -152,7 +153,7 @@ GAYA VIDEO: SAINS / ENGINEERING (blueprint, teknis, penjelasan bagian dalam).
 - Tipe yang diizinkan HANYA: SVG_CROSSSECTION, SVG_TIMELINE, SVG_GAUGE, SVG_COUNTER, SVG_BAR_CHART, B_ROLL_IMAGE. DILARANG: SVG_STAMP, SVG_COMPARE, SVG_WAVEFORM.
 - Prioritaskan SVG_CROSSSECTION saat kalimat menyebut bagian/lapisan/komponen, dan SVG_TIMELINE saat kalimat menjelaskan urutan proses atau aliran.
 - Pakai SVG_GAUGE/SVG_COUNTER/SVG_BAR_CHART untuk spesifikasi dan angka teknis (suhu, tekanan, kecepatan, ukuran) yang ada di kalimat.
-- B_ROLL_IMAGE hanya untuk gambar teknis: foto komponen nyata, diagram, blueprint, cutaway, close-up mesin. imageSearchQuery harus menyebut objek teknisnya secara spesifik (contoh: "turbofan engine cutaway diagram", "lithium ion battery cell cross section").
+- B_ROLL_IMAGE hanya untuk gambar teknis: foto komponen nyata, diagram, blueprint, cutaway, close-up mesin. imageSearchQuery WAJIB bahasa Inggris dan menyebut objek teknisnya secara spesifik (contoh: "turbofan engine cutaway diagram", "lithium ion battery cell cross section").
 - Nada visual: dingin, presisi, biru/cyan/hijau teknis. Hindari accentColor merah-pink kecuali untuk bahaya.`,
   factcheck: `
 
@@ -165,7 +166,7 @@ GAYA VIDEO: FAKTA / MITOS (footage + metrik + chart + perbandingan).
 GAYA VIDEO: KEHIDUPAN SEHARI-HARI (footage dan foto relevan).
 - Tipe yang diizinkan HANYA: B_ROLL_IMAGE, SVG_COUNTER, SVG_TIMELINE. DILARANG: SVG_STAMP, SVG_COMPARE, SVG_WAVEFORM, SVG_CROSSSECTION, SVG_GAUGE, SVG_BAR_CHART.
 - Minimal 70% scene harus B_ROLL_IMAGE. Pakai SVG_COUNTER hanya untuk satu angka kunci yang benar-benar ada di kalimat, SVG_TIMELINE hanya untuk urutan kebiasaan/langkah.
-- imageSearchQuery harus adegan manusiawi dan konkret (orang, tempat, benda sehari-hari, suasana), bukan konsep abstrak. Variasikan sudut: close-up benda, orang beraktivitas, suasana tempat.`,
+- imageSearchQuery WAJIB bahasa Inggris, adegan manusiawi dan konkret (orang, tempat, benda sehari-hari, suasana), bukan konsep abstrak. Variasikan sudut: close-up benda, orang beraktivitas, suasana tempat.`,
 };
 
 export const GRADIENT_PALETTES = [

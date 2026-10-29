@@ -16,6 +16,7 @@ export const topicStyleSchema = z.preprocess(
 
 export const topicClassifySchema = z.object({
   style: topicStyleSchema,
+  searchTopic: z.string().optional().default(""),
   reason: z.string().optional().default(""),
 });
 

@@ -92,7 +92,11 @@ export async function classifyTopicStyle(input: {
   topic: string;
   facts: string[];
   modelOverride?: string | null;
-}): Promise<{ style: TopicStyle; source: "llm" | "heuristic" }> {
+}): Promise<{
+  style: TopicStyle;
+  searchTopic: string;
+  source: "llm" | "heuristic";
+}> {
   try {
     const result = await chatJSON({
       system: TOPIC_CLASSIFIER_PROMPT,
@@ -107,7 +111,11 @@ export async function classifyTopicStyle(input: {
       maxTokens: 200,
       retries: 1,
     });
-    return { style: result.style, source: "llm" };
+    return {
+      style: result.style,
+      searchTopic: cleanSearchTopic(result.searchTopic),
+      source: "llm",
+    };
   } catch (error) {
     console.warn(
       "[topic-style] LLM gagal, memakai heuristik kata kunci:",
@@ -115,6 +123,7 @@ export async function classifyTopicStyle(input: {
     );
     return {
       style: heuristicTopicStyle(input.topic, input.facts),
+      searchTopic: "",
       source: "heuristic",
     };
   }
@@ -138,14 +147,62 @@ export function topicCore(topic: string): string[] {
     .slice(0, 4);
 }
 
+function cleanSearchTopic(value: string): string {
+  return value
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .slice(0, 5)
+    .join(" ");
+}
+
+/** Sudut pencarian yang digilir per scene supaya gambar tidak seragam. */
+const SEARCH_ANGLES: Record<TopicStyle, string[]> = {
+  engineering: [
+    "cutaway diagram",
+    "cross section",
+    "components close up",
+    "schematic blueprint",
+    "internal structure",
+  ],
+  factcheck: ["", "real photo", "close up"],
+  lifestyle: ["", "close up", "people", "real photo"],
+};
+
 /**
- * Query gambar harus selalu nyambung ke topik. Kalau tidak ada satu pun kata
- * inti topik di query (mis. "angin kencang"), kata inti topik ditaruh di depan.
- * Gaya engineering juga diarahkan ke diagram/cutaway, bukan foto umum.
+ * Query gambar harus selalu nyambung ke topik DAN berbahasa Inggris.
+ * - Ada searchTopic (Inggris): query yang tidak menyentuh topik / tidak eksplisit
+ *   teknis diganti `${searchTopic} ${sudut}`. Kata-kata narasi Indonesia dibuang,
+ *   karena itulah yang menarik poster, iklan, dan berita lokal.
+ * - Tidak ada searchTopic (project lama): perilaku sebelumnya, kata inti topik di depan.
  */
-export function anchorImageQuery(query: string, topic: string, style: TopicStyle): string {
-  const core = topicCore(topic);
+export function anchorImageQuery(
+  query: string,
+  topic: string,
+  style: TopicStyle,
+  searchTopic = "",
+  sceneIndex = 0,
+): string {
   const lower = query.toLowerCase();
+  const english = searchTopic.trim();
+
+  if (english) {
+    const tokens = english.toLowerCase().split(" ").filter((t) => t.length >= 3);
+    const trusted =
+      tokens.some((token) => lower.includes(token)) || DIAGRAM_HINT.test(query);
+    const angles = SEARCH_ANGLES[style];
+    const base = trusted
+      ? query
+      : `${english} ${angles[sceneIndex % angles.length]}`;
+    const out =
+      style === "engineering" && !DIAGRAM_HINT.test(base)
+        ? `${base} cutaway diagram`
+        : base;
+    return out.replace(/\s+/g, " ").trim().slice(0, 100);
+  }
+
+  const core = topicCore(topic);
   // Query yang sudah eksplisit teknis (cutaway/diagram/...) dipercaya apa adanya.
   const trusted =
     core.length === 0 ||
