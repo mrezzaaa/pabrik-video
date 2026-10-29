@@ -24,6 +24,7 @@ export const jetEngine: CadSceneModule = {
     subtitle: "POTONGAN A–A · SKALA 1:24",
     radius: 4.6,
     crossRadius: 1.6,
+    explodeExtent: 0.55,
     parts: [
       { id: "fan", label: "FAN // N1", anchor: [-3.6, 1.3, 0], labelDy: -0.05 },
       { id: "lpc", label: "LPC (3 TAHAP)", anchor: [-2.4, 0.55, 0], labelDy: 0.04 },
@@ -85,7 +86,7 @@ export const jetEngine: CadSceneModule = {
       nozzle.position.set(-0.38, 0.56 * Math.cos(a), 0.56 * Math.sin(a));
       combustor.add(nozzle);
     }
-    const flameMaterial = mats.additive(0xff7a1c, 0.4);
+    const flameMaterial = mats.additive(0xff7a1c, 0.55);
     const flame = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.36, 0.8, 32, 1, true), flameMaterial);
     flame.rotation.z = Math.PI / 2;
     combustor.add(flame);
@@ -117,7 +118,7 @@ export const jetEngine: CadSceneModule = {
     asm.root.add(flow.points);
 
     return makeRuntime(jetEngine.meta, asm, ({ t }) => {
-      flameMaterial.opacity = 0.32 + 0.1 * Math.sin(t * 20) + 0.05 * Math.sin(t * 47);
+      flameMaterial.opacity = 0.5 + 0.1 * Math.sin(t * 20) + 0.05 * Math.sin(t * 47);
       flow.update(t);
     });
   },

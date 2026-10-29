@@ -28,6 +28,8 @@ export interface CadSceneMeta {
   radius: number;
   /** Setengah lebar penampang (tegak lurus sumbu); menentukan jangkauan plane cutaway. */
   crossRadius: number;
+  /** Seberapa jauh model melebar saat explode = 1, sebagai pecahan `radius` (default 0.5). Dipakai untuk fit kamera. */
+  explodeExtent?: number;
 }
 
 export interface CadBuildContext {
@@ -81,7 +83,7 @@ export const DEFAULT_SHOT: CadShot = {
   explode: 0,
   azimuth: 0.55,
   elevation: 0.38,
-  roll: -0.5,
+  roll: -0.85,
   zoom: 1,
   focus: null,
   focusMix: 0,

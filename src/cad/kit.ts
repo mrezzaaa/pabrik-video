@@ -135,13 +135,19 @@ export function bladeRing(
     dummy.updateMatrix();
     blades.setMatrixAt(i, dummy.matrix);
   }
-  const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(o.rootRadius + 0.02, o.rootRadius + 0.02, 0.05, 40),
-    mats.solid(0x10233f, 0x0a1a30),
+  const discGeometry = new THREE.CylinderGeometry(
+    o.rootRadius + 0.02,
+    o.rootRadius + 0.02,
+    0.05,
+    40,
   );
-  disc.rotation.z = Math.PI / 2;
   const group = new THREE.Group();
-  group.add(blades, disc);
+  group.add(blades);
+  for (const material of [mats.glass(o.color, 0.16), mats.wire(o.color, 0.45)]) {
+    const disc = new THREE.Mesh(discGeometry, material);
+    disc.rotation.z = Math.PI / 2;
+    group.add(disc);
+  }
   return group;
 }
 

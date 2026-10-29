@@ -6,8 +6,10 @@ export const CAD_FOV = 38;
 /** Jarak kamera supaya model muat di frame (setelah roll) untuk aspect tertentu. */
 export function fitDistance(meta: CadSceneMeta, shot: CadShot, aspect: number): number {
   const tan = Math.tan((CAD_FOV * Math.PI) / 360);
-  const horizontal = (meta.radius * Math.abs(Math.cos(shot.roll)) * 1.08) / (tan * aspect);
-  const vertical = (meta.radius * Math.abs(Math.sin(shot.roll)) + meta.radius * 0.35) / tan;
+  // Saat explode, model melebar: jauhkan kamera supaya part tidak keluar frame.
+  const r = meta.radius * (1 + (meta.explodeExtent ?? 0.5) * shot.explode);
+  const horizontal = (r * Math.abs(Math.cos(shot.roll)) * 1.08) / (tan * aspect);
+  const vertical = (r * Math.abs(Math.sin(shot.roll)) + r * 0.35) / tan;
   return Math.max(horizontal, vertical) / Math.max(0.1, shot.zoom);
 }
 

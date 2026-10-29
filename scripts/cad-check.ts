@@ -4,7 +4,9 @@
  * explode menggeser part, hasil hingga (tanpa NaN), dan bounding box wajar.
  */
 import * as THREE from "three";
-import type { CadSceneModule } from "../src/cad/contract";
+import { applyCamera } from "../src/cad/camera";
+import { type CadSceneModule, DEFAULT_SHOT } from "../src/cad/contract";
+import { layoutLabels } from "../src/cad/labels";
 import { listCadScenes, getCadScene } from "../src/cad/registry";
 
 function snapshot(root: THREE.Object3D): number[] {
@@ -57,6 +59,40 @@ function check(scene: CadSceneModule): string[] {
   a.update({ t: 3.7, explode: 1 });
   const moved = meta.parts.filter((p) => a.anchor(p.id).distanceTo(new THREE.Vector3(...p.anchor)) > 1e-6).length;
   if (moved === 0) errors.push("explode tidak menggeser satu part pun");
+
+  // Framing: semua jangkar harus ada di dalam frame 1080x1920, juga saat explode penuh;
+  // label tidak boleh saling menimpa atau keluar frame.
+  const W = 1080;
+  const H = 1920;
+  const fontSize = Math.round(W * 0.026);
+  for (const explode of [0, 1]) {
+    const rt = scene.build({ clip: new THREE.Plane(new THREE.Vector3(0, 0, -1), 0), seed: 1 });
+    const shot = { ...DEFAULT_SHOT, explode };
+    for (const t of [0, 2.5, 5]) {
+      rt.update({ t, explode });
+      const cam = new THREE.PerspectiveCamera();
+      applyCamera(cam, meta, rt, shot, t, W / H);
+      const items = meta.parts.map((p) => {
+        const v = rt.anchor(p.id).project(cam);
+        const dy = p.labelDy ?? -0.04;
+        return { id: p.id, text: p.label, x: ((v.x + 1) / 2) * W, y: ((1 - v.y) / 2) * H, side: (dy < 0 ? -1 : 1) as 1 | -1, distance: Math.max(0.035, Math.abs(dy)) * H };
+      });
+      for (const it of items) {
+        if (it.x < 0 || it.x > W || it.y < 0 || it.y > H) errors.push(`explode=${explode} t=${t}: jangkar ${it.id} keluar frame (${Math.round(it.x)},${Math.round(it.y)})`);
+      }
+      const placed = layoutLabels(items, W, H, fontSize);
+      for (const l of placed) {
+        if (l.lx - l.w / 2 < 0 || l.lx + l.w / 2 > W || l.ly - l.h / 2 < 0 || l.ly + l.h / 2 > H) errors.push(`explode=${explode} t=${t}: label ${l.id} keluar frame`);
+      }
+      for (let i = 0; i < placed.length; i++) {
+        for (let j = i + 1; j < placed.length; j++) {
+          const a = placed[i];
+          const b = placed[j];
+          if (Math.abs(a.lx - b.lx) < (a.w + b.w) / 2 && Math.abs(a.ly - b.ly) < (a.h + b.h) / 2) errors.push(`explode=${explode} t=${t}: label ${a.id} menimpa ${b.id}`);
+        }
+      }
+    }
+  }
 
   const box = new THREE.Box3().setFromObject(a.root);
   const size = box.getSize(new THREE.Vector3());

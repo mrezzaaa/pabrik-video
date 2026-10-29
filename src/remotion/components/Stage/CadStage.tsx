@@ -5,6 +5,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { applyCamera, CAD_FOV } from "../../../cad/camera";
 import { type CadShot, DEFAULT_SHOT } from "../../../cad/contract";
+import { layoutLabels } from "../../../cad/labels";
 import { getCadScene } from "../../../cad/registry";
 
 export interface CadStageProps {
@@ -49,21 +50,41 @@ export const CadStage: React.FC<CadStageProps> = ({ sceneId, shot }) => {
       : s.labels === "none"
         ? []
         : s.labels;
-  const labels = ids.flatMap((id) => {
+  const fontSize = Math.round(width * 0.026);
+  const anchors = ids.flatMap((id) => {
     const part = scene.meta.parts.find((p) => p.id === id);
     if (!part) return [];
     const v = runtime.anchor(id).project(pose);
     if (v.z > 1) return [];
-    const x = ((v.x + 1) / 2) * width;
-    const y = ((1 - v.y) / 2) * height;
-    const ty = Math.min(
-      height * 0.92,
-      Math.max(height * 0.06, y + (part.labelDy ?? -0.04) * height),
-    );
-    return [{ part, x, y, ty }];
+    const dy = part.labelDy ?? -0.04;
+    return [
+      {
+        part,
+        input: {
+          id,
+          text: part.label,
+          x: ((v.x + 1) / 2) * width,
+          y: ((1 - v.y) / 2) * height,
+          side: (dy < 0 ? -1 : 1) as 1 | -1,
+          distance: Math.max(0.035, Math.abs(dy)) * height,
+        },
+      },
+    ];
   });
+  const placed = layoutLabels(
+    anchors.map((a) => a.input),
+    width,
+    height,
+    fontSize,
+  );
+  const labels = placed.map((p) => ({
+    part: anchors.find((a) => a.part.id === p.id)!.part,
+    x: p.x,
+    y: p.y,
+    lx: p.lx,
+    ly: p.ly,
+  }));
 
-  const fontSize = Math.round(width * 0.026);
   return (
     <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 45%, #0b1a38 0%, #050a1a 70%)" }}>
       <ThreeCanvas
@@ -80,23 +101,23 @@ export const CadStage: React.FC<CadStageProps> = ({ sceneId, shot }) => {
         <CameraSync pose={pose} />
       </ThreeCanvas>
       <svg width={width} height={height} style={{ position: "absolute", inset: 0, opacity: s.labelOpacity }}>
-        {labels.map(({ part, x, y, ty }) => {
+        {labels.map(({ part, x, y, lx, ly }) => {
           const color = part.hot ? "#ff9a3c" : "#4fd8ff";
           return (
             <g key={part.id}>
-              <line x1={x} y1={y} x2={x} y2={ty} stroke={color} strokeOpacity={0.7} strokeWidth={2} />
+              <line x1={x} y1={y} x2={lx} y2={ly} stroke={color} strokeOpacity={0.7} strokeWidth={2} />
               <circle cx={x} cy={y} r={6} fill={color} />
             </g>
           );
         })}
       </svg>
-      {labels.map(({ part, x, ty }) => (
+      {labels.map(({ part, lx, ly }) => (
         <div
           key={part.id}
           style={{
             position: "absolute",
-            left: x,
-            top: ty,
+            left: lx,
+            top: ly,
             transform: "translate(-50%, -50%)",
             opacity: s.labelOpacity,
             whiteSpace: "nowrap",
