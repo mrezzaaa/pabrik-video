@@ -19,6 +19,8 @@ export const topicStyleSchema = z.preprocess(
 export const topicClassifySchema = z.object({
   style: z.string().optional().default(""),
   searchTopic: z.string().optional().default(""),
+  visualTerms: z.array(z.string()).optional().default([]),
+  avoidTerms: z.array(z.string()).optional().default([]),
   reason: z.string().optional().default(""),
 });
 

@@ -136,7 +136,9 @@ Pilih tepat satu:
 - "lifestyle": topik kehidupan sehari-hari. Kebiasaan, makanan, kesehatan ringan, rumah, kerja, uang, tips, tren yang paling kuat kalau ditunjukkan lewat foto/footage nyata.
 Kalau topik bisa masuk dua kategori, pilih kategori yang paling menentukan cara visualnya ditampilkan, bukan sekadar kata di judulnya.
 Isi juga "searchTopic": 2-4 kata benda BAHASA INGGRIS yang paling tepat untuk mencari FOTO/DIAGRAM topik ini di mesin pencari gambar (istilah teknis baku, tanpa kata tanya). Contoh: "Gimana mesin jet bekerja?" -> "turbofan jet engine"; "Kenapa tidur siang penting" -> "afternoon nap".
-Kembalikan HANYA JSON valid: { "style": "engineering" | "factcheck" | "lifestyle", "searchTopic": "...", "reason": "satu kalimat singkat" }`;
+Isi juga "visualTerms": 8-12 frasa pencarian gambar BAHASA INGGRIS yang BERBEDA-BEDA (2-5 kata). Tiap frasa WAJIB menyebut objek inti topik plus satu komponen, tahap, atau sudut pandang, supaya tiap adegan video mendapat gambar yang lain. Contoh untuk mesin jet: ["turbofan jet engine cutaway", "jet engine compressor blades", "jet engine combustion chamber", "turbine blades close up", "jet engine exhaust nozzle", "turbofan fan blades", "jet engine airflow diagram", "jet engine afterburner flame"].
+Isi juga "avoidTerms": 3-8 kata Inggris dari topik TETANGGA yang sering salah muncul di hasil pencarian dan harus dihindari. Contoh untuk mesin jet: ["piston", "car", "diesel", "motorcycle", "crankshaft"].
+Kembalikan HANYA JSON valid: { "style": "engineering" | "factcheck" | "lifestyle", "searchTopic": "...", "visualTerms": ["..."], "avoidTerms": ["..."], "reason": "satu kalimat singkat" }`;
 
 /**
  * Tambahan untuk VISUAL_SYSTEM_PROMPT per gaya video. Daftar tipe yang

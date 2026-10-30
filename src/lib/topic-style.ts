@@ -105,6 +105,8 @@ export async function classifyTopicStyle(input: {
 }): Promise<{
   style: TopicStyle;
   searchTopic: string;
+  visualTerms: string[];
+  avoidTerms: string[];
   source: "llm" | "heuristic";
 }> {
   try {
@@ -118,7 +120,7 @@ export async function classifyTopicStyle(input: {
       tier: "fast",
       modelOverride: input.modelOverride,
       temperature: 0.1,
-      maxTokens: 600,
+      maxTokens: 900,
       retries: 2,
     });
     const searchTopic = cleanSearchTopic(result.searchTopic);
@@ -131,6 +133,8 @@ export async function classifyTopicStyle(input: {
     return {
       style: style ?? heuristicTopicStyle(input.topic, input.facts),
       searchTopic,
+      visualTerms: cleanTerms(result.visualTerms, 12, 5),
+      avoidTerms: cleanTerms(result.avoidTerms, 8, 2),
       source: style ? "llm" : "heuristic",
     };
   } catch (error) {
@@ -141,6 +145,8 @@ export async function classifyTopicStyle(input: {
     return {
       style: heuristicTopicStyle(input.topic, input.facts),
       searchTopic: "",
+      visualTerms: [],
+      avoidTerms: [],
       source: "heuristic",
     };
   }
@@ -174,6 +180,62 @@ function cleanSearchTopic(value: string): string {
     .join(" ");
 }
 
+function cleanTerms(values: unknown, max: number, maxWords: number): string[] {
+  if (!Array.isArray(values)) return [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const term = cleanSearchTopic(value).split(" ").slice(0, maxWords).join(" ").toLowerCase();
+    if (term.length >= 3 && !seen.has(term)) seen.add(term);
+    if (seen.size >= max) break;
+  }
+  return [...seen];
+}
+
+/** Petunjuk gambar dari stage research; kosong untuk project lama. */
+export interface ImageHints {
+  searchTopic: string;
+  visualTerms: string[];
+  avoidTerms: string[];
+}
+export const NO_HINTS: ImageHints = { searchTopic: "", visualTerms: [], avoidTerms: [] };
+
+export function readImageHints(researchData: unknown): ImageHints {
+  const r = (researchData ?? {}) as Record<string, unknown>;
+  const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  return {
+    searchTopic: typeof r.searchTopic === "string" ? r.searchTopic : "",
+    visualTerms: strings(r.visualTerms),
+    avoidTerms: strings(r.avoidTerms),
+  };
+}
+
+/** Kata Indonesia yang tidak mungkin ada di query gambar berbahasa Inggris. */
+const ID_MARKERS = new Set(
+  ("yang dan di ke dari untuk dengan ini itu pada akan bisa tidak gak nggak ga lawan mendorong dorong bakar " +
+    "pesawat mesin udara tekanan suhu panas dingin listrik tenaga energi energinya daya ruang ruangan sisa buang " +
+    "massa hukum ketiga langkah hisap kompres kompresor tekan gerak putar poros kipas baling bilah turbin " +
+    "seharusnya mengembang keluar masuk cara kerja bekerja kenapa bagaimana gimana apa adalah ada jadi lebih " +
+    "sangat banyak semua orang manusia rumah makanan minuman sehat tidur olahraga hidup sehari").split(" "),
+);
+
+export function looksIndonesian(text: string): boolean {
+  return text
+    .toLowerCase()
+    .split(/[^\p{L}]+/u)
+    .filter(Boolean)
+    .some((word) => ID_MARKERS.has(word) || (word.length > 6 && word.endsWith("nya")));
+}
+
+function vocabWords(searchTopic: string, terms: string[]): string[] {
+  return [...new Set(`${searchTopic} ${terms.join(" ")}`.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 4))];
+}
+
+/** Kata kunci relevansi untuk menilai kandidat gambar (dipakai images.ts). */
+export function relevanceVocab(hints: ImageHints): string[] {
+  return vocabWords(hints.searchTopic, hints.visualTerms);
+}
+
 /** Sudut pencarian yang digilir per scene supaya gambar tidak seragam. */
 const SEARCH_ANGLES: Record<TopicStyle, string[]> = {
   engineering: [
@@ -187,47 +249,56 @@ const SEARCH_ANGLES: Record<TopicStyle, string[]> = {
   lifestyle: ["", "close up", "people", "real photo"],
 };
 
+export interface QueryContext extends Partial<ImageHints> {
+  sceneIndex?: number;
+}
+
+function overlapsVocab(query: string, vocab: string[]): boolean {
+  const words = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 4);
+  return words.some((w) => vocab.some((v) => w.includes(v) || v.includes(w)));
+}
+
 /**
- * Query gambar harus selalu nyambung ke topik DAN berbahasa Inggris.
- * - Ada searchTopic (Inggris): query yang tidak menyentuh topik / tidak eksplisit
- *   teknis diganti `${searchTopic} ${sudut}`. Kata-kata narasi Indonesia dibuang,
- *   karena itulah yang menarik poster, iklan, dan berita lokal.
- * - Tidak ada searchTopic (project lama): perilaku sebelumnya, kata inti topik di depan.
+ * Query gambar harus nyambung ke topik DAN berbahasa Inggris.
+ * Dengan searchTopic (project baru):
+ *  - query LLM berbahasa Inggris dan nyambung ke kosakata topik -> dipakai apa adanya;
+ *  - selain itu (Indonesia, kosong, atau melenceng) -> diganti visualTerms[sceneIndex],
+ *    sehingga tiap scene mendapat frasa berbeda yang tetap menyebut objek inti.
+ * Tanpa searchTopic (project lama): kata inti topik di depan, perilaku sebelumnya.
  */
 export function anchorImageQuery(
   query: string,
   topic: string,
   style: TopicStyle,
-  searchTopic = "",
-  sceneIndex = 0,
+  ctx: QueryContext = {},
 ): string {
-  const lower = query.toLowerCase();
-  const english = searchTopic.trim();
+  const english = (ctx.searchTopic ?? "").trim();
+  const terms = ctx.visualTerms ?? [];
+  const idx = ctx.sceneIndex ?? 0;
+  const clean = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 100);
 
   if (english) {
-    const tokens = english.toLowerCase().split(" ").filter((t) => t.length >= 3);
-    const trusted =
-      tokens.some((token) => lower.includes(token)) || DIAGRAM_HINT.test(query);
+    const vocab = vocabWords(english, terms);
+    const queryWords = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    const topicWords = new Set(english.toLowerCase().split(/\s+/));
+    // Query yang hanya mengulang searchTopic terlalu generik untuk membedakan scene.
+    const generic = terms.length > 0 && queryWords.every((w) => topicWords.has(w));
+    const englishLike = queryWords.length >= 2 && !generic && !looksIndonesian(query);
+    const related = overlapsVocab(query, vocab);
+    if (englishLike && (related || (style === "lifestyle" && terms.length === 0))) {
+      return clean(related ? query : `${english} ${query}`);
+    }
+    if (terms.length) return clean(terms[idx % terms.length]);
     const angles = SEARCH_ANGLES[style];
-    const base = trusted
-      ? query
-      : `${english} ${angles[sceneIndex % angles.length]}`;
-    const out =
-      style === "engineering" && !DIAGRAM_HINT.test(base)
-        ? `${base} cutaway diagram`
-        : base;
-    return out.replace(/\s+/g, " ").trim().slice(0, 100);
+    const base = `${english} ${angles[idx % angles.length]}`;
+    return clean(style === "engineering" && !DIAGRAM_HINT.test(base) ? `${base} cutaway diagram` : base);
   }
 
   const core = topicCore(topic);
-  // Query yang sudah eksplisit teknis (cutaway/diagram/...) dipercaya apa adanya.
+  const lower = query.toLowerCase();
   const trusted =
-    core.length === 0 ||
-    core.some((word) => lower.includes(word)) ||
-    DIAGRAM_HINT.test(query);
+    core.length === 0 || core.some((word) => lower.includes(word)) || DIAGRAM_HINT.test(query);
   let out = trusted ? query : `${core.join(" ")} ${query}`;
-  if (style === "engineering" && !DIAGRAM_HINT.test(out)) {
-    out = `${out} cutaway diagram`;
-  }
-  return out.replace(/\s+/g, " ").trim().slice(0, 100);
+  if (style === "engineering" && !DIAGRAM_HINT.test(out)) out = `${out} cutaway diagram`;
+  return clean(out);
 }

@@ -37,7 +37,10 @@ import type {
 } from "../types";
 import {
   anchorImageQuery,
+  type ImageHints,
   isVisualAllowed,
+  NO_HINTS,
+  readImageHints,
   resolveTopicStyle,
   visualSystemPromptFor,
 } from "../topic-style";
@@ -582,7 +585,7 @@ function normalizeScenes(
   topic: string,
   knowledge = "",
   style: TopicStyle = "factcheck",
-  searchTopic = "",
+  hints: ImageHints = NO_HINTS,
 ): VisualScene[] {
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
@@ -620,11 +623,13 @@ function normalizeScenes(
     const baseStage: StageData = {
       ...restricted,
       imageSearchQuery: anchorImageQuery(
-        restricted.imageSearchQuery,
+        // Project baru: hanya query asli LLM yang dipertimbangkan (bukan kata narasi hasil cleanQuery).
+        hints.searchTopic
+          ? (candidate?.imageSearchQuery ?? "")
+          : restricted.imageSearchQuery,
         topic,
         style,
-        searchTopic,
-        scenes.length,
+        { ...hints, sceneIndex: scenes.length },
       ),
     };
 
@@ -699,7 +704,11 @@ function normalizeScenes(
             ANIMATIONS[sceneIndex % ANIMATIONS.length],
         },
         visualType: stage.visualType,
-        imageSearchQuery: stage.imageSearchQuery,
+        // Potongan ke-2 dst. dari satu kalimat dapat query lain supaya gambarnya tidak kembar.
+        imageSearchQuery:
+          chunkIndex > 0 && hints.searchTopic
+            ? anchorImageQuery("", topic, style, { ...hints, sceneIndex })
+            : stage.imageSearchQuery,
         imageStyle: stage.imageStyle,
         stageLabel: stage.stageLabel,
         metric: stage.metric,
@@ -729,7 +738,7 @@ function fallbackPlan(
   duration: number,
   topic: string,
   style: TopicStyle = "factcheck",
-  searchTopic = "",
+  hints: ImageHints = NO_HINTS,
 ): VisualPlan {
   return {
     vibe: "fast-cut, high contrast, gen-z viral",
@@ -763,7 +772,7 @@ function fallbackPlan(
       topic,
       "",
       style,
-      searchTopic,
+      hints,
     ),
   };
 }
@@ -806,9 +815,7 @@ export async function runVisualPlanner(projectId: string) {
     (project.researchData as { style?: unknown } | null)?.style,
   );
 
-  const rawSearchTopic = (project.researchData as { searchTopic?: unknown } | null)
-    ?.searchTopic;
-  const searchTopic = typeof rawSearchTopic === "string" ? rawSearchTopic : "";
+  const hints = readImageHints(project.researchData);
 
   let plan: VisualPlan;
   try {
@@ -847,7 +854,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
         project.topic,
         knowledge,
         style,
-        searchTopic,
+        hints,
       ),
     };
   } catch (error) {
@@ -861,7 +868,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
       duration,
       project.topic,
       style,
-      searchTopic,
+      hints,
     );
   }
 

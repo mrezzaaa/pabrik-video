@@ -77,6 +77,10 @@ export interface ResearchData {
   styleSource?: "llm" | "heuristic";
   /** Istilah topik 2-4 kata BAHASA INGGRIS untuk pencarian gambar (mis. "turbofan jet engine"). */
   searchTopic?: string;
+  /** 8-12 frasa pencarian gambar Inggris yang berbeda-beda (komponen/tahap/sudut) untuk topik ini. */
+  visualTerms?: string[];
+  /** Kata Inggris dari topik tetangga yang sering salah muncul (mis. "piston" untuk mesin jet). */
+  avoidTerms?: string[];
   facts: string[];
   sources: { title: string; url: string }[];
   uniqueAngles: string[];
