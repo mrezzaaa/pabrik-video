@@ -4,6 +4,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { PUBLIC_DIR } from "./media";
 import { searchImages } from "./searxng";
+import { type ImageHints, NO_HINTS, relevanceVocab } from "./topic-style";
 import type { VisualScene } from "./types";
 
 const execFileAsync = promisify(execFile);
@@ -53,11 +54,22 @@ export function localeMismatchPenalty(
   return penalty;
 }
 
-function scoreCandidate(
+export interface Relevance {
+  /** Kata kunci topik (searchTopic + visualTerms); kandidat tanpa satu pun kena penalti. */
+  vocab: string[];
+  /** Kata dari topik tetangga yang salah (mis. "piston" untuk mesin jet). */
+  avoid: string[];
+}
+
+const LOCAL_POLITICS =
+  /\b(jokowi|prabowo|presiden|menteri|gubernur|bupati|walikota|kampanye|pilpres|pilkada|dprd?|partai)\b/i;
+
+export function scoreCandidate(
   imgSrc: string,
   source: string,
   title: string,
   query: string,
+  relevance?: Relevance,
 ) {
   let score = 0;
   if (PREFERRED_HOST.test(source)) score += 4;
@@ -81,6 +93,22 @@ function scoreCandidate(
   const hits = tokens.filter((token) => haystack.includes(token)).length;
   score += Math.min(7, hits * 2);
   if (hits === 0 && tokens.length >= 2) score -= 2;
+
+  if (relevance) {
+    if (relevance.vocab.length) {
+      const relHits = relevance.vocab.filter((w) => haystack.includes(w)).length;
+      // Tanpa satu pun kata kunci topik = tidak relevan: ditolak (lebih baik tanpa gambar daripada gambar ngaco).
+      score += relHits === 0 ? -10 : Math.min(6, relHits * 2);
+    }
+    for (const word of relevance.avoid) {
+      if (new RegExp(`\\b${word.replace(/[^\p{L}\p{N}]/gu, "")}`, "i").test(haystack)) {
+        score -= 20; // topik tetangga yang salah: tolak tegas walau judul cocok kata kunci umum ("engine")
+        break;
+      }
+    }
+  }
+  // Berita/politik lokal tidak pernah relevan sebagai b-roll topik sains/teknik.
+  if (LOCAL_POLITICS.test(`${title} ${source}`) && !LOCAL_POLITICS.test(query)) score -= 10;
 
   return score;
 }
@@ -205,6 +233,7 @@ export async function downloadSceneImage(
   projectId: string,
   index: number,
   usedSources: Set<string>,
+  relevance?: Relevance,
 ): Promise<string | null> {
   const normalized = query.replace(/\s+/g, " ").trim().slice(0, 100);
   if (normalized.length < 3) return null;
@@ -220,7 +249,7 @@ export async function downloadSceneImage(
       imgSrc: item.imgSrc,
       source: item.source,
       title: item.title,
-      score: scoreCandidate(item.imgSrc, item.source, item.title, normalized),
+      score: scoreCandidate(item.imgSrc, item.source, item.title, normalized, relevance),
     }))
     .filter((item) => item.score > -6 && !usedSources.has(item.imgSrc))
     .sort((a, b) => b.score - a.score)
@@ -286,8 +315,10 @@ export async function attachSceneImages(
   scenes: VisualScene[],
   projectId: string,
   topic = "",
-  searchTopic = "",
+  hints: ImageHints = NO_HINTS,
 ): Promise<VisualScene[]> {
+  const searchTopic = hints.searchTopic;
+  const relevance: Relevance = { vocab: relevanceVocab(hints), avoid: hints.avoidTerms };
   const targets = scenes
     .map((scene, index) => ({ scene, index }))
     .filter((entry) => !entry.scene.imageUrl);
@@ -299,13 +330,14 @@ export async function attachSceneImages(
 
   async function resolveScene(scene: VisualScene, index: number) {
     const query = scene.imageSearchQuery ?? "";
-    let url = await downloadSceneImage(query, projectId, index, usedSources);
+    let url = await downloadSceneImage(query, projectId, index, usedSources, relevance);
 
     if (!url && query) {
       // SearXNG may return nothing for a wordy or very specific query. Retry
       // with a simpler one. Kalau ada searchTopic (Inggris) pakai itu, bukan
       // potongan kata narasi Indonesia yang menarik halaman lokal.
       const simplified =
+        hints.visualTerms[(index + 1) % Math.max(1, hints.visualTerms.length)] ||
         searchTopic ||
         query
           .split(/\s+/)
@@ -318,6 +350,7 @@ export async function attachSceneImages(
           projectId,
           index,
           usedSources,
+          relevance,
         );
       }
     }
@@ -328,6 +361,7 @@ export async function attachSceneImages(
         projectId,
         index,
         usedSources,
+        relevance,
       );
     }
     if (url) resolved.set(index, url);

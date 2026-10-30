@@ -15,6 +15,7 @@ import {
   PUBLIC_DIR,
 } from "../media";
 import { attachSceneImages } from "../images";
+import { readImageHints } from "../topic-style";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
 import type {
@@ -62,13 +63,11 @@ export async function runRender(projectId: string) {
 
   // Download real SearXNG b-roll before Remotion starts. Failures are
   // non-fatal: the stage falls back to a procedural dark plate.
-  const rawSearchTopic = (project.researchData as { searchTopic?: unknown } | null)
-    ?.searchTopic;
   const scenes = await attachSceneImages(
     plan.scenes,
     projectId,
     project.topic,
-    typeof rawSearchTopic === "string" ? rawSearchTopic : "",
+    readImageHints(project.researchData),
   );
   const enrichedPlan: VisualPlan = { ...plan, scenes };
   await prisma.project.update({
