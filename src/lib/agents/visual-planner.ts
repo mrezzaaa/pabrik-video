@@ -590,6 +590,7 @@ function normalizeScenes(
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
   let previousStage: VisualType | null = null;
+  let previousStageKey = "";
   let previousImageStyle: ImageFrameStyle | null = null;
 
   sentences.forEach((sentence, sentenceIndex) => {
@@ -672,6 +673,12 @@ function normalizeScenes(
           imageStyle: stage.imageStyle,
         };
       }
+      // Dua scene berturut-turut dengan data grafis identik (mis. crosssection yang sama) membosankan: ganti foto.
+      const stageKey = JSON.stringify([stage.visualType, stage.layers, stage.steps, stage.counter, stage.metric, stage.stamp, stage.compare, stage.bars, stage.range]);
+      if (isData(stage.visualType) && stageKey === previousStageKey) {
+        stage = { visualType: "B_ROLL_IMAGE", stageLabel: "", imageSearchQuery: stage.imageSearchQuery, imageStyle: stage.imageStyle };
+      }
+      previousStageKey = isData(stage.visualType) ? stageKey : "";
       previousStage = stage.visualType;
 
       if (stage.imageStyle === previousImageStyle) {
@@ -831,8 +838,12 @@ ${sentenceTable}
 PILIHAN GRADIENT (background.value harus salah satu string ini):
 ${paletteTable}
 
-FAKTA RISET:
-${JSON.stringify(project.researchData ?? {}).slice(0, 2000)}
+${
+  hints.visualTerms.length
+    ? `VISUAL TERMS (BAHASA INGGRIS). imageSearchQuery tiap scene WAJIB salah satu frasa berikut (salin persis, boleh ditambah satu kata sudut seperti "close up" atau "diagram"). Pilih yang paling cocok dengan kalimat scene dan variasikan antar scene; dilarang memakai kata Indonesia di imageSearchQuery:\n${hints.visualTerms.map((term) => `- ${term}`).join("\n")}\n\n`
+    : ""
+}FAKTA RISET:
+${JSON.stringify({ ...((project.researchData as object) ?? {}), visualTerms: undefined, avoidTerms: undefined }).slice(0, 2000)}
 
 Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan mengubah timing.
 INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center stage hanya angka/metrik atau label sumbu 1-2 kata.`,

@@ -253,6 +253,27 @@ export interface QueryContext extends Partial<ImageHints> {
   sceneIndex?: number;
 }
 
+const QUERY_MODIFIERS = new Set(
+  ("close up closeup diagram cutaway view photo detail details schematic model cross section test real structure " +
+    "inside internal blueprint exploded side front top aerial macro illustration system parts part of in and with").split(" "),
+);
+
+/**
+ * Query hanya diterima bila SETIAP katanya berasal dari kosakata topik (searchTopic + visualTerms)
+ * atau kata sudut umum ("close up", "diagram", ...). Kata Indonesia apa pun otomatis gagal,
+ * tanpa perlu daftar penanda bahasa yang lengkap.
+ */
+export function isOnVocab(query: string, searchTopic: string, terms: string[]): boolean {
+  const known = new Set(
+    `${searchTopic} ${terms.join(" ")}`.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 2),
+  );
+  const words = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  if (words.length < 2) return false;
+  const isKnown = (w: string) =>
+    known.has(w) || QUERY_MODIFIERS.has(w) || (w.endsWith("s") && known.has(w.slice(0, -1))) || known.has(`${w}s`);
+  return words.every(isKnown) && words.some((w) => known.has(w) || known.has(w.replace(/s$/, "")));
+}
+
 function overlapsVocab(query: string, vocab: string[]): boolean {
   const words = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 4);
   return words.some((w) => vocab.some((v) => w.includes(v) || v.includes(w)));
@@ -279,6 +300,12 @@ export function anchorImageQuery(
 
   if (english) {
     const vocab = vocabWords(english, terms);
+    if (terms.length) {
+      // Mode ketat: query LLM diterima hanya jika seluruhnya kosakata topik; selain itu pakai frasa visualTerms.
+      const generic = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).every((w) => english.toLowerCase().split(/\s+/).includes(w));
+      if (!generic && isOnVocab(query, english, terms)) return clean(query);
+      return clean(terms[idx % terms.length]);
+    }
     const queryWords = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
     const topicWords = new Set(english.toLowerCase().split(/\s+/));
     // Query yang hanya mengulang searchTopic terlalu generik untuk membedakan scene.
