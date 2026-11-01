@@ -12,7 +12,7 @@ const execFileAsync = promisify(execFile);
 export const IMAGE_DIR = path.join(PUBLIC_DIR, "images");
 
 const BLOCKED_HOST =
-  /(istockphoto|shutterstock|alamy|gettyimages|dreamstime|123rf|depositphotos|freepik|vectorstock|canstockphoto|adobe|lookaside|gstatic|pinimg|tripadvisor|booking\.com|agoda|expedia|hotels\.com|yelp|facebook|instagram|tiktok|youtube|reddit|quora|clipart|kindpng|pngitem|seekpng|cleanpng|pinclipart|pngwing|pngtree|vecteezy)/i;
+  /(istockphoto|shutterstock|alamy|gettyimages|dreamstime|123rf|depositphotos|freepik|vectorstock|canstockphoto|adobe|lookaside|gstatic|pinimg|tripadvisor|booking\.com|agoda|expedia|hotels\.com|yelp|facebook|instagram|tiktok|youtube|reddit|quora|scribd|slideshare|academia\.edu|researchgate|pdfcoffee|dokumen\.tips|studylibid|docplayer|vdocuments|issuu|adoc\.pub|123dok|clipart|kindpng|pngitem|seekpng|cleanpng|pinclipart|pngwing|pngtree|vecteezy)/i;
 const PREFERRED_HOST =
   /(wikimedia|unsplash|pexels|pixabay|flickr|nasa|nih|cdc|si\.edu|britannica|bbc|nytimes|smithsonian|sciencedirect|history|museum|archive)/i;
 
@@ -54,6 +54,10 @@ export function localeMismatchPenalty(
   return penalty;
 }
 
+const DOCUMENT_LIKE =
+  /\b(pedoman|peraturan|undang-?undang|permen|makalah|skripsi|jurnal|proposal|silabus|syllabus|materi|shortcourse|webinar|seminar|lecture|powerpoint|ppt|pptx|handout|whitepaper|datasheet|leaflet|brosur|presentasi|slides?|pdf|sni|lampiran|outline|paper|thesis|disertasi|modul)\b/i;
+const DOCUMENT_URL = /\.(pdf|pptx?|docx?)(\?|#|$)|\/(slides?|ppt|documents?|dokumen|download|pdf)(\/|\b)/i;
+
 export interface Relevance {
   /** Kata kunci topik (searchTopic + visualTerms); kandidat tanpa satu pun kena penalti. */
   vocab: string[];
@@ -87,6 +91,9 @@ export function scoreCandidate(
   }
 
   score -= localeMismatchPenalty(imgSrc, source, title, query);
+
+  // Dokumen/slide/peraturan penuh teks tidak layak jadi b-roll (teksnya menabrak caption dan gauge).
+  if (DOCUMENT_LIKE.test(title) || DOCUMENT_URL.test(imgSrc) || DOCUMENT_URL.test(source)) score -= 14;
 
   const haystack = `${title} ${source} ${imgSrc}`.toLowerCase();
   const tokens = queryTokens(query);
