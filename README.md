@@ -118,6 +118,7 @@ Semua variabel dibaca dari `process.env`; worker memuat `.env.local` lalu `.env`
 | `OMNIROUTE_API_KEY` | `local` | API key OmniRoute |
 | `OMNIROUTE_PRIMARY_MODEL` | `auto` | Model naskah & visual plan |
 | `OMNIROUTE_FAST_MODEL` | `auto` | Model riset |
+| `IMAGE_JUDGE_MODEL` | _(kosong = mati)_ | Model vision untuk memilih gambar b-roll yang relevan dan bebas teks besar. Maks. 2 panggilan per scene; gagal = kembali ke penilaian teks |
 | `VOICESTUDIO_BASE_URL` | `http://localhost:3900/v1` | TTS utama |
 | `VOICE_DEFAULT_ID` | `alloy` | Voice ID VoiceStudio (OpenAI alias) |
 | `VOICESTUDIO_VOICE_NAME` | `Alloy` | Label suara |

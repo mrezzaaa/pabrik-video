@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 import { PUBLIC_DIR } from "./media";
+import { imageJudgeModel, judgeAvailable, judgeImages } from "./image-judge";
 import { searchImages } from "./searxng";
 import { type ImageHints, NO_HINTS, relevanceVocab } from "./topic-style";
 import type { VisualScene } from "./types";
@@ -241,6 +242,29 @@ async function normalizeImage(
   }
 }
 
+export interface JudgeContext {
+  model: string;
+  topic: string;
+  narration: string;
+  avoid: string[];
+}
+
+/** Thumbnail kecil (jpeg, lebar maks 480) sebagai data URL untuk penilai vision. */
+async function makeThumb(raw: Buffer, dir: string, index: number, slot: number): Promise<string | null> {
+  const src = path.join(dir, `judge-${index}-${slot}.src`);
+  const out = path.join(dir, `judge-${index}-${slot}.jpg`);
+  try {
+    await fs.writeFile(src, raw);
+    await execFileAsync("ffmpeg", ["-y", "-i", src, "-vf", "scale='min(480,iw)':-2", "-frames:v", "1", "-q:v", "6", out]);
+    return `data:image/jpeg;base64,${(await fs.readFile(out)).toString("base64")}`;
+  } catch {
+    return null;
+  } finally {
+    await fs.rm(src, { force: true }).catch(() => null);
+    await fs.rm(out, { force: true }).catch(() => null);
+  }
+}
+
 export async function downloadSceneImage(
   query: string,
   projectId: string,
@@ -248,6 +272,7 @@ export async function downloadSceneImage(
   usedSources: Set<string>,
   relevance?: Relevance,
   engines?: string,
+  judge?: JudgeContext,
 ): Promise<string | null> {
   const normalized = query.replace(/\s+/g, " ").trim().slice(0, 100);
   if (normalized.length < 3) return null;
@@ -279,6 +304,37 @@ export async function downloadSceneImage(
 
   let bestLandscapeBuffer: Buffer | null = null;
 
+  // Mode penilai vision: kumpulkan 3 kandidat terunduh, minta model memilih; maksimal 2 putaran.
+  const judging = Boolean(judge) && judgeAvailable(judge!.model);
+  interface Pooled {
+    raw: Buffer;
+    portrait: boolean;
+  }
+  const pool: Pooled[] = [];
+  let rounds = 0;
+  const finalize = async (p: Pooled) =>
+    (await normalizeImage(p.raw, outputPath, p.portrait)) ? `/images/${projectId}/${filename}` : null;
+  /** string = gambar terpilih; null = penilai menolak semua; undefined = penilai gagal. */
+  const judgePool = async (): Promise<string | null | undefined> => {
+    rounds += 1;
+    const thumbs = await Promise.all(pool.map((p, i) => makeThumb(p.raw, dir, index, i)));
+    const valid = pool.flatMap((p, i) => (thumbs[i] ? [{ p, t: thumbs[i] as string }] : []));
+    if (valid.length === 0) return undefined;
+    const result = await judgeImages(
+      { topic: judge!.topic, narration: judge!.narration, query: normalized, avoid: judge!.avoid, thumbs: valid.map((v) => v.t) },
+      judge!.model,
+    );
+    if ("error" in result) return undefined;
+    console.info(`[image-judge] scene ${index + 1} "${normalized}": ${result.choice === null ? "semua ditolak" : `pilih #${result.choice}`}, ${result.reason}`);
+    if (result.choice === null) return null;
+    return finalize(valid[result.choice].p);
+  };
+  /** Penilai gagal: pakai urutan skor teks (portrait dulu), seperti tanpa penilai. */
+  const fallbackFromPool = async () => {
+    const pick = pool.find((p) => p.portrait) ?? pool[0];
+    return pick ? finalize(pick) : null;
+  };
+
   for (const candidate of ranked) {
     if (usedSources.has(candidate.imgSrc)) continue;
     usedSources.add(candidate.imgSrc);
@@ -289,6 +345,19 @@ export async function downloadSceneImage(
     await fs.writeFile(tempProbePath, raw).catch(() => null);
     const dims = await getImageDimensions(tempProbePath);
     await fs.rm(tempProbePath, { force: true }).catch(() => null);
+
+    if (judging) {
+      const portrait = dims ? dims.height >= dims.width * 0.95 && dims.height >= 700 : true;
+      pool.push({ raw, portrait });
+      if (pool.length >= 3) {
+        const verdict = await judgePool();
+        if (typeof verdict === "string") return verdict;
+        if (verdict === undefined) return fallbackFromPool();
+        pool.length = 0;
+        if (rounds >= 2) return null;
+      }
+      continue;
+    }
 
     if (dims) {
       const isPortrait = dims.height >= dims.width * 0.95; // portrait or square
@@ -307,6 +376,15 @@ export async function downloadSceneImage(
         return `/images/${projectId}/${filename}`;
       }
     }
+  }
+
+  if (judging) {
+    if (pool.length > 0 && rounds < 2) {
+      const verdict = await judgePool();
+      if (typeof verdict === "string") return verdict;
+      if (verdict === undefined) return fallbackFromPool();
+    }
+    return null;
   }
 
   // If no true portrait was found after inspecting all candidates,
@@ -330,7 +408,10 @@ export async function attachSceneImages(
   projectId: string,
   topic = "",
   hints: ImageHints = NO_HINTS,
+  /** Narasi per scene (indeks sama dengan scenes) untuk penilai vision. */
+  narrations: string[] = [],
 ): Promise<VisualScene[]> {
+  const judgeModel = imageJudgeModel();
   const searchTopic = hints.searchTopic;
   const relevance: Relevance = { vocab: relevanceVocab(hints), avoid: hints.avoidTerms };
   const targets = scenes
@@ -344,12 +425,15 @@ export async function attachSceneImages(
 
   async function resolveScene(scene: VisualScene, index: number) {
     const query = scene.imageSearchQuery ?? "";
+    const judge: JudgeContext | undefined = judgeModel
+      ? { model: judgeModel, topic, narration: narrations[index] ?? "", avoid: hints.avoidTerms }
+      : undefined;
     // Topik non-teknis: foto kurasi (Unsplash/Commons/Openverse) dulu, baru web umum.
     const photoFirst = hints.style === "factcheck" || hints.style === "lifestyle";
     let url = photoFirst
-      ? await downloadSceneImage(query, projectId, index, usedSources, relevance, PHOTO_ENGINES)
+      ? await downloadSceneImage(query, projectId, index, usedSources, relevance, PHOTO_ENGINES, judge)
       : null;
-    if (!url) url = await downloadSceneImage(query, projectId, index, usedSources, relevance);
+    if (!url) url = await downloadSceneImage(query, projectId, index, usedSources, relevance, undefined, judge);
 
     if (!url && query) {
       // SearXNG may return nothing for a wordy or very specific query. Retry
@@ -370,6 +454,8 @@ export async function attachSceneImages(
           index,
           usedSources,
           relevance,
+          undefined,
+          judge,
         );
       }
     }
@@ -381,6 +467,8 @@ export async function attachSceneImages(
         index,
         usedSources,
         relevance,
+        undefined,
+        judge,
       );
     }
     if (url) resolved.set(index, url);

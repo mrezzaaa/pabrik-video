@@ -63,11 +63,20 @@ export async function runRender(projectId: string) {
 
   // Download real SearXNG b-roll before Remotion starts. Failures are
   // non-fatal: the stage falls back to a procedural dark plate.
+  // Narasi per scene (kata yang terucap di rentang scene, longgar 0,6 dtk) untuk penilai gambar vision.
+  const narrations = plan.scenes.map((scene) =>
+    (words ?? [])
+      .filter((w) => w.end > scene.startTime - 0.6 && w.start < scene.endTime + 0.6)
+      .map((w) => w.word)
+      .join(" ")
+      .slice(0, 240),
+  );
   const scenes = await attachSceneImages(
     plan.scenes,
     projectId,
     project.topic,
     readImageHints(project.researchData),
+    narrations,
   );
   const enrichedPlan: VisualPlan = { ...plan, scenes };
   await prisma.project.update({
