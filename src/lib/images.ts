@@ -66,7 +66,12 @@ export interface Relevance {
 }
 
 const LOCAL_POLITICS =
-  /\b(jokowi|prabowo|presiden|menteri|gubernur|bupati|walikota|kampanye|pilpres|pilkada|dprd?|partai)\b/i;
+  /\b(jokowi|prabowo|gibran|anies|ganjar|megawati|presiden|menteri|gubernur|bupati|walikota|wali kota|kampanye|pilpres|pilkada|pemilu|caleg|cagub|cawali|dprd?|dpd|partai|nasdem|golkar|pdi-?p|gerindra|pks|pkb|demokrat|perindo|hanura|ppp)\b/i;
+/** Portal berita/opini lokal: gambarnya kartu infografis penuh teks atau foto konferensi, bukan b-roll. */
+const EDITORIAL_HOST =
+  /(kompas|detik|cnnindonesia|cnbcindonesia|tempo\.co|liputan6|suara\.com|tribunnews|antaranews|kumparan|tirto|idntimes|grid\.id|katadata|jawapos|republika|merdeka|okezone|viva\.co|sindonews|bisnis\.com|theconversation|kompasiana|substack|narasi\.tv|inews|jpnn|wartakota|tvonenews|beritasatu|mediaindonesia|pikiran-rakyat|jatimnow|surabaya\.go\.id|jatimprov)/i;
+/** Engine foto kurasi: dicoba dulu untuk topik non-teknis supaya bebas poster/infografis/banner. */
+const PHOTO_ENGINES = "unsplash,wikicommons.images,openverse";
 
 export function scoreCandidate(
   imgSrc: string,
@@ -115,7 +120,8 @@ export function scoreCandidate(
     }
   }
   // Berita/politik lokal tidak pernah relevan sebagai b-roll topik sains/teknik.
-  if (LOCAL_POLITICS.test(`${title} ${source}`) && !LOCAL_POLITICS.test(query)) score -= 10;
+  if (LOCAL_POLITICS.test(`${title} ${source}`) && !LOCAL_POLITICS.test(query)) score -= 20;
+  if (EDITORIAL_HOST.test(source) || EDITORIAL_HOST.test(imgSrc)) score -= 14;
 
   return score;
 }
@@ -241,6 +247,7 @@ export async function downloadSceneImage(
   index: number,
   usedSources: Set<string>,
   relevance?: Relevance,
+  engines?: string,
 ): Promise<string | null> {
   const normalized = query.replace(/\s+/g, " ").trim().slice(0, 100);
   if (normalized.length < 3) return null;
@@ -250,7 +257,7 @@ export async function downloadSceneImage(
   // ditangani normalizeImage (latar blur + foreground native).
   const portraitQuery = normalized;
 
-  const results = await searchImages(portraitQuery, 30, "en").catch(() => []);
+  const results = await searchImages(portraitQuery, 30, "en", engines).catch(() => []);
   const ranked: Candidate[] = results
     .map((item) => ({
       imgSrc: item.imgSrc,
@@ -337,7 +344,12 @@ export async function attachSceneImages(
 
   async function resolveScene(scene: VisualScene, index: number) {
     const query = scene.imageSearchQuery ?? "";
-    let url = await downloadSceneImage(query, projectId, index, usedSources, relevance);
+    // Topik non-teknis: foto kurasi (Unsplash/Commons/Openverse) dulu, baru web umum.
+    const photoFirst = hints.style === "factcheck" || hints.style === "lifestyle";
+    let url = photoFirst
+      ? await downloadSceneImage(query, projectId, index, usedSources, relevance, PHOTO_ENGINES)
+      : null;
+    if (!url) url = await downloadSceneImage(query, projectId, index, usedSources, relevance);
 
     if (!url && query) {
       // SearXNG may return nothing for a wordy or very specific query. Retry

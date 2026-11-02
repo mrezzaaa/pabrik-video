@@ -194,6 +194,8 @@ function cleanTerms(values: unknown, max: number, maxWords: number): string[] {
 
 /** Petunjuk gambar dari stage research; kosong untuk project lama. */
 export interface ImageHints {
+  /** Gaya video; undefined untuk project lama. */
+  style?: TopicStyle;
   searchTopic: string;
   visualTerms: string[];
   avoidTerms: string[];
@@ -204,6 +206,7 @@ export function readImageHints(researchData: unknown): ImageHints {
   const r = (researchData ?? {}) as Record<string, unknown>;
   const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
   return {
+    style: r.style === "engineering" || r.style === "factcheck" || r.style === "lifestyle" ? r.style : undefined,
     searchTopic: typeof r.searchTopic === "string" ? r.searchTopic : "",
     visualTerms: strings(r.visualTerms),
     avoidTerms: strings(r.avoidTerms),
