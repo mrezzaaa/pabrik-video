@@ -18,7 +18,8 @@
     "cad:check": "tsx scripts/cad-check.ts",
     "judge:test": "tsx scripts/image-judge-test.ts",
     "skills:check": "tsx scripts/skills-check.ts",
-    "selftest:research": "tsx scripts/selftest-research.ts"
+    "selftest:research": "tsx scripts/selftest-research.ts",
+    "selftest:script": "tsx scripts/selftest-script.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

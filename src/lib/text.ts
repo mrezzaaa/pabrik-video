@@ -35,7 +35,12 @@ export function normalizeSpeech(value: string): string {
     .replace(/\u2026/g, ",")
     .replace(/\.{2,}/g, ",")
     .replace(/[—–]/g, ", ")
-    .replace(/([.!?,;:])(?=\S)/g, "$1 ")
+    // Spasi setelah tanda baca, kecuali di antara dua digit (1.500 / 3,5 / 12:30).
+    .replace(/([.!?,;:])(?=\S)/g, (match, _p, offset: number, whole: string) =>
+      /\d/.test(whole[offset - 1] ?? "") && /\d/.test(whole[offset + 1] ?? "")
+        ? match
+        : `${match} `,
+    )
     .replace(/\s+([,.!?;:])/g, "$1")
     .replace(/,\s*,/g, ",")
     .replace(/\s+/g, " ")

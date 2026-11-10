@@ -9,7 +9,7 @@ Narasi dibaca mesin per kelompok kalimat. Kalimat yang kaku dan patah-patah memb
 
 ## Struktur
 Hook (1 kalimat) -> Janji (1 kalimat spesifik) -> Isi 3-5 beat (tiap beat 1-3 kalimat, satu ide) -> Payoff (1-2 kalimat) -> CTA (1 kalimat).
-Total 95-130 kata (sekitar 32-42 detik).
+Total 90-125 kata (sekitar 33-46 detik).
 
 ## Ritme kalimat
 - Rata-rata 11-17 kata. Maksimal 24 kata per kalimat.

@@ -65,6 +65,55 @@ export const scriptSentenceSchema = z.object({
     .default("curious"),
 });
 
+export const hookCandidatesSchema = z.object({
+  hooks: z
+    .array(
+      z.object({
+        spoken: z.string().min(3),
+        onScreen: z.string().optional().default(""),
+        type: z.string().optional().default(""),
+        factId: z.string().optional().default(""),
+        visual: z.string().optional().default(""),
+      }),
+    )
+    .min(1),
+});
+
+export const hookPickSchema = z.object({
+  /** 1-based */
+  pick: looseNumber,
+  reason: z.string().optional().default(""),
+});
+
+export const directedSentenceSchema = z.object({
+  text: z.string().min(1),
+  role: z.string().optional().default("body"),
+  factIds: z.array(z.string()).optional().default([]),
+  emphasisWords: z.array(z.string()).optional().default([]),
+  emotion: z.enum(["shocking", "curious", "excited"]).optional().default("curious"),
+});
+
+export const directedScriptSchema = z.object({
+  hookOnScreen: z.string().optional().default(""),
+  ctaType: z.string().optional().default(""),
+  sentences: z.array(directedSentenceSchema).min(5),
+});
+
+export const critiqueSchema = z.object({
+  scores: z.record(z.string(), looseNumber).optional().default({}),
+  issues: z
+    .array(
+      z.object({
+        sentence: looseNumber.optional().default(0),
+        problem: z.string().optional().default(""),
+        fix: z.string().optional().default(""),
+        severity: z.string().optional().default("minor"),
+      }),
+    )
+    .optional()
+    .default([]),
+});
+
 export const scriptSchema = z.object({
   hook: z.string().min(1),
   script: z.string().min(1),

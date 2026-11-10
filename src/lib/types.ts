@@ -128,11 +128,33 @@ export interface ResearchData {
 
 export type ScriptEmotion = "shocking" | "curious" | "excited";
 
+export type SentenceRole = "hook" | "promise" | "body" | "payoff" | "cta";
+export type CtaType = "save" | "share" | "follow" | "comment";
+
 export interface ScriptSentence {
   id: string;
   text: string;
   emphasisWords: string[];
   emotion: ScriptEmotion;
+  /** Peran kalimat dalam struktur naskah. Kosong pada project lama. */
+  role?: SentenceRole;
+  /** Kelompok kalimat yang disuarakan bersama (satu napas) oleh TTS. */
+  beat?: number;
+  /** ID fakta di fact bank yang mendukung kalimat ini. */
+  factIds?: string[];
+  /** Detik mulai/selesai di audio (diisi stage TTS bila tersedia). */
+  start?: number;
+  end?: number;
+}
+
+export interface ScriptQa {
+  rounds: number;
+  passed: boolean;
+  /** Masalah yang masih tersisa setelah semua putaran revisi. */
+  issues: string[];
+  scores?: Record<string, number>;
+  hookCandidates?: { spoken: string; onScreen: string; type: string }[];
+  hookPickReason?: string;
 }
 
 export interface CaptionWord {
@@ -149,7 +171,14 @@ export interface CaptionPage {
 }
 
 export interface FullScript {
+  /** Kalimat hook yang diucapkan (kalimat pertama narasi). */
   hook: string;
+  /** Judul hook di layar (2-6 kata), berbeda dari ucapan. */
+  hookOnScreen?: string;
+  cta?: { type: CtaType; text: string };
+  qa?: ScriptQa;
+  /** Skill yang dipakai per peran saat menulis naskah. */
+  skillsUsed?: Record<string, string[]>;
   script: string;
   sentences: ScriptSentence[];
   captions: CaptionPage[];

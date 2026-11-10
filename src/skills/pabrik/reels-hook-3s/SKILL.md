@@ -9,7 +9,7 @@ Detik 0-3 menentukan penonton lanjut atau geser. Hook bukan satu kalimat, tetapi
 
 | Komponen | Isi | Batas |
 |---|---|---|
-| Ucapan (suara) | kalimat pertama narasi | maksimal 9 kata, selesai diucapkan dalam 3 detik |
+| Ucapan (suara) | kalimat pertama narasi | maksimal 8 kata (sekitar 2,7 kata per detik), selesai diucapkan dalam 3 detik |
 | Teks layar (hookOnScreen) | judul visual yang menamai objek atau klaim | 2-6 kata, bukan salinan ucapan |
 | Visual pembuka | benda, angka, atau potongan yang langsung konkret di detik 0-1 | satu objek utama, tanpa layar kosong |
 
@@ -40,7 +40,7 @@ Buruk:
 - "99 persen orang salah!" (angka tanpa data)
 
 ## Cek akhir
-- Ucapan 9 kata atau kurang dan terbaca dalam 3 detik.
+- Ucapan 8 kata atau kurang dan terbaca dalam 3 detik.
 - Teks layar tidak menyalin ucapan.
 - Janji dari hook terjawab di bagian isi atau payoff.
 - Tidak ada klaim yang tidak punya ID fakta.
