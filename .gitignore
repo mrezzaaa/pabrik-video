@@ -40,6 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+patch
 # rendered media (keep the folders, not the generated files)
 /public/audio/*
 !/public/audio/.gitkeep
