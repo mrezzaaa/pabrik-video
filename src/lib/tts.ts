@@ -4,6 +4,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { env } from "./env";
 import { speechChunks } from "./text";
+import { parseSilences, type Silence } from "./engine/timeline";
 
 const execFileAsync = promisify(execFile);
 
@@ -86,7 +87,7 @@ export async function listVoiceStudioVoices(): Promise<VoiceStudioVoice[]> {
   return [];
 }
 
-async function synthesizeWithVoiceStudio(
+export async function synthesizeWithVoiceStudio(
   text: string,
   outputPath: string,
   voiceOverride?: string | null,
@@ -147,7 +148,7 @@ async function synthesizeWithVoiceStudio(
   throw lastError;
 }
 
-function resolveEdgeVoice() {
+export function resolveEdgeVoice() {
   const explicit = process.env.UNLIMITEDTTS_VOICE_ID;
   if (explicit) return explicit;
 
@@ -171,7 +172,7 @@ function resolveEdgeVoice() {
  * Fallback engine. The local machine ships the `edge-tts` CLI (UnlimitedTTS
  * compatible), so we reuse it instead of hitting a paid API.
  */
-async function synthesizeWithUnlimitedTts(text: string, outputPath: string) {
+export async function synthesizeWithUnlimitedTts(text: string, outputPath: string) {
   const voice = resolveEdgeVoice();
   const ratePercent = Math.round((env.unlimitedTtsSpeed - 1) * 100);
   const rate = `${ratePercent >= 0 ? "+" : ""}${ratePercent}%`;
@@ -382,6 +383,144 @@ export async function synthesizeChunkedToFile(
     }
 
     return { provider, voice, bytes: stat.size, chunks: chunks.length };
+  } finally {
+    await fs.rm(workDir, { recursive: true, force: true }).catch(() => undefined);
+  }
+}
+
+export interface BeatSynthesisInput {
+  /** Teks ucapan (sudah lewat toSpokenIndonesian). */
+  text: string;
+  /** Jeda setelah beat ini (detik). */
+  gapAfter: number;
+}
+
+export interface BeatSynthesisResult extends SynthesisResult {
+  beats: { duration: number; silences: Silence[] }[];
+  /** Durasi total file hasil gabungan. */
+  total: number;
+}
+
+// Pangkas hening di awal dan akhir (areverse trick) supaya durasi beat = durasi ucapan sebenarnya.
+const TRIM_FILTER =
+  "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.04," +
+  "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.06,areverse";
+
+async function probeDuration(file: string): Promise<number> {
+  const { stdout } = await execFileAsync("ffprobe", [
+    "-v",
+    "error",
+    "-show_entries",
+    "format=duration",
+    "-of",
+    "default=nw=1:nk=1",
+    file,
+  ]);
+  return Number.parseFloat(stdout.trim()) || 0;
+}
+
+/**
+ * Sintesis per beat (1-3 kalimat satu napas) lewat Voice Studio. Prosodi di dalam
+ * beat tetap utuh; durasi tiap beat dan jeda kalimat nyata diukur dari audio,
+ * sehingga timing caption dan scene tidak lagi sekadar perkiraan.
+ * Satu penyedia dipakai untuk semua beat agar suara tidak berganti di tengah video.
+ */
+export async function synthesizeBeatsToFile(
+  beats: BeatSynthesisInput[],
+  outputPath: string,
+  options?: { voice?: string | null },
+): Promise<BeatSynthesisResult> {
+  if (beats.length === 0) throw new Error("Tidak ada beat untuk disintesis.");
+
+  const workDir = path.join(
+    path.dirname(outputPath),
+    `.tts-beats-${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+  );
+  await fs.mkdir(workDir, { recursive: true });
+  const chosenVoice = options?.voice?.trim() || env.voiceDefaultId;
+
+  try {
+    let provider: SynthesisResult["provider"] = "voicestudio";
+    let voice = chosenVoice;
+    const wavs: string[] = [];
+    const measured: { duration: number; silences: Silence[] }[] = [];
+
+    for (let index = 0; index < beats.length; index += 1) {
+      const base = path.join(workDir, `beat-${String(index).padStart(2, "0")}`);
+      const mp3 = `${base}.mp3`;
+      const wav = `${base}.wav`;
+
+      if (index === 0) {
+        try {
+          await synthesizeWithVoiceStudio(beats[index].text, mp3, chosenVoice);
+        } catch (error) {
+          console.warn(
+            "[tts] VoiceStudio gagal pada beat pertama, seluruh beat memakai UnlimitedTTS:",
+            error instanceof Error ? error.message : error,
+          );
+          await synthesizeWithUnlimitedTts(beats[index].text, mp3);
+          provider = "unlimitedtts";
+          voice = resolveEdgeVoice();
+        }
+      } else if (provider === "voicestudio") {
+        await synthesizeWithVoiceStudio(beats[index].text, mp3, chosenVoice);
+      } else {
+        await synthesizeWithUnlimitedTts(beats[index].text, mp3);
+      }
+
+      await execFileAsync("ffmpeg", [
+        "-y", "-i", mp3, "-af", TRIM_FILTER, "-ar", "44100", "-ac", "1", "-c:a", "pcm_s16le", wav,
+      ]);
+      const duration = await probeDuration(wav);
+      if (duration < 0.2) throw new Error(`Beat ${index + 1} menghasilkan audio kosong.`);
+
+      const detect = await execFileAsync(
+        "ffmpeg",
+        ["-i", wav, "-af", "silencedetect=noise=-35dB:d=0.13", "-f", "null", "-"],
+        { maxBuffer: 4 * 1024 * 1024 },
+      );
+      measured.push({ duration, silences: parseSilences(detect.stderr) });
+      wavs.push(wav);
+    }
+
+    // Jeda antar beat: file hening per durasi unik.
+    const gapFiles = new Map<number, string>();
+    for (const beat of beats.slice(0, -1)) {
+      const key = Math.round(beat.gapAfter * 1000);
+      if (gapFiles.has(key)) continue;
+      const gapPath = path.join(workDir, `gap-${key}.wav`);
+      await execFileAsync("ffmpeg", [
+        "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono", "-t", String(key / 1000), "-c:a", "pcm_s16le", gapPath,
+      ]);
+      gapFiles.set(key, gapPath);
+    }
+
+    const esc = (file: string) => `file '${file.replace(/'/g, "'\\''")}'`;
+    const lines: string[] = [];
+    wavs.forEach((wav, index) => {
+      lines.push(esc(wav));
+      if (index < wavs.length - 1) {
+        lines.push(esc(gapFiles.get(Math.round(beats[index].gapAfter * 1000))!));
+      }
+    });
+    const listPath = path.join(workDir, "concat.txt");
+    await fs.writeFile(listPath, `${lines.join("\n")}\n`, "utf8");
+
+    await execFileAsync(
+      "ffmpeg",
+      ["-y", "-f", "concat", "-safe", "0", "-i", listPath, "-c:a", "libmp3lame", "-b:a", "192k", "-ar", "44100", "-ac", "1", outputPath],
+      { maxBuffer: 8 * 1024 * 1024 },
+    );
+
+    const stat = await fs.stat(outputPath);
+    if (stat.size < 1_000) throw new Error("Hasil gabungan audio beat kosong.");
+    return {
+      provider,
+      voice,
+      bytes: stat.size,
+      beats: measured,
+      total: await probeDuration(outputPath),
+    };
   } finally {
     await fs.rm(workDir, { recursive: true, force: true }).catch(() => undefined);
   }

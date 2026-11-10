@@ -19,7 +19,9 @@
     "judge:test": "tsx scripts/image-judge-test.ts",
     "skills:check": "tsx scripts/skills-check.ts",
     "selftest:research": "tsx scripts/selftest-research.ts",
-    "selftest:script": "tsx scripts/selftest-script.ts"
+    "selftest:script": "tsx scripts/selftest-script.ts",
+    "selftest:tts": "tsx scripts/selftest-tts.ts",
+    "selftest": "npm run selftest:research && npm run selftest:script && npm run selftest:tts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

@@ -1,3 +1,4 @@
+import { toSpokenIndonesian } from "./speech-prep";
 import type {
   CaptionPage,
   ScriptSentence,
@@ -143,4 +144,59 @@ export function groupCaptionPages(
   flush();
 
   return pages;
+}
+
+/** Bobot kata untuk timing: token berangka dihitung dari bentuk ucapannya ("1.500" = "seribu lima ratus"). */
+function spokenTokenWeight(token: string, emphasis: boolean) {
+  const spoken = /\d/.test(token) ? toSpokenIndonesian(token) : token;
+  const letters = Math.max(1, stripWord(spoken).length);
+  let weight = 1.4 + letters * 0.62;
+  if (/[,;:]$/.test(token)) weight += 1.1;
+  if (/[.!?]$/.test(token)) weight += 1.8;
+  if (emphasis) weight *= 1.12;
+  return weight;
+}
+
+/**
+ * Timestamp kata dari timing kalimat yang sudah diukur dari audio.
+ * Kata dibagi proporsional hanya di dalam satu kalimat, sehingga drift tidak menumpuk.
+ */
+export function alignWithSentenceTimings(
+  sentences: ScriptSentence[],
+  timings: { id: string; start: number; end: number }[],
+  maxDuration = Number.POSITIVE_INFINITY,
+): { words: WordTimestamp[]; captions: CaptionPage[] } {
+  const words: WordTimestamp[] = [];
+
+  sentences.forEach((sentence) => {
+    const timing = timings.find((t) => t.id === sentence.id);
+    if (!timing || timing.start >= maxDuration) return;
+    const tokens = sentence.text.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return;
+
+    const emphasisSet = new Set(sentence.emphasisWords.map(stripWord));
+    const weights = tokens.map((token) => spokenTokenWeight(token, emphasisSet.has(stripWord(token))));
+    const sum = weights.reduce((a, b) => a + b, 0);
+
+    // Sisakan sedikit ekor jeda supaya caption tidak menggantung di atas hening.
+    const span = Math.max(0.2, Math.min(timing.end, maxDuration) - timing.start);
+    const usable = span - Math.min(0.12, span * 0.08);
+
+    let cursor = timing.start;
+    tokens.forEach((token, index) => {
+      const length = (usable * weights[index]) / sum;
+      const start = cursor;
+      const end = Math.min(maxDuration, start + length);
+      words.push({
+        word: token,
+        start: round(start),
+        end: round(Math.max(end, start + 0.06)),
+        sentenceId: sentence.id,
+        emphasis: emphasisSet.has(stripWord(token)),
+      });
+      cursor = end;
+    });
+  });
+
+  return { words, captions: groupCaptionPages(words, 3) };
 }
