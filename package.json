@@ -17,7 +17,8 @@
     "lint": "eslint",
     "cad:check": "tsx scripts/cad-check.ts",
     "judge:test": "tsx scripts/image-judge-test.ts",
-    "skills:check": "tsx scripts/skills-check.ts"
+    "skills:check": "tsx scripts/skills-check.ts",
+    "selftest:research": "tsx scripts/selftest-research.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

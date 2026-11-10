@@ -46,20 +46,6 @@ Kembalikan HANYA JSON valid dengan bentuk:
   "durationEstimate": 38
 }`;
 
-export const RESEARCH_SYSTEM_PROMPT = `Kamu adalah researcher konten viral. Tugasmu mengubah hasil pencarian menjadi amunisi konten yang akurat dan bikin penasaran.
-Ambil hanya fakta yang benar-benar ada di sumber. Jangan mengarang angka.
-Cari: fakta mengejutkan, angka/data, kontroversi atau mitos yang beredar, dan angle unik yang jarang dibahas.
-Kembalikan HANYA JSON valid:
-{
-  "facts": ["fakta 1", "fakta 2"],
-  "sources": [{ "title": "...", "url": "..." }],
-  "uniqueAngles": ["angle 1", "angle 2"],
-  "viralPotential": "1-2 kalimat kenapa topik ini berpotensi viral",
-  "controversy": "mitos/konflik utama (opsional)",
-  "numbers": ["angka penting dari sumber (opsional)"]
-}
-Maksimal 8 fakta, 5 sources, 4 uniqueAngles.`;
-
 export const VISUAL_SYSTEM_PROMPT = `Kamu adalah visual director untuk Reels vertikal 1080x1920 yang agresif dan anti-boring.
 Tugasmu membuat visual plan per kalimat narasi. Renderer memecah setiap kalimat menjadi scene maksimal 2.5 detik.
 

@@ -1,52 +1,71 @@
 import { env } from "../env";
-import { chatJSON } from "../omniroute";
-import { completeStage, startStage } from "../pipeline";
-import { asJson } from "../pipeline";
+import { fetchPageText } from "../engine/fetch-page";
+import {
+  buildResearchQueries,
+  extractFactBank,
+  rankAndDedupe,
+  snippetFallbackFacts,
+  type FactBankResult,
+  type SourcePack,
+} from "../engine/factbank";
+import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
-import { researchSchema } from "../schemas";
 import { searchWeb, type SearchResult } from "../searxng";
+import { routeSkills } from "../skills/router";
 import { classifyTopicStyle } from "../topic-style";
-import type { ResearchData } from "../types";
-import { RESEARCH_SYSTEM_PROMPT } from "../viral";
+import type { FactItem, ResearchData } from "../types";
 
-function trimSnippet(content: string, max = 520) {
-  const flat = content.replace(/\s+/g, " ").trim();
-  if (flat.length <= max) return flat;
-  return `${flat.slice(0, max)}...`;
+const MAX_PAGES = 6;
+const FETCH_CONCURRENCY = 3;
+const MIN_FACTS = 3;
+
+function flat(value: string) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
-function buildSearchContext(results: SearchResult[]) {
-  return results
-    .map(
-      (result, index) =>
-        `[${index + 1}] ${result.title}\nURL: ${result.url}\nSnippet: ${trimSnippet(result.content)}`,
-    )
-    .join("\n\n");
+async function mapPool<T, R>(
+  items: T[],
+  size: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(size, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await fn(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
-function fallbackResearch(topic: string, results: SearchResult[]): ResearchData {
-  const facts = results
-    .map((result) => result.content.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .slice(0, 6);
-
-  return {
-    facts:
-      facts.length > 0
-        ? facts
-        : [`Topik "${topic}" belum punya snippet yang cukup, gunakan angle umum.`],
-    sources: results.slice(0, 5).map((result) => ({
+async function buildSourcePacks(results: SearchResult[]): Promise<SourcePack[]> {
+  const packs = await mapPool(results, FETCH_CONCURRENCY, async (result) => {
+    const page = await fetchPageText(result.url);
+    const snippet = flat(result.content);
+    const full = page.length >= 500;
+    return {
       title: result.title,
       url: result.url,
-    })),
-    uniqueAngles: [
-      `Bongkar mitos paling umum soal ${topic}`,
-      `Angka dan fakta yang jarang dibahas soal ${topic}`,
-    ],
-    viralPotential: `Topik ${topic} punya rasa penasaran tinggi dan mudah dibungkus jadi hook kontroversial.`,
-    controversy: "",
-    numbers: [],
-  };
+      text: full ? page : snippet,
+      full,
+    } satisfies SourcePack;
+  });
+  return packs.filter((pack) => pack.text.length >= 60);
+}
+
+function mergeFacts(primary: FactItem[], extra: FactItem[]): FactItem[] {
+  const seen = new Set(primary.map((fact) => fact.claim.toLowerCase().slice(0, 60)));
+  const merged = [...primary];
+  for (const fact of extra) {
+    const key = fact.claim.toLowerCase().slice(0, 60);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(fact);
+  }
+  return merged.map((fact, index) => ({ ...fact, id: `f${index + 1}` }));
 }
 
 export async function runResearch(projectId: string) {
@@ -55,72 +74,102 @@ export async function runResearch(projectId: string) {
 
   await startStage(projectId, "research");
 
-  const results = await searchWeb(project.topic).catch((error) => {
+  const first = await searchWeb(project.topic).catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Research agent tidak bisa mengakses SearXNG (${env.searxngUrl}): ${message}`,
     );
   });
-
-  if (results.length === 0) {
+  if (first.length === 0) {
     throw new Error(
       `SearXNG tidak mengembalikan hasil untuk topik "${project.topic}". Coba topik lain.`,
     );
   }
 
-  let research: ResearchData;
+  // 1) Gaya video + skill yang relevan, diputuskan sekali dari topik dan snippet awal.
+  const snippetFacts = first
+    .slice(0, 4)
+    .map((result) => flat(result.content))
+    .filter(Boolean);
+  const classification = await classifyTopicStyle({
+    topic: project.topic,
+    facts: snippetFacts,
+    modelOverride: project.model,
+  });
+  const route = await routeSkills({
+    topic: project.topic,
+    facts: snippetFacts,
+    style: classification.style,
+    modelOverride: project.model,
+  });
+
+  // 2) Cari lebih luas memakai istilah baku, lalu ambil isi halaman sumber terbaik.
+  const extraQueries = buildResearchQueries(
+    project.topic,
+    classification.style,
+    classification.searchTopic,
+  ).slice(1);
+  const extra = (
+    await Promise.all(extraQueries.map((query) => searchWeb(query).catch(() => [])))
+  ).flat();
+  const ranked = rankAndDedupe([...first, ...extra], MAX_PAGES);
+  const packs = await buildSourcePacks(ranked.length ? ranked : first.slice(0, MAX_PAGES));
+  if (packs.length === 0) {
+    throw new Error("Tidak ada halaman sumber yang bisa dibaca untuk topik ini.");
+  }
+
+  // 3) Ekstrak fakta berkutipan, lalu verifikasi terhadap teks sumber.
+  let bank: FactBankResult | null = null;
   try {
-    research = await chatJSON({
-      system: RESEARCH_SYSTEM_PROMPT,
-      user: `TOPIK: ${project.topic}
-
-HASIL PENCARIAN TERATAS:
-${buildSearchContext(results)}
-
-Ekstrak fakta, angka, kontroversi, dan angle unik. Sertakan URL sumber asli dari daftar di atas.`,
-      schema: researchSchema,
-      tier: "fast",
+    bank = await extractFactBank({
+      topic: project.topic,
+      style: classification.style,
+      sources: packs,
       modelOverride: project.model,
-      temperature: 0.4,
-      maxTokens: 2200,
     });
   } catch (error) {
     console.warn(
-      "[research] LLM gagal, memakai fallback dari snippet SearXNG:",
+      "[research] ekstraksi fact bank gagal:",
       error instanceof Error ? error.message : error,
     );
-    research = fallbackResearch(project.topic, results);
   }
 
-  if (research.sources.length === 0) {
-    research.sources = results.slice(0, 5).map((result) => ({
-      title: result.title,
-      url: result.url,
-    }));
+  let facts = bank?.facts ?? [];
+  if (facts.length < MIN_FACTS) {
+    facts = mergeFacts(facts, snippetFallbackFacts(packs));
+  }
+  if (facts.length < MIN_FACTS) {
+    throw new Error(
+      `Hanya ${facts.length} fakta yang bisa diverifikasi dari sumber. Coba topik yang lebih spesifik.`,
+    );
   }
 
-  research.facts = research.facts.slice(0, 8).filter(Boolean);
-  research.uniqueAngles = research.uniqueAngles.slice(0, 4).filter(Boolean);
-  research.sources = research.sources
-    .filter((source) => source.title && source.url)
-    .slice(0, 5);
-
-  if (research.facts.length === 0) {
-    research.facts = fallbackResearch(project.topic, results).facts;
-  }
-
-  // Gaya video (engineering / factcheck / lifestyle) diputuskan sekali di sini,
-  // lalu dibaca visual planner. Disimpan di researchData (JSON) tanpa migrasi DB.
-  const { style, searchTopic, visualTerms, avoidTerms, source: styleSource } = await classifyTopicStyle({
-    topic: project.topic,
-    facts: research.facts,
-    modelOverride: project.model,
-  });
-  research.style = style;
-  research.styleSource = styleSource;
-  if (searchTopic) research.searchTopic = searchTopic;
-  if (visualTerms.length) research.visualTerms = visualTerms;
-  if (avoidTerms.length) research.avoidTerms = avoidTerms;
+  const research: ResearchData = {
+    style: classification.style,
+    styleSource: classification.source,
+    ...(classification.searchTopic ? { searchTopic: classification.searchTopic } : {}),
+    ...(classification.visualTerms.length ? { visualTerms: classification.visualTerms } : {}),
+    ...(classification.avoidTerms.length ? { avoidTerms: classification.avoidTerms } : {}),
+    skills: route,
+    factBank: facts,
+    // Tetap diisi supaya UI lama (research-panel) dan project lama tidak rusak.
+    facts: facts.map((fact) => fact.claim),
+    sources: packs.map((pack) => ({ title: pack.title, url: pack.url })),
+    uniqueAngles:
+      bank?.uniqueAngles.length
+        ? bank.uniqueAngles
+        : [`Bongkar bagian paling jarang dibahas dari ${project.topic}`],
+    viralPotential:
+      bank?.viralPotential ||
+      `Topik ${project.topic} punya rasa penasaran yang kuat bila dijelaskan dengan bukti.`,
+    controversy: bank?.controversy ?? "",
+    numbers: facts.filter((fact) => fact.kind === "number").map((fact) => fact.claim),
+    grounding: {
+      ...(bank?.report ?? { requested: 0, verified: 0, soft: facts.length, dropped: [] }),
+      pagesFetched: packs.filter((pack) => pack.full).length,
+      pagesTried: ranked.length,
+    },
+  };
 
   await prisma.project.update({
     where: { id: projectId },
@@ -128,12 +177,15 @@ Ekstrak fakta, angka, kontroversi, dan angle unik. Sertakan URL sumber asli dari
   });
 
   await completeStage(projectId, "research", {
-    facts: research.facts.length,
-    sources: research.sources.length,
-    style,
-    searchTopic,
-    visualTerms: visualTerms.length,
-    styleSource,
+    style: research.style,
+    styleSource: research.styleSource,
+    searchTopic: research.searchTopic,
+    skillsExtra: route.extra,
+    facts: facts.length,
+    verified: facts.filter((fact) => fact.confidence === "verified").length,
+    soft: facts.filter((fact) => fact.confidence === "soft").length,
+    dropped: research.grounding?.dropped.length ?? 0,
+    pages: `${research.grounding?.pagesFetched}/${research.grounding?.pagesTried}`,
   });
 
   return research;

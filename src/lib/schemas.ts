@@ -40,6 +40,21 @@ export const researchSchema = z.object({
   numbers: z.array(z.string()).optional().default([]),
 });
 
+export const rawFactSchema = z.object({
+  claim: z.string().min(8),
+  evidence: z.string().min(10),
+  /** 1-based, sesuai penomoran [n] di prompt. */
+  sourceIndex: looseNumber,
+  kind: z.string().optional().default("fact"),
+});
+
+export const factBankSchema = z.object({
+  facts: z.array(rawFactSchema).default([]),
+  uniqueAngles: z.array(z.string()).optional().default([]),
+  controversy: z.string().optional().default(""),
+  viralPotential: z.string().optional().default(""),
+});
+
 export const scriptSentenceSchema = z.object({
   id: z.string().optional(),
   text: z.string().min(1),

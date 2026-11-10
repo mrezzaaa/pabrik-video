@@ -70,9 +70,46 @@ export const STATUS_PROGRESS: Record<ProjectStatus, number> = {
 export const TOPIC_STYLES = ["engineering", "factcheck", "lifestyle"] as const;
 export type TopicStyle = (typeof TOPIC_STYLES)[number];
 
+export type FactKind = "fact" | "number" | "myth" | "mechanism" | "example";
+
+/**
+ * Satu fakta di fact bank. `evidence` adalah kutipan dari halaman sumber dan
+ * sudah dicocokkan secara programatik (lihat lib/engine/factbank.ts).
+ * "soft" = kutipan cocok sebagian, naskah wajib memakai bahasa hati-hati.
+ */
+export interface FactItem {
+  id: string;
+  claim: string;
+  evidence: string;
+  /** Indeks 0-based ke ResearchData.sources. */
+  sourceIndex: number;
+  kind: FactKind;
+  confidence: "verified" | "soft";
+}
+
+export interface ResearchSkills {
+  extra: string[];
+  reasons: Record<string, string>;
+  source: "llm" | "heuristic";
+}
+
+export interface GroundingReport {
+  requested: number;
+  verified: number;
+  soft: number;
+  dropped: { reason: string; claim: string }[];
+  pagesFetched: number;
+  pagesTried: number;
+}
+
 export interface ResearchData {
   /** Kosong pada project lama; planner memperlakukannya sebagai "factcheck". */
   style?: TopicStyle;
+  /** Fakta terverifikasi (kutipan sumber). Kosong pada project lama. */
+  factBank?: FactItem[];
+  /** Skill tambahan yang dipilih router untuk topik ini. */
+  skills?: ResearchSkills;
+  grounding?: GroundingReport;
   /** "heuristic" = LLM klasifikasi gagal, gaya ditebak dari kata kunci (searchTopic kosong). */
   styleSource?: "llm" | "heuristic";
   /** Istilah topik 2-4 kata BAHASA INGGRIS untuk pencarian gambar (mis. "turbofan jet engine"). */
