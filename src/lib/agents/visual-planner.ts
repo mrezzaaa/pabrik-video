@@ -1,4 +1,5 @@
 import { chatJSON } from "../omniroute";
+import { buildPlaybook } from "../skills/playbook";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
 import { visualPlanSchema, type VisualPlanOutput } from "../schemas";
@@ -23,6 +24,7 @@ import type {
   SceneLayer,
   SceneMetric,
   SceneRange,
+  SceneRole,
   SceneStamp,
   SceneStep,
   SceneTheme,
@@ -30,6 +32,7 @@ import type {
   ScriptSentence,
   TextAnimationType,
   TopicStyle,
+  ResearchData,
   VisualPlan,
   VisualScene,
   VisualType,
@@ -681,6 +684,27 @@ function normalizeScenes(
       previousStageKey = isData(stage.visualType) ? stageKey : "";
       previousStage = stage.visualType;
 
+      // Aturan peran: hook harus tajam dan jelas, CTA tenang tanpa grafik data.
+      const sceneRole: SceneRole =
+        sentence.role === "hook" ? "hook" : sentence.role === "cta" ? "cta" : "body";
+      const asPhoto = (imageStyle?: ImageFrameStyle): StageData => ({
+        visualType: "B_ROLL_IMAGE",
+        stageLabel: "",
+        imageSearchQuery: stage.imageSearchQuery,
+        imageStyle: imageStyle ?? stage.imageStyle,
+      });
+      if (sceneRole === "cta" && stage.visualType !== "B_ROLL_IMAGE") stage = asPhoto();
+      if (
+        sceneRole === "hook" &&
+        (stage.visualType === "SVG_STAMP" || stage.visualType === "SVG_WAVEFORM")
+      ) {
+        stage = asPhoto("fullBleed");
+      }
+      if (sceneRole === "hook" && stage.visualType === "B_ROLL_IMAGE") {
+        stage = { ...stage, imageStyle: "fullBleed" };
+      }
+      if (sceneRole === "hook" && motion === "shake") motion = "zoomIn";
+
       if (stage.imageStyle === previousImageStyle) {
         stage = {
           ...stage,
@@ -692,6 +716,7 @@ function normalizeScenes(
 
       scenes.push({
         id: `sc${sceneIndex + 1}`,
+        role: sceneRole,
         startTime: Math.round(Math.max(0, chunkStart) * 1000) / 1000,
         endTime: Math.round(Math.min(duration, chunkEnd) * 1000) / 1000,
         duration: Math.round(Math.max(0.4, chunkEnd - chunkStart) * 1000) / 1000,
@@ -739,7 +764,7 @@ function normalizeScenes(
   return scenes;
 }
 
-function fallbackPlan(
+export function fallbackPlan(
   sentences: ScriptSentence[],
   timings: Timing[],
   duration: number,
@@ -805,7 +830,7 @@ export async function runVisualPlanner(projectId: string) {
   const sentenceTable = fullScript.sentences
     .map(
       (sentence, index) =>
-        `${index + 1}. [${timings[index].start.toFixed(2)}s - ${timings[index].end.toFixed(2)}s] ${sentence.text}`,
+        `${index + 1}. [${timings[index].start.toFixed(2)}s - ${timings[index].end.toFixed(2)}s]${sentence.role ? ` [${sentence.role}]` : ""} ${sentence.text}`,
     )
     .join("\n");
 
@@ -823,11 +848,16 @@ export async function runVisualPlanner(projectId: string) {
   );
 
   const hints = readImageHints(project.researchData);
+  const playbook = await buildPlaybook(
+    "visual",
+    style,
+    (project.researchData as ResearchData | null)?.skills?.extra ?? [],
+  );
 
   let plan: VisualPlan;
   try {
     const output = await chatJSON({
-      system: visualSystemPromptFor(style),
+      system: `${visualSystemPromptFor(style)}${playbook.text ? `\n\n${playbook.text}` : ""}`,
       user: `TOPIK: ${project.topic}
 DURASI AUDIO: ${duration.toFixed(2)} detik
 JUMLAH KALIMAT: ${fullScript.sentences.length}
@@ -846,6 +876,8 @@ ${
 ${JSON.stringify({ ...((project.researchData as object) ?? {}), visualTerms: undefined, avoidTerms: undefined }).slice(0, 2000)}
 
 Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan mengubah timing.
+Scene bertanda [hook] adalah 3 detik pertama: pilih visual paling spesifik dan konkret (objek utama atau angka skala). Judul hook di layar sudah dipasang terpisah, jangan mengulang teksnya.
+Scene bertanda [cta] adalah penutup: foto relevan yang tenang, tanpa grafik data dan tanpa stempel.
 INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center stage hanya angka/metrik atau label sumbu 1-2 kata.`,
       schema: visualPlanSchema,
       tier: "primary",

@@ -12,6 +12,9 @@ const defaultProps: ReelsProps = {
   fps: FPS,
   hook: "99% orang salah paham soal kucing",
   topic: demoTopic,
+  hookText: "OTAK KUCING",
+  hookKicker: "FAKTA",
+  hookEnd: 2.8,
   scenes: [
     {
       id: "demo-1",

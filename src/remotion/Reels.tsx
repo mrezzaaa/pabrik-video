@@ -10,7 +10,7 @@ import {
 import { AudioMixer } from "./components/AudioMixer";
 import { CameraRig } from "./components/CameraRig";
 import { Caption } from "./components/Caption";
-import { IntroWipe, PatternInterrupt, TopBar } from "./components/Overlays";
+import { HookCard, SoftOpen, TopBar } from "./components/Overlays";
 import { SceneBackground } from "./components/SceneBackground";
 import { SceneStage } from "./components/Stage/SceneStage";
 import { ANTON_FAMILY } from "./fonts";
@@ -22,6 +22,9 @@ export const Reels: React.FC<ReelsProps> = ({
   topic,
   scenes,
   words,
+  hookText,
+  hookKicker,
+  hookEnd,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -35,6 +38,9 @@ export const Reels: React.FC<ReelsProps> = ({
 
   const accent = activeScene?.accentColor ?? "#39FF14";
   const totalFrames = Math.max(1, durationInFrames);
+  // Kartu hook bertahan sampai hook selesai diucapkan, dibatasi 2.4-3.2 detik.
+  const hookSeconds = Math.min(3.2, Math.max(2.4, hookEnd ?? 3));
+  const hookFrames = Math.min(totalFrames, Math.round(hookSeconds * fps));
 
   return (
     <AbsoluteFill
@@ -78,12 +84,14 @@ export const Reels: React.FC<ReelsProps> = ({
 
       <TopBar topic={topic} accent={accent} />
 
-      <Sequence from={0} durationInFrames={Math.round(3 * fps)} layout="none">
-        <PatternInterrupt accent={accent} />
-      </Sequence>
+      {hookText ? (
+        <Sequence from={0} durationInFrames={hookFrames} layout="none">
+          <HookCard text={hookText} kicker={hookKicker} accent={accent} />
+        </Sequence>
+      ) : null}
 
       {words.length > 0 ? <Caption words={words} accentColor={accent} /> : null}
-      <IntroWipe accent={accent} />
+      <SoftOpen />
     </AbsoluteFill>
   );
 };

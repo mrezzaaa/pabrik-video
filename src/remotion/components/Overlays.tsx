@@ -1,7 +1,9 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Easing,
   interpolate,
+  spring,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -94,128 +96,180 @@ export const TopBar: React.FC<{ topic: string; accent: string }> = ({
   );
 };
 
-/**
- * 0-3s visual pattern interrupt: strobe, speed lines, scan bars and a rapid
- * zoom. Zero words — the narration and the bottom caption carry the message.
- */
-export const PatternInterrupt: React.FC<{ accent: string }> = ({ accent }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+/** Kata terpanjang (atau yang berangka) diberi warna aksen sebagai titik fokus hook. */
+function focusWordIndex(words: string[]): number {
+  const numeric = words.findIndex((word) => /\d/.test(word));
+  if (numeric !== -1) return numeric;
+  let best = 0;
+  words.forEach((word, index) => {
+    if (word.length > words[best].length) best = index;
+  });
+  return best;
+}
 
-  const enter = interpolate(frame, [0, 6, 18], [0, 1, 0.82], {
+/**
+ * Hook 3 detik pertama: judul bersih yang muncul kata demi kata (fade + naik + blur hilang),
+ * garis aksen yang tergambar, lalu memudar halus. Tanpa strobe, tanpa kilatan warna.
+ * Teks di sini adalah judul hook (2-6 kata) yang SENGAJA berbeda dari kalimat yang diucapkan,
+ * karena caption bawah sudah menampilkan ucapan.
+ * Dipasang di dalam <Sequence> sepanjang durasi hook.
+ */
+export const HookCard: React.FC<{
+  text: string;
+  kicker?: string;
+  accent: string;
+}> = ({ text, kicker, accent }) => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const focus = focusWordIndex(words);
+
+  const exitStart = Math.max(10, durationInFrames - 12);
+  const exit = interpolate(frame, [exitStart, durationInFrames], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.in(Easing.quad),
+  });
+  const lift = interpolate(frame, [exitStart, durationInFrames], [0, -14], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const exit = interpolate(frame, [Math.round(2.5 * fps), Math.round(3 * fps)], [1, 0], {
+  const scrim = interpolate(frame, [0, 10, exitStart, durationInFrames], [0, 1, 1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const strobe = frame < 4 ? 0.35 : frame < 7 ? 0.15 : 0;
-  const sweep = interpolate(frame, [0, 34], [-120, 1200], {
+  const kickerIn = interpolate(frame, [2, 14], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
   });
-  const bars = 9;
+  const barIn = interpolate(frame, [8 + words.length * 3, 24 + words.length * 3], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
 
   return (
-    <AbsoluteFill
-      style={{ pointerEvents: "none", zIndex: 45, opacity: exit * enter }}
-    >
+    <AbsoluteFill style={{ pointerEvents: "none", zIndex: 46 }}>
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: `radial-gradient(ellipse at 50% 50%, ${accent}22 0%, rgba(0,0,0,0) 65%)`,
+          opacity: scrim,
+          background:
+            "linear-gradient(180deg, rgba(5,8,14,0.82) 0%, rgba(5,8,14,0.55) 34%, rgba(5,8,14,0) 62%)",
         }}
       />
-
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          overflow: "hidden",
+          top: 250,
+          left: 70,
+          right: 70,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          opacity: exit,
+          transform: `translateY(${lift}px)`,
         }}
       >
-        {Array.from({ length: bars }).map((_, index) => {
-          const height = 18 + (index % 3) * 16;
-          const y = 80 + index * 180;
-          return (
+        {kicker ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              marginBottom: 26,
+              opacity: kickerIn,
+              transform: `translateY(${(1 - kickerIn) * 10}px)`,
+            }}
+          >
+            <div style={{ width: 44, height: 3, borderRadius: 2, backgroundColor: accent }} />
             <div
-              key={`speed-${index}`}
               style={{
-                position: "absolute",
-                top: y,
-                left: 0,
-                width: `${36 + (index % 4) * 14}%`,
-                height,
-                background: `linear-gradient(90deg, ${accent}00 0%, ${accent}44 45%, ${accent}00 100%)`,
-                transform: `translateX(${((frame * (12 + index * 4)) % 900) - 280}px) skewX(-24deg)`,
-                opacity: 0.2 + (index % 3) * 0.08,
-                mixBlendMode: "screen",
+                fontFamily: "ui-monospace, Menlo, monospace",
+                fontSize: 30,
+                fontWeight: 700,
+                letterSpacing: 8,
+                color: accent,
+                textTransform: "uppercase",
               }}
-            />
-          );
-        })}
+            >
+              {kicker}
+            </div>
+            <div style={{ width: 44, height: 3, borderRadius: 2, backgroundColor: accent }} />
+          </div>
+        ) : null}
 
         <div
           style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            width: 260,
-            left: sweep,
-            background: `linear-gradient(90deg, transparent, ${accent}44, transparent)`,
-            mixBlendMode: "screen",
-            transform: "skewX(-14deg)",
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            columnGap: 26,
+            rowGap: 6,
+            maxWidth: 940,
+            textAlign: "center",
+          }}
+        >
+          {words.map((word, index) => {
+            const progress = spring({
+              frame: frame - (4 + index * 3),
+              fps,
+              config: { damping: 200, mass: 0.6, stiffness: 120 },
+            });
+            return (
+              <span
+                key={`${word}-${index}`}
+                style={{
+                  fontFamily: ANTON_FAMILY,
+                  fontSize: 112,
+                  lineHeight: 1.06,
+                  textTransform: "uppercase",
+                  color: index === focus ? accent : "#FFFFFF",
+                  opacity: progress,
+                  transform: `translateY(${(1 - progress) * 30}px)`,
+                  filter: `blur(${(1 - progress) * 14}px)`,
+                  textShadow: "0 6px 28px rgba(0,0,0,0.55)",
+                  display: "inline-block",
+                }}
+              >
+                {word}
+              </span>
+            );
+          })}
+        </div>
+
+        <div
+          style={{
+            marginTop: 30,
+            height: 8,
+            width: 360,
+            borderRadius: 4,
+            backgroundColor: accent,
+            boxShadow: `0 0 24px ${accent}88`,
+            transformOrigin: "center",
+            transform: `scaleX(${barIn})`,
           }}
         />
       </div>
-
-      <AbsoluteFill
-        style={{
-          backgroundColor: accent,
-          opacity: strobe,
-          mixBlendMode: "screen",
-        }}
-      />
     </AbsoluteFill>
   );
 };
 
-export const IntroWipe: React.FC<{ accent: string }> = ({ accent }) => {
+/** Pembuka halus: 8 frame pertama memudar dari gelap ke visual. Tidak ada kilatan warna atau logo. */
+export const SoftOpen: React.FC = () => {
   const frame = useCurrentFrame();
-  const opacity = interpolate(frame, [0, 1, 6, 9], [1, 1, 0.7, 0], {
+  if (frame > 8) return null;
+  const opacity = interpolate(frame, [0, 8], [0.85, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
+    easing: Easing.out(Easing.quad),
   });
-  if (frame > 9) return null;
-
   return (
-    <AbsoluteFill style={{ zIndex: 100, pointerEvents: "none", opacity }}>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: accent,
-          transform: `translateY(${interpolate(frame, [0, 9], [0, -100])}%)`,
-          opacity: 0.94,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: ANTON_FAMILY,
-          fontSize: 44,
-          letterSpacing: 10,
-          color: "#050505",
-        }}
-      >
-        PABRIK VIDEO
-      </div>
-    </AbsoluteFill>
+    <AbsoluteFill
+      style={{ zIndex: 100, pointerEvents: "none", backgroundColor: "#050505", opacity }}
+    />
   );
 };

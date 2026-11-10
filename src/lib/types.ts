@@ -277,8 +277,12 @@ export interface SceneStep {
   label: string;
 }
 
+export type SceneRole = "hook" | "body" | "cta";
+
 export interface VisualScene {
   id: string;
+  /** Peran scene dari kalimat naskah. Kosong pada project lama. */
+  role?: SceneRole;
   startTime: number;
   endTime: number;
   /** Explicit scene length (seconds). Kept <= 2.5 by the visual planner. */

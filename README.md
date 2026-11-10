@@ -39,11 +39,48 @@ lewat SSE yang membaca database.
 
 | Stage | Agent | Output |
 | --- | --- | --- |
-| `research` | `src/lib/agents/research.ts` | fakta, sumber, angka, angle viral |
-| `scriptwriting` | `src/lib/agents/scriptwriter.ts` | hook + naskah 30–45 detik |
-| `tts` | `src/lib/agents/tts.ts` | `public/audio/{id}.mp3` + word timestamps |
-| `visual-planning` | `src/lib/agents/visual-planner.ts` | b-roll query, infografis SVG, gerakan kamera, warna |
+| `research` | `src/lib/agents/research.ts` | fact bank berkutipan (isi halaman sumber, diverifikasi), gaya topik, skill terpilih |
+| `scriptwriting` | `src/lib/agents/scriptwriter.ts` | hook 3 detik + naskah 33–46 detik + CTA natural (director + kritik + validator) |
+| `tts` | `src/lib/agents/tts.ts` | `public/audio/{id}.mp3` + timing kalimat terukur dari audio |
+| `visual-planning` | `src/lib/agents/visual-planner.ts` | b-roll query, infografis SVG, gerakan kamera, warna, peran scene (hook/CTA) |
 | `render` | `src/lib/agents/render.ts` | `public/videos/{id}.mp4` + thumbnail |
+
+## Alur skill-driven
+
+Setiap stage memakai skill dari `src/skills` sesuai gaya topik (`engineering`,
+`factcheck`, `lifestyle`). Skill diperlakukan sebagai data: `src/lib/skills`
+membaca `SKILL.md`, memotong bagian yang relevan, lalu menyuntikkannya ke prompt
+agent.
+
+| Peran | Skill |
+| --- | --- |
+| hook | `pabrik/reels-hook-3s`, `ad-creative/hook-system`, `social/short-form-video`, `marketing-psychology` |
+| narasi | `pabrik/reels-narasi-tts`, `copywriting/ai-tells`, `copywriting/natural-transitions` |
+| CTA | `pabrik/reels-cta-natural` |
+| grounding | `pabrik/reels-grounding` |
+| kritik | `copy-editing` + daftar cek skill pabrik |
+| visual | `pabrik/reels-visual-{engineering,factcheck,lifestyle}` (+ `blueprint-figure`, `isometric-explainer` untuk engineering) |
+
+Router (`src/lib/skills/router.ts`) menambah maksimal 2 skill sesuai topik
+(mis. `marketing-psychology` untuk topik kebiasaan/uang, `motion-figure` untuk
+topik proses). Pilihan disimpan di `researchData.skills`. Periksa pembacaan
+skill dengan `npm run skills:check -- engineering`.
+
+Anti-halusinasi:
+
+1. Research mengambil isi halaman sumber, LLM mengekstrak klaim + kutipan persis,
+   kode memverifikasi kutipan ada di sumber dan angka klaim ada di kutipan.
+   Fakta karangan dibuang; kurang dari 3 fakta lolos = stage gagal.
+2. Script hanya boleh memakai ID fakta; validator kode memeriksa angka tiap
+   kalimat terhadap fakta yang dirujuk.
+3. Kritik LLM + validator kode (panjang, klise AI, CTA menumpuk) memicu maksimal
+   2 revisi; hasil akhirnya (`fullScript.qa`) tersimpan.
+
+Hook 3 detik: ucapan maksimal 8 kata, judul layar 2–6 kata yang berbeda dari
+ucapan, dan visual pembuka spesifik. CTA: satu kalimat, satu aksi, lahir dari
+isi video.
+
+Tes cepat tanpa database/Redis/OmniRoute: `npm run selftest`.
 
 ## Kebutuhan
 
@@ -166,10 +203,13 @@ Komposisi `Reels` berada di `src/remotion/`. Spesifikasi render:
   meter), `SVG_BAR_CHART` (spring bars), `SVG_WAVEFORM` (ECG/flatline).
 - Caption karaoke per kata, maksimal 3 kata per baris
 - Kata aktif berwarna kuning dengan skala 1.2 dan stroke hitam 4 px
-- Tanpa CTA (komen/share/like/follow/part 2) dan tanpa badge CTA; naskah
-  ditutup dengan refleksi/open loop natural
-- TTS disintesis per klausa/kalimat utuh lalu digabung dengan jeda 120 ms,
-  sehingga tidak ada pemotongan di tengah kata atau plosif yang terpotong
+- CTA natural: satu kalimat penutup, satu aksi (simpan/kirim/ikuti/jawab
+  pertanyaan konkret), tanpa menumpuk like/komen/share/subscribe
+- Hook 3 detik: kartu judul bersih (kata muncul bertahap, garis aksen, memudar
+  halus); tanpa strobe dan tanpa kilatan logo
+- TTS disintesis per beat (1–3 kalimat satu napas) lewat Voice Studio; angka
+  diucapkan sebagai kata Indonesia; durasi beat dan batas kalimat diukur dari
+  audio sehingga caption dan scene tidak drift
 
 Preview tanpa render:
 

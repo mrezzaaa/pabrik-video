@@ -15,16 +15,23 @@ import {
   PUBLIC_DIR,
 } from "../media";
 import { attachSceneImages } from "../images";
-import { readImageHints } from "../topic-style";
+import { readImageHints, resolveTopicStyle } from "../topic-style";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
 import type {
   FullScript,
+  TopicStyle,
   VisualPlan,
   WordTimestamp,
 } from "../types";
 
 const execFileAsync = promisify(execFile);
+
+const HOOK_KICKER: Record<TopicStyle, string> = {
+  engineering: "CARA KERJA",
+  factcheck: "CEK FAKTA",
+  lifestyle: "SEHARI-HARI",
+};
 
 function stripPublicPrefix(url: string) {
   return url.replace(/^\/+/, "");
@@ -92,6 +99,17 @@ export async function runRender(projectId: string) {
     topic: project.topic,
     scenes,
     words: words ?? [],
+    // Kartu hook hanya untuk naskah baru (punya judul layar terpisah dari ucapan).
+    ...(fullScript.hookOnScreen
+      ? {
+          hookText: fullScript.hookOnScreen,
+          hookKicker:
+            HOOK_KICKER[
+              resolveTopicStyle((project.researchData as { style?: unknown } | null)?.style)
+            ],
+          hookEnd: fullScript.sentences[0]?.end,
+        }
+      : {}),
   };
 
   await fs.writeFile(propsPath, JSON.stringify(props, null, 2), "utf8");
