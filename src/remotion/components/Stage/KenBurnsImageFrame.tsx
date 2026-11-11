@@ -57,7 +57,13 @@ function StageLabel({ text, accent }: { text: string; accent: string }) {
 }
 
 /** Film grain + vignette + top/bottom readability gradients across the full 1080x1920 screen. */
-function PhotoTreatment({ danger }: { danger: boolean }) {
+function PhotoTreatment({
+  danger,
+  grid,
+}: {
+  danger: boolean;
+  grid?: boolean;
+}) {
   return (
     <>
       {/* Top & bottom readability gradients for TopBar and Captions */}
@@ -101,9 +107,39 @@ function PhotoTreatment({ danger }: { danger: boolean }) {
             "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.6) 100%)",
         }}
       />
+      {/* Blueprint grid dari skill visual (blueprint-figure / isometric). */}
+      {grid ? (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              opacity: 0.16,
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.16) 1px, transparent 1px)",
+              backgroundSize: "90px 90px",
+              mixBlendMode: "overlay",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 40,
+              border: "1px solid rgba(255,255,255,0.14)",
+            }}
+          />
+        </>
+      ) : null}
     </>
   );
 }
+
+const GRADES: Record<string, string> = {
+  documentary: "saturate(1.02) contrast(1.1) brightness(0.84)",
+  cold: "saturate(0.84) contrast(1.18) brightness(0.8) hue-rotate(4deg)",
+  warm: "saturate(1.12) contrast(1.05) brightness(0.88) sepia(0.08)",
+  hard: "saturate(1.16) contrast(1.22) brightness(0.8)",
+};
 
 /**
  * Full-bleed SearXNG b-roll visual frame.
@@ -123,13 +159,13 @@ export const KenBurnsImageFrame: React.FC<{ scene: VisualScene }> = ({
 
   const zoom =
     scene.kenBurns === false
-      ? 1.04
-      : interpolate(progress, [0, 1], [1.04, 1.16], {
+      ? 1.02
+      : interpolate(progress, [0, 1], [1.02, 1.1], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
         });
-  const driftX = interpolate(progress, [0, 1], [-20, 20]);
-  const driftY = interpolate(progress, [0, 1], [10, -12]);
+  const driftX = interpolate(progress, [0, 1], [-14, 14]);
+  const driftY = interpolate(progress, [0, 1], [8, -10]);
   const rotate = interpolate(progress, [0, 1], [-0.5, 0.5]);
 
   const fallbackPlate = (
@@ -198,7 +234,8 @@ export const KenBurnsImageFrame: React.FC<{ scene: VisualScene }> = ({
               objectFit: "cover",
               filter: danger
                 ? "saturate(0.9) contrast(1.12) brightness(0.8) hue-rotate(-6deg)"
-                : "saturate(1.05) contrast(1.08) brightness(0.85)",
+                : (GRADES[scene.imageGrade ?? "documentary"] ??
+                  "saturate(1.05) contrast(1.08) brightness(0.85)"),
               transform: `scale(${zoom}) translate3d(${driftX}px, ${driftY}px, 0) rotate(${rotate}deg)`,
               transformOrigin: "center center",
             }}
@@ -209,7 +246,7 @@ export const KenBurnsImageFrame: React.FC<{ scene: VisualScene }> = ({
       </div>
 
       {/* Cinematic Grading & Top/Bottom Gradients */}
-      <PhotoTreatment danger={danger} />
+      <PhotoTreatment danger={danger} grid={scene.gridOverlay} />
 
       {/* Optional Highlight Metric / Counter Overlay */}
       {scene.metric || scene.counter ? (

@@ -1,5 +1,6 @@
 import { chatJSON } from "../omniroute";
 import { buildPlaybook } from "../skills/playbook";
+import { grammarBrief, visualGrammarFor, type VisualGrammar } from "../skills/visual-grammar";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
 import { visualPlanSchema, type VisualPlanOutput } from "../schemas";
@@ -185,8 +186,6 @@ function pickBackground(value: string, index: number) {
   }
   return GRADIENT_PALETTES[index % GRADIENT_PALETTES.length];
 }
-
-const MAX_SCENE_SECONDS = 2.5;
 
 const SPOKEN_NUMBERS: Array<[RegExp, string]> = [
   [/\bdua belas\b/g, "12"],
@@ -580,6 +579,52 @@ function resolveTheme(raw: SceneTheme | undefined, sentence: ScriptSentence, acc
   return "info";
 }
 
+function deriveSkillStage(
+  type: VisualType,
+  candidate: Candidate | undefined,
+  sentence: ScriptSentence,
+  knowledge: string,
+): Partial<StageData> | null {
+  const digits = narrationDigits(digitizeSpokenNumbers(sentence.text));
+
+  switch (type) {
+    case "SVG_COMPARE": {
+      const compare = deriveCompare(candidate?.compare, knowledge, digits);
+      return compare
+        ? { visualType: "SVG_COMPARE", stageLabel: "", compare }
+        : null;
+    }
+    case "SVG_CROSSSECTION": {
+      const layers = deriveLayers(candidate?.layers, knowledge, digits);
+      return layers
+        ? {
+            visualType: "SVG_CROSSSECTION",
+            stageLabel: axisLabelSafe(candidate?.stageLabel ?? "", "POTONGAN"),
+            layers,
+          }
+        : null;
+    }
+    case "SVG_TIMELINE": {
+      const steps = deriveSteps(candidate?.steps, knowledge, digits);
+      return steps
+        ? {
+            visualType: "SVG_TIMELINE",
+            stageLabel: axisLabelSafe(candidate?.stageLabel ?? "", "URUTAN"),
+            steps,
+          }
+        : null;
+    }
+    case "SVG_STAMP": {
+      const stamp = deriveStamp(candidate?.stamp, sentence.text);
+      return stamp
+        ? { visualType: "SVG_STAMP", stageLabel: "", stamp }
+        : null;
+    }
+    default:
+      return null;
+  }
+}
+
 function normalizeScenes(
   output: VisualPlanOutput,
   sentences: ScriptSentence[],
@@ -589,11 +634,12 @@ function normalizeScenes(
   knowledge = "",
   style: TopicStyle = "factcheck",
   hints: ImageHints = NO_HINTS,
+  grammar: VisualGrammar = visualGrammarFor([], style),
 ): VisualScene[] {
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
   let previousStage: VisualType | null = null;
-  let previousStageKey = "";
+  const seenStageKeys = new Set<string>();
   let previousImageStyle: ImageFrameStyle | null = null;
 
   sentences.forEach((sentence, sentenceIndex) => {
@@ -618,7 +664,7 @@ function normalizeScenes(
     }
 
     const span = Math.max(0.5, end - start);
-    const chunkCount = Math.max(1, Math.ceil(span / MAX_SCENE_SECONDS));
+    const chunkCount = Math.max(1, Math.ceil(span / grammar.maxSceneSeconds));
     const chunkLength = span / chunkCount;
     const restricted = restrictToStyle(
       deriveStage(candidate, sentence, topic, scenes.length, knowledge),
@@ -676,12 +722,13 @@ function normalizeScenes(
           imageStyle: stage.imageStyle,
         };
       }
-      // Dua scene berturut-turut dengan data grafis identik (mis. crosssection yang sama) membosankan: ganti foto.
+      // Grafis data yang isinya identik (mis. compare yang sama muncul lagi)
+      // membosankan: ganti foto.
       const stageKey = JSON.stringify([stage.visualType, stage.layers, stage.steps, stage.counter, stage.metric, stage.stamp, stage.compare, stage.bars, stage.range]);
-      if (isData(stage.visualType) && stageKey === previousStageKey) {
+      if (isData(stage.visualType) && seenStageKeys.has(stageKey)) {
         stage = { visualType: "B_ROLL_IMAGE", stageLabel: "", imageSearchQuery: stage.imageSearchQuery, imageStyle: stage.imageStyle };
       }
-      previousStageKey = isData(stage.visualType) ? stageKey : "";
+      if (isData(stage.visualType)) seenStageKeys.add(stageKey);
       previousStage = stage.visualType;
 
       // Aturan peran: hook harus tajam dan jelas, CTA tenang tanpa grafik data.
@@ -704,6 +751,28 @@ function normalizeScenes(
         stage = { ...stage, imageStyle: "fullBleed" };
       }
       if (sceneRole === "hook" && motion === "shake") motion = "zoomIn";
+
+      // Skill explainer wajib terlihat: bila video belum punya cukup scene
+      // penjelasan, ubah potongan body yang datanya tersedia menjadi stage
+      // dari daftar preferred grammar (bukan hanya menambah teks prompt).
+      if (sceneRole === "body" && stage.visualType === "B_ROLL_IMAGE") {
+        const explainerCount = scenes.filter(
+          (scene) =>
+            scene.role === "body" &&
+            scene.visualType !== undefined &&
+            scene.visualType !== "B_ROLL_IMAGE",
+        ).length;
+        if (explainerCount < grammar.minExplainerScenes) {
+          for (const type of grammar.preferred) {
+            if (type === "B_ROLL_IMAGE" || !isVisualAllowed(style, type)) continue;
+            const derived = deriveSkillStage(type, candidate, sentence, knowledge);
+            if (derived) {
+              stage = { ...stage, ...derived };
+              break;
+            }
+          }
+        }
+      }
 
       if (stage.imageStyle === previousImageStyle) {
         stage = {
@@ -742,6 +811,8 @@ function normalizeScenes(
             ? anchorImageQuery("", topic, style, { ...hints, sceneIndex })
             : stage.imageSearchQuery,
         imageStyle: stage.imageStyle,
+        imageGrade: grammar.grade,
+        gridOverlay: grammar.grid,
         stageLabel: stage.stageLabel,
         metric: stage.metric,
         counter: stage.counter,
@@ -771,10 +842,19 @@ export function fallbackPlan(
   topic: string,
   style: TopicStyle = "factcheck",
   hints: ImageHints = NO_HINTS,
+  knowledge = "",
+  grammar: VisualGrammar = visualGrammarFor([], style),
 ): VisualPlan {
   return {
     vibe: "fast-cut, high contrast, gen-z viral",
     generatedAt: new Date().toISOString(),
+    grammar: {
+      id: grammar.id,
+      label: grammar.label,
+      principle: grammar.principle,
+      maxSceneSeconds: grammar.maxSceneSeconds,
+      minExplainerScenes: grammar.minExplainerScenes,
+    },
     scenes: normalizeScenes(
       {
         vibe: "fallback",
@@ -802,9 +882,10 @@ export function fallbackPlan(
       timings,
       duration,
       topic,
-      "",
+      knowledge,
       style,
       hints,
+      grammar,
     ),
   };
 }
@@ -848,16 +929,15 @@ export async function runVisualPlanner(projectId: string) {
   );
 
   const hints = readImageHints(project.researchData);
-  const playbook = await buildPlaybook(
-    "visual",
-    style,
-    (project.researchData as ResearchData | null)?.skills?.extra ?? [],
-  );
+  const extraSkills =
+    (project.researchData as ResearchData | null)?.skills?.extra ?? [];
+  const grammar = visualGrammarFor(extraSkills, style);
+  const playbook = await buildPlaybook("visual", style, extraSkills);
 
   let plan: VisualPlan;
   try {
     const output = await chatJSON({
-      system: `${visualSystemPromptFor(style)}${playbook.text ? `\n\n${playbook.text}` : ""}`,
+      system: `${visualSystemPromptFor(style)}${playbook.text ? `\n\n${playbook.text}` : ""}\n\n${grammarBrief(grammar, extraSkills)}`,
       user: `TOPIK: ${project.topic}
 DURASI AUDIO: ${duration.toFixed(2)} detik
 JUMLAH KALIMAT: ${fullScript.sentences.length}
@@ -870,7 +950,7 @@ ${paletteTable}
 
 ${
   hints.visualTerms.length
-    ? `VISUAL TERMS (BAHASA INGGRIS). imageSearchQuery tiap scene WAJIB salah satu frasa berikut (salin persis, boleh ditambah satu kata sudut seperti "close up" atau "diagram"). Pilih yang paling cocok dengan kalimat scene dan variasikan antar scene; dilarang memakai kata Indonesia di imageSearchQuery:\n${hints.visualTerms.map((term) => `- ${term}`).join("\n")}\n\n`
+    ? `VISUAL TERMS (BAHASA INGGRIS). imageSearchQuery tiap scene WAJIB salah satu frasa berikut (salin persis, boleh ditambah satu kata sudut seperti "close up" atau "aerial"). Pilih frasa yang paling cocok dengan kalimat scene dan variasikan antar scene; dilarang memakai kata Indonesia di imageSearchQuery. Pilih adegan yang bisa difoto, bukan peta/grafik:\n${hints.visualTerms.map((term) => `- ${term}`).join("\n")}\n\n`
     : ""
 }FAKTA RISET:
 ${JSON.stringify({ ...((project.researchData as object) ?? {}), visualTerms: undefined, avoidTerms: undefined }).slice(0, 2000)}
@@ -878,6 +958,9 @@ ${JSON.stringify({ ...((project.researchData as object) ?? {}), visualTerms: und
 Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan mengubah timing.
 Scene bertanda [hook] adalah 3 detik pertama: pilih visual paling spesifik dan konkret (objek utama atau angka skala). Judul hook di layar sudah dipasang terpisah, jangan mengulang teksnya.
 Scene bertanda [cta] adalah penutup: foto relevan yang tenang, tanpa grafik data dan tanpa stempel.
+SKILL VISUAL: pakai minimal ${grammar.minExplainerScenes} scene dengan visualType ${grammar.preferred
+        .filter((type) => type !== "B_ROLL_IMAGE")
+        .join(" / ")}. Untuk SVG_COMPARE isi "compare" (left/right, 2-3 item masing-masing), untuk SVG_CROSSSECTION isi "layers" (3-5 lapisan), untuk SVG_TIMELINE isi "steps" (2-4 langkah). Semua label 1-2 kata dan harus ada di narasi/fakta.
 INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center stage hanya angka/metrik atau label sumbu 1-2 kata.`,
       schema: visualPlanSchema,
       tier: "primary",
@@ -889,6 +972,14 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
     plan = {
       vibe: output.vibe,
       generatedAt: new Date().toISOString(),
+      skillsUsed: extraSkills,
+      grammar: {
+        id: grammar.id,
+        label: grammar.label,
+        principle: grammar.principle,
+        maxSceneSeconds: grammar.maxSceneSeconds,
+        minExplainerScenes: grammar.minExplainerScenes,
+      },
       scenes: normalizeScenes(
         output,
         fullScript.sentences,
@@ -898,6 +989,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
         knowledge,
         style,
         hints,
+        grammar,
       ),
     };
   } catch (error) {
@@ -912,7 +1004,10 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
       project.topic,
       style,
       hints,
+      knowledge,
+      grammar,
     );
+    plan.skillsUsed = extraSkills;
   }
 
   await prisma.project.update({
@@ -924,6 +1019,8 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
     scenes: plan.scenes.length,
     style,
     vibe: plan.vibe,
+    skills: plan.skillsUsed ?? [],
+    grammar: plan.grammar?.label ?? "",
     withImages: plan.scenes.filter((scene) => scene.visualType === "B_ROLL_IMAGE").length,
   });
 

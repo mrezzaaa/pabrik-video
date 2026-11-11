@@ -17,6 +17,13 @@ export const env = {
     /\/$/,
     "",
   ),
+  // Public engines get rate-limited independently. Keep a working set first
+  // and let the client fall back group by group.
+  searxngEngines: required("SEARXNG_ENGINES", "bing,yahoo,wikipedia"),
+  searxngImageEngines: required(
+    "SEARXNG_IMAGE_ENGINES",
+    "bing images,unsplash,wikimedia",
+  ),
 
   omnirouteBaseUrl: required(
     "OMNIROUTE_BASE_URL",

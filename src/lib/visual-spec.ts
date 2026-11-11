@@ -48,17 +48,24 @@ function clean(value: unknown): string {
   );
 }
 
-/** Setiap kata >=4 huruf harus muncul di narasi/riset; angka harus ada di narasi. */
+/** Setiap kata di label dicek terhadap narasi/riset bila knowledge tersedia; angka harus ada di narasi. */
 function known(label: string, knowledge: string, digits: Set<string>): boolean {
   if (!label) return false;
-  return label
-    .toLowerCase()
-    .split(/\s+/)
-    .every((token) => {
-      if (/^\d+$/.test(token)) return digits.has(token);
-      if (token.length < 4) return true;
-      return knowledge.includes(token);
-    });
+  const tokens = label.toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0 || tokens.length > 3) return false;
+
+  // Angka pada label wajib grounded di naskah/narasi
+  for (const token of tokens) {
+    if (/^\d+$/.test(token) && !digits.has(token)) return false;
+  }
+
+  // Jika knowledge tidak tersedia, terima label tekstual singkat
+  if (!knowledge || knowledge.trim().length === 0) return true;
+
+  // Setidaknya salah satu kata kunci utama harus terlacak di knowledge, atau panjang kata < 4
+  const words = tokens.filter((t) => !/^\d+$/.test(t) && t.length >= 4);
+  if (words.length === 0) return true;
+  return words.some((word) => knowledge.includes(word));
 }
 
 function uniqueLabels(

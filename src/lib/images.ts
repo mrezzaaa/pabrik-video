@@ -1,10 +1,11 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 import { PUBLIC_DIR } from "./media";
 import { imageJudgeModel, judgeAvailable, judgeImages } from "./image-judge";
-import { searchImages } from "./searxng";
+import { searchCommonsImages, searchImages } from "./searxng";
 import { type ImageHints, NO_HINTS, relevanceVocab } from "./topic-style";
 import type { VisualScene } from "./types";
 
@@ -13,7 +14,7 @@ const execFileAsync = promisify(execFile);
 export const IMAGE_DIR = path.join(PUBLIC_DIR, "images");
 
 const BLOCKED_HOST =
-  /(istockphoto|shutterstock|alamy|gettyimages|dreamstime|123rf|depositphotos|freepik|vectorstock|canstockphoto|adobe|lookaside|gstatic|pinimg|tripadvisor|booking\.com|agoda|expedia|hotels\.com|yelp|facebook|instagram|tiktok|youtube|reddit|quora|scribd|slideshare|academia\.edu|researchgate|pdfcoffee|dokumen\.tips|studylibid|docplayer|vdocuments|issuu|adoc\.pub|123dok|clipart|kindpng|pngitem|seekpng|cleanpng|pinclipart|pngwing|pngtree|vecteezy)/i;
+  /(istockphoto|shutterstock|alamy|gettyimages|dreamstime|123rf|depositphotos|freepik|vectorstock|canstockphoto|adobe|ftcdn|stockcake|magnific|canva|pikbest|lovepik|lookaside|gstatic|pinimg|pinterest|tripadvisor|booking\.com|agoda|expedia|hotels\.com|yelp|facebook|instagram|tiktok|youtube|ytimg|fbcdn|scontent|reddit|quora|scribd|slideshare|academia\.edu|researchgate|pdfcoffee|dokumen\.tips|studylibid|docplayer|vdocuments|issuu|adoc\.pub|123dok|clipart|kindpng|pngitem|seekpng|cleanpng|pinclipart|pngwing|pngtree|vecteezy)/i;
 const PREFERRED_HOST =
   /(wikimedia|unsplash|pexels|pixabay|flickr|nasa|nih|cdc|si\.edu|britannica|bbc|nytimes|smithsonian|sciencedirect|history|museum|archive)/i;
 
@@ -23,6 +24,19 @@ type Candidate = {
   title: string;
   score: number;
 };
+
+/**
+ * Banyak CDN mengembalikan thumbnail kecil lewat parameter lebar. Naikkan ke
+ * ukuran layak render (1080x1920) sebelum diunduh supaya tidak diblur/upscale.
+ */
+export function upgradeImageUrl(raw: string): string {
+  return raw
+    .replace(/([?&])w=\d{2,4}(?=&|$)/i, "$1w=1800")
+    .replace(/([?&])s=\d+x\d+(?=&|$)/i, "$1s=2048x2048")
+    .replace(/\/360_F_/g, "/1000_F_")
+    .replace(/\/240_F_/g, "/1000_F_")
+    .replace(/_l\.(jpe?g|png)(\?|$)/i, "_b.$1$2");
+}
 
 function queryTokens(query: string) {
   return query
@@ -98,6 +112,17 @@ export function scoreCandidate(
 
   score -= localeMismatchPenalty(imgSrc, source, title, query);
 
+  // Peta/grafik/screenshot penuh teks Inggris terlihat seperti slide, bukan
+  // b-roll. Tetap boleh kalau query memang meminta diagram.
+  if (
+    !/\b(map|maps|chart|graph|diagram|infographic|visualization|satellite)\b/i.test(query) &&
+    /\b(map|maps|chart|charting|graph|diagram|infographic|screenshot|slide|table|noaa|nasa|esa|anomaly)\b/i.test(
+      `${title} ${imgSrc}`,
+    )
+  ) {
+    score -= 7;
+  }
+
   // Dokumen/slide/peraturan penuh teks tidak layak jadi b-roll (teksnya menabrak caption dan gauge).
   if (DOCUMENT_LIKE.test(title) || DOCUMENT_URL.test(imgSrc) || DOCUMENT_URL.test(source)) score -= 14;
 
@@ -154,9 +179,9 @@ async function fetchImage(url: string): Promise<Buffer | null> {
   }
 }
 
-async function getImageDimensions(
+async function probeImage(
   filePath: string,
-): Promise<{ width: number; height: number } | null> {
+): Promise<{ width: number; height: number; blur: number | null } | null> {
   try {
     const { stdout } = await execFileAsync("ffprobe", [
       "-v",
@@ -173,58 +198,76 @@ async function getImageDimensions(
     const width = parseInt(wStr, 10);
     const height = parseInt(hStr, 10);
     if (
-      Number.isFinite(width) &&
-      Number.isFinite(height) &&
-      width > 0 &&
-      height > 0
+      !Number.isFinite(width) ||
+      !Number.isFinite(height) ||
+      width <= 0 ||
+      height <= 0
     ) {
-      return { width, height };
+      return null;
     }
-    return null;
+
+    // Blurdiest: blurdetect mengukur lebar tepi (piksel). Nilai besar = blur.
+    // Diukur pada lebar tetap 720 supaya ambangnya konsisten antar resolusi.
+    let blur: number | null = null;
+    try {
+      const { stderr } = await execFileAsync("ffmpeg", [
+        "-hide_banner",
+        "-i",
+        filePath,
+        "-vf",
+        "scale=720:-2,blurdetect",
+        "-f",
+        "null",
+        "-",
+      ]);
+      const match = stderr.match(/blur mean:\s*([\d.]+)/);
+      if (match) blur = Number(match[1]);
+    } catch {
+      blur = null;
+    }
+
+    return { width, height, blur };
   } catch {
     return null;
   }
 }
 
-async function normalizeImage(
-  raw: Buffer,
-  outputPath: string,
-  isPortrait = true,
-) {
+/** Aturan kualitas b-roll: cukup besar, tidak perlu di-upscale ekstrem, dan tidak blur. */
+export function imageQualityIssue(
+  probe: { width: number; height: number; blur: number | null } | null,
+  targetWidth = 1080,
+  targetHeight = 1920,
+): string | null {
+  if (!probe) return "dimensi tidak terbaca";
+  const { width, height, blur } = probe;
+  if (Math.min(width, height) < 640) return `resolusi kecil ${width}x${height}`;
+  if (width * height < 700_000) return `piksel kurang ${width}x${height}`;
+  const upscale = Math.max(targetWidth / width, targetHeight / height);
+  if (upscale > 2.6) return `perlu upscale ${upscale.toFixed(1)}x`;
+  if (blur !== null && blur > 5.6) return `blur (${blur.toFixed(1)})`;
+  return null;
+}
+
+async function normalizeImage(raw: Buffer, outputPath: string) {
   const tempPath = `${outputPath}.src`;
   try {
     await fs.writeFile(tempPath, raw);
 
-    if (isPortrait) {
-      // True portrait / vertical aspect ratio: scale & center crop cleanly to 1080x1920
-      await execFileAsync("ffmpeg", [
-        "-y",
-        "-i",
-        tempPath,
-        "-vf",
-        "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
-        "-frames:v",
-        "1",
-        "-q:v",
-        "2",
-        outputPath,
-      ]);
-    } else {
-      // Landscape fallback: DO NOT zoom excessively to avoid severe pixelation/blur.
-      // Use cinematic stacked background blur + sharp native fit overlay.
-      await execFileAsync("ffmpeg", [
-        "-y",
-        "-i",
-        tempPath,
-        "-filter_complex",
-        "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=24:24[bg];[0:v]scale=1080:-1[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2",
-        "-frames:v",
-        "1",
-        "-q:v",
-        "2",
-        outputPath,
-      ]);
-    }
+    // Selalu full-bleed cover crop. Latar blur + gambar kecil di tengah terlihat
+    // seperti video lama yang dipenuhi pita buram; lebih baik crop tajam
+    // (lanczos + unsharp) daripada mengulang gambar yang sama dua kali.
+    await execFileAsync("ffmpeg", [
+      "-y",
+      "-i",
+      tempPath,
+      "-vf",
+      "scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,unsharp=5:5:0.5:5:5:0",
+      "-frames:v",
+      "1",
+      "-q:v",
+      "2",
+      outputPath,
+    ]);
 
     const stat = await fs.stat(outputPath);
     if (stat.size < 8_000) throw new Error("normalized image too small");
@@ -273,26 +316,39 @@ export async function downloadSceneImage(
   relevance?: Relevance,
   engines?: string,
   judge?: JudgeContext,
+  usedHashes: Set<string> = new Set(),
 ): Promise<string | null> {
   const normalized = query.replace(/\s+/g, " ").trim().slice(0, 100);
   if (normalized.length < 3) return null;
 
   // Tidak menambah "portrait vertical" ke query: kata itu menarik screenshot HP,
-  // potret orang, dan ilustrasi anime ke topik teknis. Gambar landscape sudah
-  // ditangani normalizeImage (latar blur + foreground native).
+  // potret orang, dan ilustrasi anime ke topik teknis.
   const portraitQuery = normalized;
 
-  const results = await searchImages(portraitQuery, 30, "en", engines).catch(() => []);
+  const [searxResults, commonsResults] = await Promise.all([
+    searchImages(portraitQuery, 30, "en", engines).catch(() => []),
+    searchCommonsImages(portraitQuery, 14).catch(() => []),
+  ]);
+  const seenSrc = new Set<string>();
+  const results = [...commonsResults, ...searxResults].filter((item) => {
+    const src = upgradeImageUrl(item.imgSrc);
+    if (seenSrc.has(src)) return false;
+    seenSrc.add(src);
+    return true;
+  });
   const ranked: Candidate[] = results
-    .map((item) => ({
-      imgSrc: item.imgSrc,
-      source: item.source,
-      title: item.title,
-      score: scoreCandidate(item.imgSrc, item.source, item.title, normalized, relevance),
-    }))
+    .map((item) => {
+      const imgSrc = upgradeImageUrl(item.imgSrc);
+      return {
+        imgSrc,
+        source: item.source,
+        title: item.title,
+        score: scoreCandidate(imgSrc, item.source, item.title, normalized, relevance),
+      };
+    })
     .filter((item) => item.score > -6 && !usedSources.has(item.imgSrc))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 18);
+    .slice(0, 26);
 
   if (ranked.length === 0) return null;
 
@@ -302,18 +358,27 @@ export async function downloadSceneImage(
   const outputPath = path.join(dir, filename);
   const tempProbePath = path.join(dir, `probe-${index}.tmp`);
 
-  let bestLandscapeBuffer: Buffer | null = null;
-
-  // Mode penilai vision: kumpulkan 3 kandidat terunduh, minta model memilih; maksimal 2 putaran.
+  // Mode penilai vision: kumpulkan kandidat terunduh yang lolos kualitas,
+  // minta model memilih; maksimal 2 putaran.
   const judging = Boolean(judge) && judgeAvailable(judge!.model);
   interface Pooled {
     raw: Buffer;
-    portrait: boolean;
+    probe: { width: number; height: number; blur: number | null };
   }
   const pool: Pooled[] = [];
   let rounds = 0;
-  const finalize = async (p: Pooled) =>
-    (await normalizeImage(p.raw, outputPath, p.portrait)) ? `/images/${projectId}/${filename}` : null;
+  const finalize = async (p: Pooled): Promise<string | null> => {
+    if (!(await normalizeImage(p.raw, outputPath))) return null;
+    const hash = createHash("md5")
+      .update(await fs.readFile(outputPath))
+      .digest("hex");
+    if (usedHashes.has(hash)) {
+      await fs.rm(outputPath, { force: true }).catch(() => undefined);
+      return null;
+    }
+    usedHashes.add(hash);
+    return `/images/${projectId}/${filename}`;
+  };
   /** string = gambar terpilih; null = penilai menolak semua; undefined = penilai gagal. */
   const judgePool = async (): Promise<string | null | undefined> => {
     rounds += 1;
@@ -329,10 +394,13 @@ export async function downloadSceneImage(
     if (result.choice === null) return null;
     return finalize(valid[result.choice].p);
   };
-  /** Penilai gagal: pakai urutan skor teks (portrait dulu), seperti tanpa penilai. */
+  /** Penilai gagal: pakai kandidat pertama yang lolos kualitas. */
   const fallbackFromPool = async () => {
-    const pick = pool.find((p) => p.portrait) ?? pool[0];
-    return pick ? finalize(pick) : null;
+    for (const pick of pool) {
+      const url = await finalize(pick);
+      if (url) return url;
+    }
+    return null;
   };
 
   for (const candidate of ranked) {
@@ -341,14 +409,19 @@ export async function downloadSceneImage(
     const raw = await fetchImage(candidate.imgSrc);
     if (!raw) continue;
 
-    // Probe dimensions to verify aspect ratio
     await fs.writeFile(tempProbePath, raw).catch(() => null);
-    const dims = await getImageDimensions(tempProbePath);
+    const probe = await probeImage(tempProbePath);
     await fs.rm(tempProbePath, { force: true }).catch(() => null);
+    if (!probe) continue;
+
+    const issue = imageQualityIssue(probe);
+    if (issue) {
+      console.info(`[images] scene ${index + 1} ditolak (${issue}): ${candidate.imgSrc.slice(0, 80)}`);
+      continue;
+    }
 
     if (judging) {
-      const portrait = dims ? dims.height >= dims.width * 0.95 && dims.height >= 700 : true;
-      pool.push({ raw, portrait });
+      pool.push({ raw, probe });
       if (pool.length >= 3) {
         const verdict = await judgePool();
         if (typeof verdict === "string") return verdict;
@@ -359,23 +432,8 @@ export async function downloadSceneImage(
       continue;
     }
 
-    if (dims) {
-      const isPortrait = dims.height >= dims.width * 0.95; // portrait or square
-      if (isPortrait && dims.height >= 700) {
-        // High quality portrait found!
-        if (await normalizeImage(raw, outputPath, true)) {
-          return `/images/${projectId}/${filename}`;
-        }
-      } else if (!bestLandscapeBuffer) {
-        // Keep first decent landscape as emergency fallback
-        bestLandscapeBuffer = raw;
-      }
-    } else {
-      // Dimension probe failed, try normalize as portrait
-      if (await normalizeImage(raw, outputPath, true)) {
-        return `/images/${projectId}/${filename}`;
-      }
-    }
+    const url = await finalize({ raw, probe });
+    if (url) return url;
   }
 
   if (judging) {
@@ -385,14 +443,6 @@ export async function downloadSceneImage(
       if (verdict === undefined) return fallbackFromPool();
     }
     return null;
-  }
-
-  // If no true portrait was found after inspecting all candidates,
-  // use the best landscape image with cinematic blurred letterbox so it NEVER looks pixelated/stretched.
-  if (bestLandscapeBuffer) {
-    if (await normalizeImage(bestLandscapeBuffer, outputPath, false)) {
-      return `/images/${projectId}/${filename}`;
-    }
   }
 
   return null;
@@ -416,10 +466,16 @@ export async function attachSceneImages(
   const relevance: Relevance = { vocab: relevanceVocab(hints), avoid: hints.avoidTerms };
   const targets = scenes
     .map((scene, index) => ({ scene, index }))
-    .filter((entry) => !entry.scene.imageUrl);
+    // Stage data (SVG_*) tidak memakai foto di belakangnya; mengunduhnya hanya
+    // menghabiskan kuota dan memaksa gambar yang sama dipakai ulang.
+    .filter(
+      (entry) =>
+        entry.scene.visualType === "B_ROLL_IMAGE" && !entry.scene.imageUrl,
+    );
 
   const resolved = new Map<number, string>();
   const usedSources = new Set<string>();
+  const usedHashes = new Set<string>();
   const concurrency = 3;
   let cursor = 0;
 
@@ -431,9 +487,9 @@ export async function attachSceneImages(
     // Topik non-teknis: foto kurasi (Unsplash/Commons/Openverse) dulu, baru web umum.
     const photoFirst = hints.style === "factcheck" || hints.style === "lifestyle";
     let url = photoFirst
-      ? await downloadSceneImage(query, projectId, index, usedSources, relevance, PHOTO_ENGINES, judge)
+      ? await downloadSceneImage(query, projectId, index, usedSources, relevance, PHOTO_ENGINES, judge, usedHashes)
       : null;
-    if (!url) url = await downloadSceneImage(query, projectId, index, usedSources, relevance, undefined, judge);
+    if (!url) url = await downloadSceneImage(query, projectId, index, usedSources, relevance, undefined, judge, usedHashes);
 
     if (!url && query) {
       // SearXNG may return nothing for a wordy or very specific query. Retry
@@ -456,6 +512,7 @@ export async function attachSceneImages(
           relevance,
           undefined,
           judge,
+          usedHashes,
         );
       }
     }
@@ -469,6 +526,7 @@ export async function attachSceneImages(
         relevance,
         undefined,
         judge,
+        usedHashes,
       );
     }
     if (url) resolved.set(index, url);
@@ -494,26 +552,11 @@ export async function attachSceneImages(
     console.warn("[images] tidak ada gambar b-roll yang bisa diunduh.");
   }
 
-  // Ensure 100% visual continuity across all scenes (statistics, metrics, compare):
-  let lastImage = "";
-  const withImages = scenes.map((scene, index) => {
-    let imageUrl = resolved.get(index) ?? scene.imageUrl;
-    if (imageUrl) {
-      lastImage = imageUrl;
-    } else if (lastImage) {
-      imageUrl = lastImage;
-    }
+  // Jangan menyalin gambar scene lain ke scene yang gagal: pengulangan gambar
+  // dalam satu video terlihat seperti bug. Scene tanpa gambar memakai plate
+  // prosedural gelap yang memang dirancang untuk itu.
+  return scenes.map((scene, index) => {
+    const imageUrl = resolved.get(index) ?? scene.imageUrl;
     return imageUrl ? { ...scene, imageUrl } : scene;
   });
-
-  // If first scenes missed an image, backfill from the first available image
-  if (lastImage) {
-    for (let i = 0; i < withImages.length; i++) {
-      if (!withImages[i].imageUrl) {
-        withImages[i].imageUrl = lastImage;
-      }
-    }
-  }
-
-  return withImages;
 }

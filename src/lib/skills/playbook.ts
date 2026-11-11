@@ -144,8 +144,15 @@ const EXTRA_SKILL_ROLES: Record<string, SkillRole[]> = {
   "marketing-skills/marketing-psychology": ["hook", "narration"],
   "marketing-skills/pricing": ["narration"],
   "marketing-skills/content-strategy": ["cta"],
+  "marketing-skills/social": ["hook", "visual"],
+  "marketing-skills/video": ["hook", "visual"],
+  "marketing-skills/image": ["visual"],
+  "marketing-skills/public-relations": ["grounding", "narration"],
+  "marketing-skills/customer-research": ["grounding"],
   "motion-figure": ["visual"],
+  "blueprint-figure": ["visual"],
   "isometric-explainer": ["visual"],
+  "course-style": ["visual"],
 };
 
 async function renderSource(source: SkillSource): Promise<string> {

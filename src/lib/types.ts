@@ -309,6 +309,10 @@ export interface VisualScene {
   /** English/Indonesian query used to fetch the real image. */
   imageSearchQuery?: string;
   imageStyle?: ImageFrameStyle;
+  /** Grading foto dari skill visual (documentary/cold/warm/hard). */
+  imageGrade?: "documentary" | "cold" | "warm" | "hard";
+  /** Overlay grid tipis khas blueprint. */
+  gridOverlay?: boolean;
   /** 1-2 word axis label. Never a sentence or transcript. */
   stageLabel?: string;
   metric?: SceneMetric;
@@ -333,6 +337,16 @@ export interface VisualPlan {
   scenes: VisualScene[];
   vibe?: string;
   generatedAt?: string;
+  /** Skill yang benar-benar mengubah rencana visual (bukan hanya prompt). */
+  skillsUsed?: string[];
+  /** Ringkasan tata bahasa visual yang diterapkan. */
+  grammar?: {
+    id: string;
+    label: string;
+    principle: string;
+    maxSceneSeconds: number;
+    minExplainerScenes: number;
+  };
 }
 
 export interface JobDTO {

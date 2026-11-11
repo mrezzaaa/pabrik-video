@@ -17,15 +17,20 @@ search:
     - html
     - json
 
+# Public default engines get suspended constantly (Google CSE / Brave rate
+# limits, DuckDuckGo TLS failures). Bing and Yahoo ship disabled in the
+# default settings, so enable them explicitly as the primary working pair.
+# The app also passes ?engines=... and falls back group by group.
+engines:
+  - name: bing
+    disabled: false
+  - name: yahoo
+    disabled: false
+
 categories_as_tabs:
   general:
-    - google
-    - duckduckgo
     - bing
-    - brave
+    - yahoo
   images:
-    - google images
     - bing images
-    - duckduckgo images
     - unsplash
-    - wikimedia

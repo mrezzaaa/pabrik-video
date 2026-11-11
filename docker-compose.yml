@@ -84,6 +84,8 @@ services:
       DATABASE_URL: postgresql://pabrik:pabrik_secret@postgres:5432/pabrik_video?schema=public
       REDIS_URL: redis://redis:6379
       SEARXNG_URL: http://searxng:8080
+      SEARXNG_ENGINES: ${SEARXNG_ENGINES:-bing,yahoo,wikipedia}
+      SEARXNG_IMAGE_ENGINES: ${SEARXNG_IMAGE_ENGINES:-bing images,unsplash,wikimedia}
       OMNIROUTE_BASE_URL: http://host.docker.internal:20128/v1
       OMNIROUTE_API_KEY: ${OMNIROUTE_API_KEY:-local}
       OMNIROUTE_PRIMARY_MODEL: ${OMNIROUTE_PRIMARY_MODEL:-auto}
@@ -121,6 +123,8 @@ services:
       DATABASE_URL: postgresql://pabrik:pabrik_secret@postgres:5432/pabrik_video?schema=public
       REDIS_URL: redis://redis:6379
       SEARXNG_URL: http://searxng:8080
+      SEARXNG_ENGINES: ${SEARXNG_ENGINES:-bing,yahoo,wikipedia}
+      SEARXNG_IMAGE_ENGINES: ${SEARXNG_IMAGE_ENGINES:-bing images,unsplash,wikimedia}
       OMNIROUTE_BASE_URL: http://host.docker.internal:20128/v1
       OMNIROUTE_API_KEY: ${OMNIROUTE_API_KEY:-local}
       OMNIROUTE_PRIMARY_MODEL: ${OMNIROUTE_PRIMARY_MODEL:-auto}
@@ -136,7 +140,6 @@ services:
       UNLIMITEDTTS_VOICE: ${UNLIMITEDTTS_VOICE:-Ethan}
       UNLIMITEDTTS_SPEED: ${UNLIMITEDTTS_SPEED:-1.1}
       UNLIMITEDTTS_VOICE_ID: ${UNLIMITEDTTS_VOICE_ID:-id-ID-ArdiNeural}
-      PEXELS_API_KEY: ${PEXELS_API_KEY:-}
       REMOTION_CONCURRENCY: ${REMOTION_CONCURRENCY:-2}
       REMOTION_FPS: ${REMOTION_FPS:-30}
       REMOTION_GL: ${REMOTION_GL:-swangle}

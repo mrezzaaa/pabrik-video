@@ -283,6 +283,17 @@ function overlapsVocab(query: string, vocab: string[]): boolean {
 }
 
 /**
+ * Saat satu frasa visual dipakai ulang (video punya lebih banyak scene daripada
+ * frasa), tambahkan sudut pandang berbeda supaya mesin pencari mengembalikan
+ * kandidat baru, bukan daftar yang sama.
+ */
+const TERM_CYCLE_ANGLES: Record<TopicStyle, string[]> = {
+  engineering: ["", "close up", "detail parts", "wide shot"],
+  factcheck: ["", "close up", "aerial view", "wide shot"],
+  lifestyle: ["", "close up", "people", "wide shot"],
+};
+
+/**
  * Query gambar harus nyambung ke topik DAN berbahasa Inggris.
  * Dengan searchTopic (project baru):
  *  - query LLM berbahasa Inggris dan nyambung ke kosakata topik -> dipakai apa adanya;
@@ -307,7 +318,10 @@ export function anchorImageQuery(
       // Mode ketat: query LLM diterima hanya jika seluruhnya kosakata topik; selain itu pakai frasa visualTerms.
       const generic = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).every((w) => english.toLowerCase().split(/\s+/).includes(w));
       if (!generic && isOnVocab(query, english, terms)) return clean(query);
-      return clean(terms[idx % terms.length]);
+      const cycle = Math.floor(idx / terms.length);
+      const angles = TERM_CYCLE_ANGLES[style];
+      const angle = cycle > 0 ? angles[cycle % angles.length] : "";
+      return clean(`${terms[idx % terms.length]} ${angle}`.trim());
     }
     const queryWords = query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
     const topicWords = new Set(english.toLowerCase().split(/\s+/));

@@ -10,7 +10,7 @@ import {
 } from "../engine/factbank";
 import { asJson, completeStage, startStage } from "../pipeline";
 import { prisma } from "../prisma";
-import { searchWeb, type SearchResult } from "../searxng";
+import { searchWeb, searchWebResilient, type SearchResult } from "../searxng";
 import { routeSkills } from "../skills/router";
 import { classifyTopicStyle } from "../topic-style";
 import type { FactItem, ResearchData } from "../types";
@@ -74,22 +74,32 @@ export async function runResearch(projectId: string) {
 
   await startStage(projectId, "research");
 
-  const first = await searchWeb(project.topic).catch((error) => {
+  const first = await searchWebResilient(project.topic).catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Research agent tidak bisa mengakses SearXNG (${env.searxngUrl}): ${message}`,
     );
   });
-  if (first.length === 0) {
+  if (first.results.length === 0) {
+    const engines = first.unresponsive.length
+      ? first.unresponsive.join(", ")
+      : "semua engine";
     throw new Error(
-      `SearXNG tidak mengembalikan hasil untuk topik "${project.topic}". Coba topik lain.`,
+      `SearXNG tidak mengembalikan hasil untuk topik "${project.topic}" ` +
+        `(engine bermasalah: ${engines}). Ini masalah koneksi/rate-limit ` +
+        `SearXNG, bukan topiknya — cek container searxng lalu ulangi.`,
+    );
+  }
+  if (first.viaWikipedia) {
+    console.warn(
+      `[research] SearXNG kosong; memakai Wikipedia untuk "${first.query}".`,
     );
   }
 
   // 1) Gaya video + skill yang relevan, diputuskan sekali dari topik dan snippet awal.
-  const snippetFacts = first
+  const snippetFacts = first.results
     .slice(0, 4)
-    .map((result) => flat(result.content))
+    .map((result: SearchResult) => flat(result.content))
     .filter(Boolean);
   const classification = await classifyTopicStyle({
     topic: project.topic,
@@ -112,8 +122,10 @@ export async function runResearch(projectId: string) {
   const extra = (
     await Promise.all(extraQueries.map((query) => searchWeb(query).catch(() => [])))
   ).flat();
-  const ranked = rankAndDedupe([...first, ...extra], MAX_PAGES);
-  const packs = await buildSourcePacks(ranked.length ? ranked : first.slice(0, MAX_PAGES));
+  const ranked = rankAndDedupe([...first.results, ...extra], MAX_PAGES);
+  const packs = await buildSourcePacks(
+    ranked.length ? ranked : first.results.slice(0, MAX_PAGES),
+  );
   if (packs.length === 0) {
     throw new Error("Tidak ada halaman sumber yang bisa dibaca untuk topik ini.");
   }
