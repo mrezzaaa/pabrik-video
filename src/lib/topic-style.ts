@@ -22,6 +22,9 @@ export const STYLE_LABELS: Record<TopicStyle, string> = {
 
 const ALL_VISUALS: VisualType[] = [
   "B_ROLL_IMAGE",
+  "ISO_ASSEMBLY",
+  "MECHANISM_FLOW",
+  "BLUEPRINT",
   "SVG_GAUGE",
   "SVG_BAR_CHART",
   "SVG_COUNTER",
@@ -35,17 +38,29 @@ const ALL_VISUALS: VisualType[] = [
 export const STYLE_POLICY: Record<TopicStyle, { allowed: ReadonlySet<VisualType> }> = {
   engineering: {
     allowed: new Set<VisualType>([
-      "B_ROLL_IMAGE",
+      "ISO_ASSEMBLY",
+      "MECHANISM_FLOW",
+      "BLUEPRINT",
       "SVG_CROSSSECTION",
       "SVG_TIMELINE",
       "SVG_GAUGE",
       "SVG_COUNTER",
       "SVG_BAR_CHART",
+      "B_ROLL_IMAGE",
     ]),
   },
   factcheck: { allowed: new Set<VisualType>(ALL_VISUALS) },
   lifestyle: {
-    allowed: new Set<VisualType>(["B_ROLL_IMAGE", "SVG_COUNTER", "SVG_TIMELINE"]),
+    allowed: new Set<VisualType>([
+      "ISO_ASSEMBLY",
+      "MECHANISM_FLOW",
+      "BLUEPRINT",
+      "SVG_CROSSSECTION",
+      "SVG_TIMELINE",
+      "SVG_COMPARE",
+      "SVG_COUNTER",
+      "B_ROLL_IMAGE",
+    ]),
   },
 };
 

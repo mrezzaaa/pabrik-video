@@ -113,27 +113,33 @@ export function baseSources(role: SkillRole, style: TopicStyle): SkillSource[] {
           maxChars: 2400,
         },
       ];
-    case "visual":
+    case "visual": {
+      const explainerCore: SkillSource[] = [
+        {
+          skill: "blueprint-figure",
+          file: "references/kinds.md",
+          sections: ["nine figure kinds"],
+          maxChars: 1100,
+        },
+        {
+          skill: "isometric-explainer",
+          sections: ["Method"],
+          maxChars: 1000,
+        },
+        {
+          skill: "motion-figure",
+          sections: ["Method"],
+          maxChars: 900,
+        },
+      ];
       if (style === "engineering") {
-        return [
-          { skill: "pabrik/reels-visual-engineering", maxChars: 3200 },
-          {
-            skill: "blueprint-figure",
-            file: "references/kinds.md",
-            sections: ["nine figure kinds"],
-            maxChars: 1200,
-          },
-          {
-            skill: "isometric-explainer",
-            sections: ["Method"],
-            maxChars: 1000,
-          },
-        ];
+        return [{ skill: "pabrik/reels-visual-engineering", maxChars: 3200 }, ...explainerCore];
       }
       if (style === "lifestyle") {
-        return [{ skill: "pabrik/reels-visual-lifestyle", maxChars: 2800 }, SPECS];
+        return [{ skill: "pabrik/reels-visual-lifestyle", maxChars: 2400 }, ...explainerCore, SPECS];
       }
-      return [{ skill: "pabrik/reels-visual-factcheck", maxChars: 3000 }, SPECS];
+      return [{ skill: "pabrik/reels-visual-factcheck", maxChars: 2600 }, ...explainerCore, SPECS];
+    }
   }
 }
 

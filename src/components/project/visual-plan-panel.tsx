@@ -3,6 +3,13 @@ import type { VisualPlan } from "@/lib/types";
 
 const TYPE_LABEL: Record<string, string> = {
   B_ROLL_IMAGE: "B-ROLL",
+  ISO_ASSEMBLY: "ISO 3D",
+  MECHANISM_FLOW: "MEKANISME",
+  BLUEPRINT: "BLUEPRINT",
+  SVG_CROSSSECTION: "POTONGAN",
+  SVG_TIMELINE: "TIMELINE",
+  SVG_COMPARE: "COMPARE",
+  SVG_STAMP: "STAMP",
   SVG_COUNTER: "COUNTER",
   SVG_GAUGE: "GAUGE",
   SVG_BAR_CHART: "BAR",
@@ -10,6 +17,24 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 function detailFor(scene: VisualPlan["scenes"][number]) {
+  if (
+    scene.visualType === "ISO_ASSEMBLY" ||
+    scene.visualType === "MECHANISM_FLOW" ||
+    scene.visualType === "BLUEPRINT"
+  ) {
+    const focus = scene.shot?.focus?.length ? scene.shot.focus.join(", ") : "ALL PARTS";
+    const cut = Math.round((scene.shot?.cutaway ?? 0.6) * 100);
+    return `FOCUS // ${focus} · CUT ${cut}%`;
+  }
+  if (scene.visualType === "SVG_CROSSSECTION" && scene.layers?.length) {
+    return scene.layers.map((l) => l.label).join(" → ");
+  }
+  if (scene.visualType === "SVG_TIMELINE" && scene.steps?.length) {
+    return scene.steps.map((s) => s.label).join(" → ");
+  }
+  if (scene.visualType === "SVG_COMPARE" && scene.compare) {
+    return `${scene.compare.left.title} VS ${scene.compare.right.title}`;
+  }
   if (scene.visualType === "SVG_COUNTER") {
     return `${Math.round(scene.counter?.to ?? scene.metric?.value ?? 0)}${scene.metric?.suffix ?? ""}`;
   }

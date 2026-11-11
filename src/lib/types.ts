@@ -1,3 +1,5 @@
+import type { ExplainerShot, ObjectModel } from "./explainer/model";
+
 export const PROJECT_STATUSES = [
   "QUEUED",
   "RESEARCHING",
@@ -118,6 +120,8 @@ export interface ResearchData {
   visualTerms?: string[];
   /** Kata Inggris dari topik tetangga yang sering salah muncul (mis. "piston" untuk mesin jet). */
   avoidTerms?: string[];
+  /** Model objek/sistem 3D isometrik untuk stage penjelas. */
+  anatomy?: ObjectModel;
   facts: string[];
   sources: { title: string; url: string }[];
   uniqueAngles: string[];
@@ -203,6 +207,9 @@ export type SceneTheme = "danger" | "warn" | "info" | "success";
  */
 export type VisualType =
   | "B_ROLL_IMAGE"
+  | "ISO_ASSEMBLY"
+  | "MECHANISM_FLOW"
+  | "BLUEPRINT"
   | "SVG_GAUGE"
   | "SVG_BAR_CHART"
   | "SVG_COUNTER"
@@ -324,6 +331,8 @@ export interface VisualScene {
   compare?: SceneCompare;
   layers?: SceneLayer[];
   steps?: SceneStep[];
+  /** Instruksi kamera/fokus/cutaway/aliran untuk stage penjelas. */
+  shot?: Partial<ExplainerShot>;
   /** Drives SFX + color treatment (danger scenes get impacts/red). */
   theme?: SceneTheme;
   /** Detik sejak kalimat mulai (visual lanjut mulus antar potongan 2.5s). */
@@ -335,6 +344,8 @@ export interface VisualScene {
 
 export interface VisualPlan {
   scenes: VisualScene[];
+  /** Model objek/sistem 3D isometrik bersama yang dirender oleh ExplainerStage. */
+  model?: ObjectModel;
   vibe?: string;
   generatedAt?: string;
   /** Skill yang benar-benar mengubah rencana visual (bukan hanya prompt). */

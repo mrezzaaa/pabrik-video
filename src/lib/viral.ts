@@ -20,26 +20,25 @@ ATURAN RETENSI:
 - accentColor: hex neon yang kontras (bukan putih, bukan hitam).
 - background.value HARUS salah satu gradient dari daftar yang diberikan user.
 
-VISUAL TYPE (WAJIB salah satu):
-1. "B_ROLL_IMAGE" untuk scene naratif/historical/emosional. Sertakan "imageSearchQuery": 3-6 kata benda konkret bahasa Inggris/Indonesia, tanpa nama brand, tanpa teks di gambar.
-   Contoh: "19th century factory workers black and white", "human brain MRI scan dark", "exhausted office worker night".
-   "imageStyle": "fullBleed" | "split" | "glass" (variasikan, jangan sama terus).
-2. "SVG_COUNTER" untuk tahun atau satu angka yang berdiri sendiri. Sertakan "metric": { "value": 1817, "suffix": "" }. Angka HARUS ada di kalimat.
-3. "SVG_GAUGE" untuk rentang angka. Sertakan "range": { "from": 5, "to": 10, "min": 0, "max": 12, "unit": "JAM" }.
-4. "SVG_BAR_CHART" untuk perbandingan 2-3 angka. Sertakan "bars": [{ "label": "BAYI", "value": 14, "unit": "JAM" }, { "label": "DEWASA", "value": 7, "unit": "JAM" }, { "label": "RI", "value": 5, "unit": "JAM", "highlight": true }]. Label maks 2 kata.
-5. "SVG_WAVEFORM" untuk dampak/penurunan/kecepatan. Sertakan "wave": { "label": "OTAK", "dip": 0.6 }.
-6. "SVG_STAMP" untuk vonis tegas. Sertakan "stamp": { "word": "MITOS" } (pilihan: MITOS | FAKTA | BAHAYA | AMAN). Kata cap HARUS sejalan dengan isi kalimat (kalimat tentang bahaya -> BAHAYA, bukan FAKTA).
-7. "SVG_COMPARE" untuk dua hal yang dibandingkan / mitos vs fakta. Sertakan "compare": { "left": { "title": "MITOS", "items": ["BIKIN PUTIH", "AMAN"] }, "right": { "title": "FAKTA", "items": ["MERKURI", "RUSAK KULIT"] } }. Title dan item masing-masing 1-2 kata, 1-3 item per sisi.
-8. "SVG_CROSSSECTION" untuk menjelaskan lapisan / isi sesuatu (kulit, produk, organ). Sertakan "stageLabel": "KULIT" dan "layers": [{ "label": "EPIDERMIS" }, { "label": "DERMIS" }, { "label": "HIPODERMIS" }] (3-5 lapisan dari luar ke dalam, label 1-2 kata).
-9. "SVG_TIMELINE" untuk urutan proses/kejadian. Sertakan "stageLabel": "REAKSI" dan "steps": [{ "label": "OLES" }, { "label": "MERESAP" }, { "label": "IRITASI" }] (2-4 langkah, label 1-2 kata).
+VISUAL TYPE (WAJIB salah satu, prioritaskan no. 1-5 sebagai VISUAL PENJELAS >= 65% scene):
+1. "ISO_ASSEMBLY" (Isometric 3D Cutaway / Exploded View dari ObjectModel). Sertakan "shot": { "focus": ["id-part"], "cutaway": 0.7, "explode": 0.2, "zoom": 1.25, "labels": "focus" }. Pakai saat memperkenalkan bentuk utuh, membedah bagian dalam (cutaway), atau menyorot satu komponen spesifik.
+2. "MECHANISM_FLOW" (Aliran Mekanisme 3D + Partikel Bergerak + Tahap Proses). Sertakan "shot": { "focus": ["id-part-1", "id-part-2"], "cutaway": 0.65, "explode": 0, "zoom": 1.1, "flowId": "id-flow", "step": 0, "labels": "focus" }. Pakai saat menjelaskan arus/aliran/reaksi/proses sebab-akibat yang bergerak melewati komponen.
+3. "BLUEPRINT" (Gambar Kerja Teknis / Wireframe + Dimensi + Callout Bernomor). Sertakan "shot": { "focus": ["id-part"], "cutaway": 0.5, "explode": 0.35, "zoom": 1.2, "labels": "all" }. Pakai untuk pembedahan spesifikasi, struktur, atau rancangan teknis.
+4. "SVG_CROSSSECTION" untuk menjelaskan lapisan dari luar ke dalam (3-5 lapisan). Sertakan "stageLabel": "STRUKTUR" dan "layers": [{ "label": "LAPISAN 1" }, { "label": "LAPISAN 2" }, { "label": "LAPISAN 3" }].
+5. "SVG_TIMELINE" untuk urutan tahap proses (3-4 langkah). Sertakan "stageLabel": "ALUR" dan "steps": [{ "label": "TAHAP 1" }, { "label": "TAHAP 2" }, { "label": "TAHAP 3" }].
+6. "SVG_COUNTER" untuk tahun atau satu angka yang berdiri sendiri. Sertakan "metric": { "value": 1817, "suffix": "" }. Angka HARUS ada di kalimat.
+7. "SVG_GAUGE" untuk rentang angka. Sertakan "range": { "from": 5, "to": 10, "min": 0, "max": 12, "unit": "JAM" }.
+8. "SVG_BAR_CHART" untuk perbandingan 2-3 angka. Sertakan "bars": [{ "label": "A", "value": 14, "unit": "JAM" }, { "label": "B", "value": 7, "unit": "JAM", "highlight": true }].
+9. "SVG_COMPARE" untuk dua hal yang dibandingkan / mitos vs fakta. Sertakan "compare": { "left": { "title": "MITOS", "items": ["TOLAK PETIR"] }, "right": { "title": "FAKTA", "items": ["TARIK PETIR"] } }.
+10. "SVG_STAMP" untuk vonis tegas (MITOS | FAKTA | BAHAYA | AMAN).
+11. "B_ROLL_IMAGE" HANYA untuk foto bukti nyata/konteks visual (MAKSIMAL 25% dari total scene!). Sertakan "imageSearchQuery": frasa bahasa Inggris spesifik dari daftar VISUAL TERMS, dan "imageStyle": "glass" | "split" | "fullBleed".
 
-ATURAN DATA:
-- "stageLabel": 1-2 kata HURUF BESAR sebagai label sumbu (contoh "TIDUR", "OTAK", "RESPONDEN"). Bukan kalimat, bukan kutipan.
-- Semua angka di metric/range/bars/wave harus benar-benar muncul di kalimat tersebut. JANGAN mengarang angka.
-- Tahun 4 digit (1817, 2025) ditulis apa adanya tanpa titik ribuan.
-- Label di compare/layers/steps HARUS istilah yang ada di kalimat atau fakta riset. JANGAN mengarang nama lapisan, pembanding, atau langkah. Kalau ragu, jangan pakai tipe 6-9.
-- Variasikan: jangan tipe yang sama di dua scene berurutan. Pakai SVG_STAMP maksimal 2x per video (untuk hook dan vonis akhir).
-- Pilih visualType yang paling jujur dengan isi kalimat. Kalau tidak ada angka dan tidak ada visual yang cocok, pakai B_ROLL_IMAGE.
+ATURAN DATA & STORYBOARD:
+- Minimal 65% scene WAJIB memakai visual penjelas (ISO_ASSEMBLY, MECHANISM_FLOW, BLUEPRINT, SVG_CROSSSECTION, SVG_TIMELINE, SVG_COMPARE).
+- B_ROLL_IMAGE maksimal 25% scene, dan dilarang 2 B_ROLL_IMAGE berturut-turut.
+- Untuk ISO_ASSEMBLY, MECHANISM_FLOW, dan BLUEPRINT, gunakan id part dan flowId yang ada di OBJECT MODEL (diberikan di prompt user). Buat kamera berkesinambungan: mulai dari overview cutaway (hook), lalu zoom ke komponen satu per satu mengikuti kalimat, lalu tampilkan aliran MECHANISM_FLOW.
+- Semua angka di metric/range/bars harus benar-benar muncul di kalimat tersebut. JANGAN mengarang angka.
+- Label di compare/layers/steps HARUS istilah 1-2 kata dari kalimat, fakta riset, atau OBJECT MODEL.
 
 Kembalikan HANYA JSON valid:
 {
@@ -94,25 +93,23 @@ export const STYLE_PROMPT_ADDENDUM: Record<
 > = {
   engineering: `
 
-GAYA VIDEO: SAINS / ENGINEERING (blueprint, teknis, penjelasan bagian dalam).
-- Tipe yang diizinkan HANYA: SVG_CROSSSECTION, SVG_TIMELINE, SVG_GAUGE, SVG_COUNTER, SVG_BAR_CHART, B_ROLL_IMAGE. DILARANG: SVG_STAMP, SVG_COMPARE, SVG_WAVEFORM.
-- Prioritaskan SVG_CROSSSECTION saat kalimat menyebut bagian/lapisan/komponen, dan SVG_TIMELINE saat kalimat menjelaskan urutan proses atau aliran.
-- Pakai SVG_GAUGE/SVG_COUNTER/SVG_BAR_CHART untuk spesifikasi dan angka teknis (suhu, tekanan, kecepatan, ukuran) yang ada di kalimat.
-- B_ROLL_IMAGE hanya untuk gambar teknis: foto komponen nyata, diagram, blueprint, cutaway, close-up mesin. imageSearchQuery WAJIB bahasa Inggris dan menyebut objek teknisnya secara spesifik (contoh: "turbofan engine cutaway diagram", "lithium ion battery cell cross section").
-- Nada visual: dingin, presisi, biru/cyan/hijau teknis. Hindari accentColor merah-pink kecuali untuk bahaya.`,
+GAYA VIDEO: SAINS / ENGINEERING (isometric cutaway, blueprint, mekanisme aliran).
+- WAJIB >= 65% scene memakai visual penjelas: ISO_ASSEMBLY, MECHANISM_FLOW, BLUEPRINT, SVG_CROSSSECTION, SVG_TIMELINE.
+- Gunakan ISO_ASSEMBLY (cutaway/explode) saat membedah komponen, MECHANISM_FLOW saat menjelaskan aliran fisika/listrik/udara/gaya, dan BLUEPRINT saat membahas struktur/dimensi.
+- Pakai SVG_GAUGE/SVG_COUNTER/SVG_BAR_CHART untuk spesifikasi dan angka teknis yang ada di kalimat.
+- B_ROLL_IMAGE maksimal 20% scene (hanya untuk bukti foto nyata komponen). imageSearchQuery WAJIB bahasa Inggris spesifik.
+- Nada visual: dingin, presisi, biru/cyan/hijau teknis.`,
   factcheck: `
 
-GAYA VIDEO: FAKTA / MITOS (footage + metrik + chart + perbandingan).
-- Semua tipe diizinkan. Prioritaskan SVG_COMPARE untuk mitos vs fakta, SVG_BAR_CHART/SVG_COUNTER/SVG_GAUGE untuk angka, dan SVG_STAMP untuk vonis.
-- Selingi dengan B_ROLL_IMAGE bukti nyata (foto kejadian, produk, dokumen, orang) supaya klaim terasa punya bukti.
-- imageSearchQuery WAJIB bahasa Inggris dan berupa ADEGAN YANG BISA DIFOTO (bencana, lahan, laut, orang beraktivitas, benda nyata). DILARANG memakai istilah data yang menarik peta/grafik/slide ("sea surface temperature", "anomaly", "index", "chart", "map"); pilih objek yang mewakili angka itu.
-- Kalau kalimat memuat angka atau pembanding, tampilkan sebagai metrik/chart, jangan hanya foto.`,
+GAYA VIDEO: FAKTA / MITOS (visual penjelas + perbandingan + metrik + bukti).
+- WAJIB >= 60% scene memakai visual penjelas & data: ISO_ASSEMBLY, MECHANISM_FLOW, BLUEPRINT, SVG_COMPARE, SVG_CROSSSECTION, SVG_TIMELINE, SVG_BAR_CHART, SVG_COUNTER, SVG_GAUGE.
+- Gunakan SVG_COMPARE untuk mitos vs fakta, ISO_ASSEMBLY / MECHANISM_FLOW untuk menjelaskan mekanisme di balik fakta, dan SVG_BAR_CHART/SVG_COUNTER/SVG_GAUGE untuk angka.
+- B_ROLL_IMAGE maksimal 25% scene sebagai foto bukti nyata (berbahasa Inggris, adegan konkret yang bisa difoto).`,
   lifestyle: `
 
-GAYA VIDEO: KEHIDUPAN SEHARI-HARI (footage dan foto relevan).
-- Tipe yang diizinkan HANYA: B_ROLL_IMAGE, SVG_COUNTER, SVG_TIMELINE. DILARANG: SVG_STAMP, SVG_COMPARE, SVG_WAVEFORM, SVG_CROSSSECTION, SVG_GAUGE, SVG_BAR_CHART.
-- Minimal 70% scene harus B_ROLL_IMAGE. Pakai SVG_COUNTER hanya untuk satu angka kunci yang benar-benar ada di kalimat, SVG_TIMELINE hanya untuk urutan kebiasaan/langkah.
-- imageSearchQuery WAJIB bahasa Inggris, adegan manusiawi dan konkret (orang, tempat, benda sehari-hari, suasana), bukan konsep abstrak. Variasikan sudut: close-up benda, orang beraktivitas, suasana tempat.`,
+GAYA VIDEO: KEHIDUPAN SEHARI-HARI (visual penjelas mekanisme + alur + foto relevan).
+- WAJIB >= 60% scene memakai visual penjelas: ISO_ASSEMBLY, MECHANISM_FLOW, BLUEPRINT, SVG_TIMELINE, SVG_CROSSSECTION, SVG_COMPARE, SVG_COUNTER.
+- B_ROLL_IMAGE maksimal 25% scene untuk konteks nyata manusiawi (imageSearchQuery bahasa Inggris konkret).`,
 };
 
 export const GRADIENT_PALETTES = [

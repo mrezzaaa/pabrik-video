@@ -1,4 +1,5 @@
 import React from "react";
+import { genericModel, type ObjectModel } from "../../../lib/explainer/model";
 import type { VisualScene } from "../../../lib/types";
 import { CognitiveWave } from "./CognitiveWave";
 import { ComparisonBars } from "./ComparisonBars";
@@ -8,6 +9,7 @@ import {
   StampStage,
   TimelineStage,
 } from "./EditorialStages";
+import { ExplainerStage } from "./ExplainerStage";
 import { KenBurnsImageFrame } from "./KenBurnsImageFrame";
 import { OdometerCounter } from "./OdometerCounter";
 import { RangeGauge } from "./RangeGauge";
@@ -18,18 +20,35 @@ export const STAGE_HEIGHT = 1000;
 
 /**
  * Center stage dispatcher.
- * When B_ROLL_IMAGE is used, it renders FULL BLEED (1080x1920) across the entire screen
- * so the viewer stays focused without visual fragmentation or disjointed frames.
+ * When B_ROLL_IMAGE or an ExplainerStage (ISO_ASSEMBLY, MECHANISM_FLOW, BLUEPRINT)
+ * is used, it renders FULL BLEED (1080x1920) across the entire screen.
  * For animated data graphics (counters, gauges, charts), they stay centered in the safe zone.
  */
 export const SceneStage: React.FC<{
   scene: VisualScene;
   index: number;
-}> = ({ scene, index }) => {
-  const isImage = scene.visualType === "B_ROLL_IMAGE";
+  model?: ObjectModel;
+  topic?: string;
+}> = ({ scene, index, model, topic }) => {
+  const isFullBleedStage =
+    scene.visualType === "B_ROLL_IMAGE" ||
+    scene.visualType === "ISO_ASSEMBLY" ||
+    scene.visualType === "MECHANISM_FLOW" ||
+    scene.visualType === "BLUEPRINT";
 
   const stage = (() => {
     switch (scene.visualType) {
+      case "ISO_ASSEMBLY":
+      case "MECHANISM_FLOW":
+      case "BLUEPRINT": {
+        const effectiveModel =
+          model ??
+          genericModel(
+            topic || scene.stageLabel || "SISTEM",
+            (scene.layers ?? scene.steps ?? []).map((item) => item.label),
+          );
+        return <ExplainerStage scene={scene} model={effectiveModel} index={index} />;
+      }
       case "SVG_COUNTER":
         return <OdometerCounter scene={scene} />;
       case "SVG_GAUGE":
@@ -55,7 +74,7 @@ export const SceneStage: React.FC<{
 
   if (!stage) return null;
 
-  if (isImage) {
+  if (isFullBleedStage) {
     return (
       <div
         style={{

@@ -167,6 +167,17 @@ export async function resetFromStage(projectId: string, fromStage: JobType) {
     data.visualPlan = Prisma.DbNull;
     data.videoUrl = null;
     data.thumbnailUrl = null;
+    if (startIndex > STAGE_SEQUENCE.indexOf("research")) {
+      const existing = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { researchData: true },
+      });
+      if (existing?.researchData && typeof existing.researchData === "object") {
+        const cleaned = { ...(existing.researchData as Record<string, unknown>) };
+        delete cleaned.anatomy;
+        data.researchData = asJson(cleaned);
+      }
+    }
   }
   if (startIndex <= STAGE_SEQUENCE.indexOf("render")) {
     data.videoUrl = null;

@@ -87,6 +87,32 @@ export async function listVoiceStudioVoices(): Promise<VoiceStudioVoice[]> {
   return [];
 }
 
+/** Beat lanjutan wajib suara yang sama: ulangi VoiceStudio, jangan pindah engine di tengah video. */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      last = error;
+      await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+    }
+  }
+  throw last;
+}
+
+/** Seed deterministik dari voice id (FNV-1a 31-bit) supaya timbre stabil antar request. */
+export function voiceSeed(voice: string): number {
+  const override = Number(process.env.VOICESTUDIO_SEED);
+  if (Number.isFinite(override) && override > 0) return Math.floor(override);
+  let hash = 0x811c9dc5;
+  for (const ch of voice.toLowerCase()) {
+    hash ^= ch.charCodeAt(0);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return (hash & 0x7fffffff) || 1;
+}
+
 export async function synthesizeWithVoiceStudio(
   text: string,
   outputPath: string,
@@ -116,6 +142,10 @@ export async function synthesizeWithVoiceStudio(
           response_format: "mp3",
           speed: env.voiceStudioSpeed,
           language: "id-ID",
+          // Seed tetap per suara: model zero-shot (omnivoice) memakai seed untuk
+          // memilih timbre. Tanpa seed tiap request (tiap beat) bisa jadi
+          // pembicara berbeda walau voice id sama.
+          seed: voiceSeed(voice),
         }),
         signal: controller.signal,
       });
@@ -302,7 +332,7 @@ export async function synthesizeChunkedToFile(
 
       if (index === 0) {
         try {
-          await synthesizeWithVoiceStudio(chunks[index], chunkPath, chosenVoice);
+          await withRetry(() => synthesizeWithVoiceStudio(chunks[index], chunkPath, chosenVoice));
           provider = "voicestudio";
           voice = chosenVoice;
         } catch (error) {
@@ -315,7 +345,7 @@ export async function synthesizeChunkedToFile(
           voice = resolveEdgeVoice();
         }
       } else if (provider === "voicestudio") {
-        await synthesizeWithVoiceStudio(chunks[index], chunkPath, chosenVoice);
+        await withRetry(() => synthesizeWithVoiceStudio(chunks[index], chunkPath, chosenVoice));
       } else {
         await synthesizeWithUnlimitedTts(chunks[index], chunkPath);
       }
@@ -463,7 +493,7 @@ export async function synthesizeBeatsToFile(
           voice = resolveEdgeVoice();
         }
       } else if (provider === "voicestudio") {
-        await synthesizeWithVoiceStudio(beats[index].text, mp3, chosenVoice);
+        await withRetry(() => synthesizeWithVoiceStudio(beats[index].text, mp3, chosenVoice));
       } else {
         await synthesizeWithUnlimitedTts(beats[index].text, mp3);
       }

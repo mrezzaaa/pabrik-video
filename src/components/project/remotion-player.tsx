@@ -123,6 +123,8 @@ export function RemotionReelsPlayer({ project }: { project: ProjectDTO }) {
     return fallbackScenes(project, duration);
   }, [duration, project]);
 
+  const model = project.visualPlan?.model ?? project.researchData?.anatomy;
+
   const inputProps = {
     audioSrc,
     duration,
@@ -131,6 +133,7 @@ export function RemotionReelsPlayer({ project }: { project: ProjectDTO }) {
     topic: project.topic,
     scenes,
     words,
+    ...(model ? { model } : {}),
   };
 
   if (!audioSrc) return null;

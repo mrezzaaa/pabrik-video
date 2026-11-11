@@ -132,6 +132,9 @@ export const textAnimationSchema = z.enum(["karaoke", "popIn", "typewriter"]);
 export const sceneThemeSchema = z.enum(["danger", "warn", "info", "success"]);
 export const visualTypeSchema = z.enum([
   "B_ROLL_IMAGE",
+  "ISO_ASSEMBLY",
+  "MECHANISM_FLOW",
+  "BLUEPRINT",
   "SVG_GAUGE",
   "SVG_BAR_CHART",
   "SVG_COUNTER",
@@ -197,6 +200,17 @@ export const sceneLabelSchema = z.object({
   label: z.string().optional().default(""),
 });
 
+export const sceneShotSchema = z.object({
+  focus: z.array(z.string()).optional().default([]),
+  cutaway: looseNumber.optional(),
+  explode: looseNumber.optional(),
+  zoom: looseNumber.optional(),
+  flowId: z.string().optional(),
+  step: looseNumber.optional(),
+  labels: z.enum(["focus", "all", "none"]).optional(),
+  yaw: looseNumber.optional(),
+});
+
 export const visualSceneSchema = z.object({
   id: z.string().optional(),
   startTime: looseNumber,
@@ -235,6 +249,7 @@ export const visualSceneSchema = z.object({
   compare: sceneCompareSchema.optional(),
   layers: z.array(sceneLabelSchema).optional().default([]),
   steps: z.array(sceneLabelSchema).optional().default([]),
+  shot: sceneShotSchema.optional(),
   theme: sceneThemeSchema.optional(),
   accentColor: z.string().default("#39FF14"),
 });

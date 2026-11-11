@@ -9,6 +9,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import type { SceneProps } from "../types";
+import { ExplainerBackdrop } from "./Stage/ExplainerStage";
 
 function imageSrc(scene: SceneProps["scene"]) {
   const value = scene.imageUrl?.replace(/^\/+/, "");
@@ -72,6 +73,15 @@ export const SceneBackground: React.FC<SceneProps> = ({ scene }) => {
   }
 
   const danger = scene.theme === "danger";
+  const isExplainer =
+    scene.visualType === "ISO_ASSEMBLY" ||
+    scene.visualType === "MECHANISM_FLOW" ||
+    scene.visualType === "BLUEPRINT";
+
+  if (isExplainer) {
+    return <ExplainerBackdrop blueprint={scene.visualType === "BLUEPRINT"} />;
+  }
+
   const hasVideo =
     scene.background.type === "video" && Boolean(scene.background.videoUrl);
   const src = imageSrc(scene);

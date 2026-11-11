@@ -1,3 +1,4 @@
+import type { ObjectModel } from "../lib/explainer/model";
 import type { VisualScene, WordTimestamp } from "../lib/types";
 
 export type ReelsProps = {
@@ -8,6 +9,8 @@ export type ReelsProps = {
   topic: string;
   scenes: VisualScene[];
   words: WordTimestamp[];
+  /** Model objek/sistem 3D isometrik bersama untuk ExplainerStage. */
+  model?: ObjectModel;
   /** Judul hook di layar (2-6 kata). Kosong = tanpa kartu hook (project lama). */
   hookText?: string;
   /** Label kecil di atas judul, mis. "CARA KERJA". */

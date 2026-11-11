@@ -1,3 +1,9 @@
+import { ensureObjectModel } from "../explainer/anatomy";
+import {
+  genericModel,
+  type ExplainerShot,
+  type ObjectModel,
+} from "../explainer/model";
 import { chatJSON } from "../omniroute";
 import { buildPlaybook } from "../skills/playbook";
 import { grammarBrief, visualGrammarFor, type VisualGrammar } from "../skills/visual-grammar";
@@ -320,17 +326,111 @@ type StageData = {
   compare?: SceneCompare;
   layers?: SceneLayer[];
   steps?: SceneStep[];
+  shot?: Partial<ExplainerShot>;
   imageSearchQuery: string;
   imageStyle: ImageFrameStyle;
 };
 
 /** Stage yang animasinya berjalan sepanjang kalimat (lanjut antar potongan). */
 const EDITORIAL_STAGES = new Set<VisualType>([
+  "ISO_ASSEMBLY",
+  "MECHANISM_FLOW",
+  "BLUEPRINT",
   "SVG_STAMP",
   "SVG_COMPARE",
   "SVG_CROSSSECTION",
   "SVG_TIMELINE",
 ]);
+
+function deriveShotForScene(
+  model: ObjectModel | undefined,
+  candidate: Candidate | undefined,
+  sentence: ScriptSentence,
+  sceneIndex: number,
+  mode: VisualType,
+): Partial<ExplainerShot> {
+  const rawShot = candidate?.shot;
+  if (!model || model.parts.length === 0) {
+    return rawShot ?? { cutaway: 0.65, explode: 0.15, zoom: 1.05, labels: "all", yaw: (sceneIndex * 18) % 360 };
+  }
+
+  const partIds = new Set(model.parts.map((p) => p.id));
+  const lower = sentence.text.toLowerCase();
+  const matched = model.parts
+    .filter((p) =>
+      p.label
+        .toLowerCase()
+        .split(/\s+/)
+        .some((w) => w.length >= 4 && lower.includes(w)),
+    )
+    .map((p) => p.id);
+
+  const validCandidateFocus = (rawShot?.focus ?? []).filter((id) => partIds.has(id));
+  const fallbackPart = model.parts[sceneIndex % model.parts.length].id;
+  const focus =
+    validCandidateFocus.length > 0
+      ? validCandidateFocus
+      : matched.length > 0
+        ? matched.slice(0, 2)
+        : mode === "BLUEPRINT"
+          ? [fallbackPart]
+          : [fallbackPart];
+
+  const isHook = sentence.role === "hook" || sceneIndex === 0;
+  const isCta = sentence.role === "cta";
+  const stepCount = Math.max(1, model.steps.length);
+
+  if (isHook) {
+    return {
+      focus: [],
+      cutaway: 0.72,
+      explode: 0.12,
+      zoom: 1.06,
+      labels: "all",
+      yaw: -14,
+    };
+  }
+  if (isCta) {
+    return {
+      focus: [],
+      cutaway: 0.35,
+      explode: 0,
+      zoom: 1.0,
+      labels: "all",
+      yaw: 16,
+    };
+  }
+  if (mode === "MECHANISM_FLOW") {
+    return {
+      focus,
+      cutaway: rawShot?.cutaway ?? 0.68,
+      explode: rawShot?.explode ?? 0.08,
+      zoom: rawShot?.zoom ?? 1.08,
+      flowId: rawShot?.flowId ?? model.flows[0]?.id,
+      step: rawShot?.step ?? sceneIndex % stepCount,
+      labels: "focus",
+      yaw: rawShot?.yaw ?? ((sceneIndex * 22) % 60) - 25,
+    };
+  }
+  if (mode === "BLUEPRINT") {
+    return {
+      focus,
+      cutaway: rawShot?.cutaway ?? 0.55,
+      explode: rawShot?.explode ?? 0.32,
+      zoom: rawShot?.zoom ?? 1.15,
+      labels: "all",
+      yaw: rawShot?.yaw ?? ((sceneIndex * 16) % 50) - 20,
+    };
+  }
+  return {
+    focus,
+    cutaway: rawShot?.cutaway ?? 0.75,
+    explode: rawShot?.explode ?? (sceneIndex % 2 === 0 ? 0.15 : 0.35),
+    zoom: rawShot?.zoom ?? (focus.length === 1 ? 1.24 : 1.08),
+    labels: rawShot?.labels ?? "focus",
+    yaw: rawShot?.yaw ?? ((sceneIndex * 20) % 60) - 25,
+  };
+}
 
 /**
  * Visual type di luar kebijakan gaya video (mis. SVG_STAMP di video lifestyle)
@@ -357,6 +457,7 @@ function deriveStage(
   topic: string,
   sceneIndex: number,
   knowledge = "",
+  model?: ObjectModel,
 ): StageData {
   const text = sentence.text;
   const digitText = digitizeSpokenNumbers(text);
@@ -473,6 +574,19 @@ function deriveStage(
   // Visual editorial: hanya kalau LLM memintanya DAN lolos guard (label 1-2 kata,
   // terlacak ke narasi/riset). Kalau tidak lolos, jatuh ke wave/counter/b-roll.
   const wanted = candidate?.visualType;
+  if (
+    wanted === "ISO_ASSEMBLY" ||
+    wanted === "MECHANISM_FLOW" ||
+    wanted === "BLUEPRINT"
+  ) {
+    return {
+      visualType: wanted,
+      stageLabel: axisLabelSafe(candidate?.stageLabel ?? "", wanted === "BLUEPRINT" ? "BLUEPRINT" : "MEKANISME"),
+      shot: deriveShotForScene(model, candidate, sentence, sceneIndex, wanted),
+      imageSearchQuery: query,
+      imageStyle,
+    };
+  }
   if (wanted === "SVG_STAMP") {
     const stamp = deriveStamp(candidate?.stamp, text);
     if (stamp) {
@@ -498,7 +612,12 @@ function deriveStage(
     }
   }
   if (wanted === "SVG_CROSSSECTION") {
-    const layers = deriveLayers(candidate?.layers, knowledge, digits);
+    const derived = deriveLayers(candidate?.layers, knowledge, digits);
+    const modelLayers =
+      model && model.parts.length >= 3
+        ? model.parts.slice(0, 4).map((p) => ({ label: p.label }))
+        : null;
+    const layers = derived && derived.length >= 3 ? derived : modelLayers;
     if (layers) {
       return {
         visualType: "SVG_CROSSSECTION",
@@ -510,7 +629,14 @@ function deriveStage(
     }
   }
   if (wanted === "SVG_TIMELINE") {
-    const steps = deriveSteps(candidate?.steps, knowledge, digits);
+    const derived = deriveSteps(candidate?.steps, knowledge, digits);
+    const modelSteps =
+      model && model.steps.length >= 3
+        ? model.steps.slice(0, 4).map((label) => ({ label }))
+        : model && model.parts.length >= 3
+          ? model.parts.slice(0, 4).map((p) => ({ label: p.label }))
+          : null;
+    const steps = derived && derived.length >= 3 ? derived : modelSteps;
     if (steps) {
       return {
         visualType: "SVG_TIMELINE",
@@ -584,10 +710,23 @@ function deriveSkillStage(
   candidate: Candidate | undefined,
   sentence: ScriptSentence,
   knowledge: string,
+  sceneIndex = 0,
+  model?: ObjectModel,
 ): Partial<StageData> | null {
   const digits = narrationDigits(digitizeSpokenNumbers(sentence.text));
 
   switch (type) {
+    case "ISO_ASSEMBLY":
+    case "MECHANISM_FLOW":
+    case "BLUEPRINT":
+      return {
+        visualType: type,
+        stageLabel: axisLabelSafe(
+          candidate?.stageLabel ?? "",
+          type === "BLUEPRINT" ? "BLUEPRINT" : "MEKANISME",
+        ),
+        shot: deriveShotForScene(model, candidate, sentence, sceneIndex, type),
+      };
     case "SVG_COMPARE": {
       const compare = deriveCompare(candidate?.compare, knowledge, digits);
       return compare
@@ -595,7 +734,12 @@ function deriveSkillStage(
         : null;
     }
     case "SVG_CROSSSECTION": {
-      const layers = deriveLayers(candidate?.layers, knowledge, digits);
+      const derived = deriveLayers(candidate?.layers, knowledge, digits);
+      const fallbackLayers =
+        model && model.parts.length >= 3
+          ? model.parts.slice(0, 4).map((p) => ({ label: p.label }))
+          : null;
+      const layers = derived && derived.length >= 3 ? derived : fallbackLayers;
       return layers
         ? {
             visualType: "SVG_CROSSSECTION",
@@ -605,7 +749,14 @@ function deriveSkillStage(
         : null;
     }
     case "SVG_TIMELINE": {
-      const steps = deriveSteps(candidate?.steps, knowledge, digits);
+      const derived = deriveSteps(candidate?.steps, knowledge, digits);
+      const fallbackSteps =
+        model && model.steps.length >= 3
+          ? model.steps.slice(0, 4).map((label) => ({ label }))
+          : model && model.parts.length >= 3
+            ? model.parts.slice(0, 4).map((p) => ({ label: p.label }))
+            : null;
+      const steps = derived && derived.length >= 3 ? derived : fallbackSteps;
       return steps
         ? {
             visualType: "SVG_TIMELINE",
@@ -625,6 +776,16 @@ function deriveSkillStage(
   }
 }
 
+const EXPLAINER_CYCLE: VisualType[] = [
+  "ISO_ASSEMBLY",
+  "MECHANISM_FLOW",
+  "BLUEPRINT",
+  "ISO_ASSEMBLY",
+  "SVG_CROSSSECTION",
+  "MECHANISM_FLOW",
+  "SVG_TIMELINE",
+];
+
 function normalizeScenes(
   output: VisualPlanOutput,
   sentences: ScriptSentence[],
@@ -635,12 +796,16 @@ function normalizeScenes(
   style: TopicStyle = "factcheck",
   hints: ImageHints = NO_HINTS,
   grammar: VisualGrammar = visualGrammarFor([], style),
+  model: ObjectModel = genericModel(topic, []),
 ): VisualScene[] {
   const scenes: VisualScene[] = [];
   let previousMotion: MotionType | null = null;
   let previousStage: VisualType | null = null;
   const seenStageKeys = new Set<string>();
   let previousImageStyle: ImageFrameStyle | null = null;
+  let bRollCount = 0;
+  let explainerCycleCursor = 0;
+  const maxBRollScenes = Math.max(2, Math.floor(sentences.length * 0.25));
 
   sentences.forEach((sentence, sentenceIndex) => {
     const candidate = output.scenes[sentenceIndex];
@@ -667,13 +832,12 @@ function normalizeScenes(
     const chunkCount = Math.max(1, Math.ceil(span / grammar.maxSceneSeconds));
     const chunkLength = span / chunkCount;
     const restricted = restrictToStyle(
-      deriveStage(candidate, sentence, topic, scenes.length, knowledge),
+      deriveStage(candidate, sentence, topic, scenes.length, knowledge, model),
       style,
     );
     const baseStage: StageData = {
       ...restricted,
       imageSearchQuery: anchorImageQuery(
-        // Project baru: hanya query asli LLM yang dipertimbangkan (bukan kata narasi hasil cleanQuery).
         hints.searchTopic
           ? (candidate?.imageSearchQuery ?? "")
           : restricted.imageSearchQuery,
@@ -706,73 +870,128 @@ function normalizeScenes(
           ? candidate.background.fallback
           : gradient;
 
-      // Alternate visual families: two data graphics in a row is the maximum,
-      // then a real image takes over so the video never feels like a slideshow.
-      let stage = baseStage;
-      const isData = (type: VisualType) => type !== "B_ROLL_IMAGE";
-      if (
-        isData(stage.visualType) &&
-        isData(previousStage ?? "B_ROLL_IMAGE") &&
-        (chunkIndex > 0 || sceneIndex % 3 === 2)
-      ) {
-        stage = {
-          visualType: "B_ROLL_IMAGE",
-          stageLabel: "",
-          imageSearchQuery: stage.imageSearchQuery,
-          imageStyle: stage.imageStyle,
-        };
-      }
-      // Grafis data yang isinya identik (mis. compare yang sama muncul lagi)
-      // membosankan: ganti foto.
-      const stageKey = JSON.stringify([stage.visualType, stage.layers, stage.steps, stage.counter, stage.metric, stage.stamp, stage.compare, stage.bars, stage.range]);
-      if (isData(stage.visualType) && seenStageKeys.has(stageKey)) {
-        stage = { visualType: "B_ROLL_IMAGE", stageLabel: "", imageSearchQuery: stage.imageSearchQuery, imageStyle: stage.imageStyle };
-      }
-      if (isData(stage.visualType)) seenStageKeys.add(stageKey);
-      previousStage = stage.visualType;
-
-      // Aturan peran: hook harus tajam dan jelas, CTA tenang tanpa grafik data.
+      let stage: StageData = { ...baseStage };
       const sceneRole: SceneRole =
-        sentence.role === "hook" ? "hook" : sentence.role === "cta" ? "cta" : "body";
-      const asPhoto = (imageStyle?: ImageFrameStyle): StageData => ({
-        visualType: "B_ROLL_IMAGE",
-        stageLabel: "",
-        imageSearchQuery: stage.imageSearchQuery,
-        imageStyle: imageStyle ?? stage.imageStyle,
-      });
-      if (sceneRole === "cta" && stage.visualType !== "B_ROLL_IMAGE") stage = asPhoto();
-      if (
-        sceneRole === "hook" &&
-        (stage.visualType === "SVG_STAMP" || stage.visualType === "SVG_WAVEFORM")
-      ) {
-        stage = asPhoto("fullBleed");
-      }
-      if (sceneRole === "hook" && stage.visualType === "B_ROLL_IMAGE") {
-        stage = { ...stage, imageStyle: "fullBleed" };
-      }
-      if (sceneRole === "hook" && motion === "shake") motion = "zoomIn";
+        sentence.role === "hook" || sentenceIndex === 0
+          ? "hook"
+          : sentence.role === "cta" || isLastSentence
+            ? "cta"
+            : "body";
 
-      // Skill explainer wajib terlihat: bila video belum punya cukup scene
-      // penjelasan, ubah potongan body yang datanya tersedia menjadi stage
-      // dari daftar preferred grammar (bukan hanya menambah teks prompt).
-      if (sceneRole === "body" && stage.visualType === "B_ROLL_IMAGE") {
-        const explainerCount = scenes.filter(
-          (scene) =>
-            scene.role === "body" &&
-            scene.visualType !== undefined &&
-            scene.visualType !== "B_ROLL_IMAGE",
-        ).length;
-        if (explainerCount < grammar.minExplainerScenes) {
-          for (const type of grammar.preferred) {
-            if (type === "B_ROLL_IMAGE" || !isVisualAllowed(style, type)) continue;
-            const derived = deriveSkillStage(type, candidate, sentence, knowledge);
-            if (derived) {
-              stage = { ...stage, ...derived };
-              break;
+      const pickNextExplainer = (): StageData => {
+        for (let tries = 0; tries < EXPLAINER_CYCLE.length; tries += 1) {
+          const nextType =
+            EXPLAINER_CYCLE[(explainerCycleCursor + tries) % EXPLAINER_CYCLE.length];
+          if (!isVisualAllowed(style, nextType)) continue;
+          const derived = deriveSkillStage(
+            nextType,
+            candidate,
+            sentence,
+            knowledge,
+            sceneIndex + tries,
+            model,
+          );
+          if (derived && derived.visualType) {
+            const key = JSON.stringify([
+              derived.visualType,
+              derived.shot?.focus,
+              derived.layers,
+              derived.steps,
+            ]);
+            if (!seenStageKeys.has(key) || tries === EXPLAINER_CYCLE.length - 1) {
+              explainerCycleCursor += tries + 1;
+              return { ...stage, ...derived, visualType: derived.visualType };
             }
           }
         }
+        explainerCycleCursor += 1;
+        return {
+          ...stage,
+          visualType: "ISO_ASSEMBLY",
+          stageLabel: "MEKANISME",
+          shot: deriveShotForScene(model, candidate, sentence, sceneIndex, "ISO_ASSEMBLY"),
+        };
+      };
+
+      // Hook wajib penjelas visual yang kuat (cutaway 3D atau metrik skala), bukan foto kusam.
+      if (
+        sceneRole === "hook" &&
+        (stage.visualType === "B_ROLL_IMAGE" ||
+          stage.visualType === "SVG_STAMP" ||
+          stage.visualType === "SVG_WAVEFORM")
+      ) {
+        stage = {
+          ...stage,
+          visualType: "ISO_ASSEMBLY",
+          stageLabel: "MEKANISME",
+          shot: deriveShotForScene(model, candidate, sentence, sceneIndex, "ISO_ASSEMBLY"),
+        };
       }
+      if (sceneRole === "hook" && motion === "shake") motion = "zoomIn";
+
+      // CTA: foto tenang tanpa grafik agar kalimat penutup bernapas.
+      if (sceneRole === "cta" && stage.visualType !== "B_ROLL_IMAGE") {
+        stage = {
+          ...stage,
+          visualType: "B_ROLL_IMAGE",
+          stageLabel: "",
+          shot: undefined,
+          metric: undefined,
+          counter: undefined,
+          range: undefined,
+          bars: undefined,
+          wave: undefined,
+          stamp: undefined,
+          compare: undefined,
+          layers: undefined,
+          steps: undefined,
+        };
+      }
+
+      // Potongan ke-2 dari kalimat yang sama: kalau B_ROLL_IMAGE atau statis kembar, putar ke sudut explainer baru.
+      if (chunkIndex > 0 && sceneRole !== "cta" && stage.visualType === "B_ROLL_IMAGE") {
+        stage = pickNextExplainer();
+      }
+
+      // Cegah grafis statis identik (compare/crosssection/timeline yang persis sama berulang).
+      const isData = (type: VisualType) => type !== "B_ROLL_IMAGE";
+      const stageKey = JSON.stringify([
+        stage.visualType,
+        stage.shot?.focus,
+        stage.shot?.step,
+        stage.layers,
+        stage.steps,
+        stage.counter,
+        stage.metric,
+        stage.stamp,
+        stage.compare,
+        stage.bars,
+        stage.range,
+      ]);
+      if (isData(stage.visualType) && chunkIndex === 0 && seenStageKeys.has(stageKey)) {
+        stage = pickNextExplainer();
+      }
+
+      // Batasi B_ROLL_IMAGE maksimal 25% scene & larang 2 B_ROLL_IMAGE berturut-turut pada body/hook!
+      if (stage.visualType === "B_ROLL_IMAGE" && sceneRole !== "cta") {
+        const ConsecutivePhoto = previousStage === "B_ROLL_IMAGE";
+        const OverQuota = bRollCount >= maxBRollScenes;
+        const NeedsMoreExplainer =
+          sceneRole === "body" &&
+          scenes.filter((s) => s.visualType !== "B_ROLL_IMAGE").length <
+            grammar.minExplainerScenes &&
+          sceneIndex % 3 !== 1;
+        if (ConsecutivePhoto || OverQuota || NeedsMoreExplainer) {
+          stage = pickNextExplainer();
+        }
+      }
+
+      if (stage.visualType === "B_ROLL_IMAGE") {
+        bRollCount += 1;
+      } else {
+        seenStageKeys.add(stageKey);
+      }
+      previousStage = stage.visualType;
 
       if (stage.imageStyle === previousImageStyle) {
         stage = {
@@ -805,7 +1024,6 @@ function normalizeScenes(
             ANIMATIONS[sceneIndex % ANIMATIONS.length],
         },
         visualType: stage.visualType,
-        // Potongan ke-2 dst. dari satu kalimat dapat query lain supaya gambarnya tidak kembar.
         imageSearchQuery:
           chunkIndex > 0 && hints.searchTopic
             ? anchorImageQuery("", topic, style, { ...hints, sceneIndex })
@@ -823,6 +1041,7 @@ function normalizeScenes(
         compare: stage.compare,
         layers: stage.layers,
         steps: stage.steps,
+        shot: stage.shot,
         visualOffset: EDITORIAL_STAGES.has(stage.visualType)
           ? Math.round(Math.max(0, chunkStart - start) * 1000) / 1000
           : undefined,
@@ -844,10 +1063,12 @@ export function fallbackPlan(
   hints: ImageHints = NO_HINTS,
   knowledge = "",
   grammar: VisualGrammar = visualGrammarFor([], style),
+  model: ObjectModel = genericModel(topic, []),
 ): VisualPlan {
   return {
     vibe: "fast-cut, high contrast, gen-z viral",
     generatedAt: new Date().toISOString(),
+    model,
     grammar: {
       id: grammar.id,
       label: grammar.label,
@@ -886,6 +1107,7 @@ export function fallbackPlan(
       style,
       hints,
       grammar,
+      model,
     ),
   };
 }
@@ -919,20 +1141,32 @@ export async function runVisualPlanner(projectId: string) {
     (gradient, index) => `${index + 1}. ${gradient}`,
   ).join("\n");
 
-  // Basis pelacakan label editorial: narasi + fakta riset (huruf kecil).
-  const knowledge = `${project.topic} ${fullScript.sentences
-    .map((sentence) => sentence.text)
-    .join(" ")} ${JSON.stringify(project.researchData ?? {})}`.toLowerCase();
-
-  const style = resolveTopicStyle(
-    (project.researchData as { style?: unknown } | null)?.style,
-  );
-
-  const hints = readImageHints(project.researchData);
-  const extraSkills =
-    (project.researchData as ResearchData | null)?.skills?.extra ?? [];
+  const researchData = (project.researchData ?? null) as ResearchData | null;
+  const style = resolveTopicStyle(researchData?.style);
+  const hints = readImageHints(researchData);
+  const extraSkills = researchData?.skills?.extra ?? [];
   const grammar = visualGrammarFor(extraSkills, style);
   const playbook = await buildPlaybook("visual", style, extraSkills);
+
+  // Bangun/ambil ObjectModel 3D isometrik bersama untuk topik ini.
+  const model = await ensureObjectModel({
+    topic: project.topic,
+    style,
+    researchData,
+    sentences: fullScript.sentences,
+    modelOverride: project.model,
+  });
+
+  // Basis pelacakan label editorial: narasi + fakta riset + label ObjectModel (huruf kecil).
+  const modelVocab = `${model.parts.map((p) => p.label).join(" ")} ${model.steps.join(" ")}`;
+  const knowledge = `${project.topic} ${fullScript.sentences
+    .map((sentence) => sentence.text)
+    .join(" ")} ${JSON.stringify(researchData ?? {})} ${modelVocab}`.toLowerCase();
+
+  const modelBrief = `OBJECT MODEL (gunakan id part & flowId ini pada field "shot" untuk ISO_ASSEMBLY / MECHANISM_FLOW / BLUEPRINT):
+- parts: ${model.parts.map((p) => `${p.id} ("${p.label}", ${p.shape})`).join(", ")}
+- flows: ${model.flows.map((f) => `${f.id} ("${f.label}": ${f.through.join(" -> ")})`).join(", ") || "-"}
+- steps: ${model.steps.map((s, i) => `${i}: "${s}"`).join(", ") || "-"}`;
 
   let plan: VisualPlan;
   try {
@@ -941,6 +1175,8 @@ export async function runVisualPlanner(projectId: string) {
       user: `TOPIK: ${project.topic}
 DURASI AUDIO: ${duration.toFixed(2)} detik
 JUMLAH KALIMAT: ${fullScript.sentences.length}
+
+${modelBrief}
 
 KALIMAT + TIMING (wajib jadi acuan scene):
 ${sentenceTable}
@@ -953,25 +1189,27 @@ ${
     ? `VISUAL TERMS (BAHASA INGGRIS). imageSearchQuery tiap scene WAJIB salah satu frasa berikut (salin persis, boleh ditambah satu kata sudut seperti "close up" atau "aerial"). Pilih frasa yang paling cocok dengan kalimat scene dan variasikan antar scene; dilarang memakai kata Indonesia di imageSearchQuery. Pilih adegan yang bisa difoto, bukan peta/grafik:\n${hints.visualTerms.map((term) => `- ${term}`).join("\n")}\n\n`
     : ""
 }FAKTA RISET:
-${JSON.stringify({ ...((project.researchData as object) ?? {}), visualTerms: undefined, avoidTerms: undefined }).slice(0, 2000)}
+${JSON.stringify({ ...((researchData as object) ?? {}), visualTerms: undefined, avoidTerms: undefined, anatomy: undefined }).slice(0, 1800)}
 
 Buat tepat ${fullScript.sentences.length} scene, satu scene per kalimat. Jangan mengubah timing.
-Scene bertanda [hook] adalah 3 detik pertama: pilih visual paling spesifik dan konkret (objek utama atau angka skala). Judul hook di layar sudah dipasang terpisah, jangan mengulang teksnya.
-Scene bertanda [cta] adalah penutup: foto relevan yang tenang, tanpa grafik data dan tanpa stempel.
-SKILL VISUAL: pakai minimal ${grammar.minExplainerScenes} scene dengan visualType ${grammar.preferred
+Scene bertanda [hook] adalah 3 detik pertama: pakai ISO_ASSEMBLY cutaway overview (atau angka skala).
+Scene bertanda [cta] adalah penutup: pakai ISO_ASSEMBLY rakitan utuh tenang (atau 1 foto relevan).
+SKILL VISUAL: WAJIB minimal ${grammar.minExplainerScenes} scene memakai visual penjelas (${grammar.preferred
         .filter((type) => type !== "B_ROLL_IMAGE")
-        .join(" / ")}. Untuk SVG_COMPARE isi "compare" (left/right, 2-3 item masing-masing), untuk SVG_CROSSSECTION isi "layers" (3-5 lapisan), untuk SVG_TIMELINE isi "steps" (2-4 langkah). Semua label 1-2 kata dan harus ada di narasi/fakta.
+        .join(" / ")}). B_ROLL_IMAGE maksimal 25% scene dan dilarang 2 foto berturut-turut.
+Untuk ISO_ASSEMBLY / MECHANISM_FLOW / BLUEPRINT isi "shot": { "focus": ["<part-id>"], "cutaway": 0.7, "explode": 0.2, "zoom": 1.2, "flowId": "${model.flows[0]?.id ?? "main-flow"}", "step": 0, "labels": "focus" }.
 INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center stage hanya angka/metrik atau label sumbu 1-2 kata.`,
       schema: visualPlanSchema,
       tier: "primary",
       modelOverride: project.model,
-      temperature: 0.8,
-      maxTokens: 3200,
+      temperature: 0.7,
+      maxTokens: 3400,
     });
 
     plan = {
       vibe: output.vibe,
       generatedAt: new Date().toISOString(),
+      model,
       skillsUsed: extraSkills,
       grammar: {
         id: grammar.id,
@@ -990,6 +1228,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
         style,
         hints,
         grammar,
+        model,
       ),
     };
   } catch (error) {
@@ -1006,13 +1245,27 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
       hints,
       knowledge,
       grammar,
+      model,
     );
     plan.skillsUsed = extraSkills;
   }
 
+  const updatedResearch: ResearchData = {
+    ...(researchData ?? {
+      facts: [],
+      sources: [],
+      uniqueAngles: [],
+      viralPotential: "",
+    }),
+    anatomy: model,
+  };
+
   await prisma.project.update({
     where: { id: projectId },
-    data: { visualPlan: asJson(plan) },
+    data: {
+      visualPlan: asJson(plan),
+      researchData: asJson(updatedResearch),
+    },
   });
 
   await completeStage(projectId, "visual-planning", {
@@ -1021,6 +1274,7 @@ INGAT: jangan kirim headline/subheadline/tags/emoji/kalimat transkrip. Center st
     vibe: plan.vibe,
     skills: plan.skillsUsed ?? [],
     grammar: plan.grammar?.label ?? "",
+    explainerScenes: plan.scenes.filter((scene) => scene.visualType !== "B_ROLL_IMAGE").length,
     withImages: plan.scenes.filter((scene) => scene.visualType === "B_ROLL_IMAGE").length,
   });
 

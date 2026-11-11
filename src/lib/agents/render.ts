@@ -91,6 +91,10 @@ export async function runRender(projectId: string) {
     data: { visualPlan: asJson(enrichedPlan) },
   });
 
+  const model =
+    plan.model ??
+    ((project.researchData as { anatomy?: VisualPlan["model"] } | null)?.anatomy);
+
   const props = {
     audioSrc: stripPublicPrefix(project.audioUrl),
     duration: project.duration,
@@ -99,6 +103,7 @@ export async function runRender(projectId: string) {
     topic: project.topic,
     scenes,
     words: words ?? [],
+    ...(model ? { model } : {}),
     // Kartu hook hanya untuk naskah baru (punya judul layar terpisah dari ucapan).
     ...(fullScript.hookOnScreen
       ? {

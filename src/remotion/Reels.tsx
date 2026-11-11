@@ -22,6 +22,7 @@ export const Reels: React.FC<ReelsProps> = ({
   topic,
   scenes,
   words,
+  model,
   hookText,
   hookKicker,
   hookEnd,
@@ -76,7 +77,7 @@ export const Reels: React.FC<ReelsProps> = ({
                 index={index}
                 total={sortedScenes.length}
               />
-              <SceneStage scene={scene} index={index} />
+              <SceneStage scene={scene} index={index} model={model} topic={topic} />
             </CameraRig>
           </Sequence>
         );

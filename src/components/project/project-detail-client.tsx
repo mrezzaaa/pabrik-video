@@ -220,20 +220,37 @@ export function ProjectDetailClient({
                 Force Restart
               </Button>
             ) : (
-              <Button
-                size="sm"
-                variant={failedJob ? "destructive" : "secondary"}
-                onClick={() => void rerun()}
-                disabled={rerunning}
-                title="Jalankan ulang stage"
-              >
-                {rerunning ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="size-3.5" />
-                )}
-                {failedJob ? `Retry ${failedJob.type}` : "Rerun"}
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={() => void rerun("visual-planning", true)}
+                  disabled={rerunning}
+                  title="Bangun ulang model 3D/Blueprint/Mekanisme dan render ulang video dengan engine baru"
+                >
+                  {rerunning ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="size-3.5" />
+                  )}
+                  Render Ulang (Engine Baru)
+                </Button>
+                <Button
+                  size="sm"
+                  variant={failedJob ? "destructive" : "secondary"}
+                  onClick={() => void rerun()}
+                  disabled={rerunning}
+                  title="Jalankan ulang dari TTS + Visual + Render"
+                >
+                  {rerunning ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="size-3.5" />
+                  )}
+                  {failedJob ? `Retry ${failedJob.type}` : "Rerun Full (TTS+Visual)"}
+                </Button>
+              </>
             )}
           </div>
         </div>
